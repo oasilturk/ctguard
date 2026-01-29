@@ -25,5 +25,5 @@ func TestCTGuard(t *testing.T) {
 		t.Fatalf("failed to make testdata path absolute: %v", err)
 	}
 
-	analysistest.Run(t, abs, analyzer.Analyzer, "a")
+	analysistest.Run(t, abs, analyzer.Analyzer, "a", "b")
 }
