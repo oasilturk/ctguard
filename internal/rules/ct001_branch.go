@@ -10,11 +10,10 @@ import (
 	"golang.org/x/tools/go/ssa"
 
 	"github.com/oasilturk/ctguard/internal/annotations"
+	"github.com/oasilturk/ctguard/internal/taint"
 )
 
 // CT001: Secret-dependent branches.
-// In Go SSA (x/tools), switch statements are typically lowered into a chain of *ssa.If,
-// so checking *ssa.If is enough to catch secret-dependent switch conditions too.
 func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets) []analysis.Diagnostic {
 	var diags []analysis.Diagnostic
 
@@ -24,117 +23,7 @@ func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 		}
 
 		secretParams := secretParamSetForFn(fn, secrets)
-
-		memo := map[ssa.Value]bool{}
-		inStack := map[ssa.Value]bool{}
-
-		var depends func(ssa.Value) bool
-		depends = func(v ssa.Value) bool {
-			if v == nil {
-				return false
-			}
-			if val, ok := memo[v]; ok {
-				return val
-			}
-			if inStack[v] {
-				// break cycles defensively
-				return false
-			}
-			inStack[v] = true
-			defer func() { inStack[v] = false }()
-
-			// Base case: secret parameter
-			if p, ok := v.(*ssa.Parameter); ok {
-				if secretParams[p.Name()] {
-					memo[v] = true
-					return true
-				}
-			}
-
-			switch t := v.(type) {
-			case *ssa.UnOp:
-				memo[v] = depends(t.X)
-				return memo[v]
-
-			case *ssa.BinOp:
-				memo[v] = depends(t.X) || depends(t.Y)
-				return memo[v]
-
-			case *ssa.Phi:
-				for _, e := range t.Edges {
-					if depends(e) {
-						memo[v] = true
-						return true
-					}
-				}
-				memo[v] = false
-				return false
-
-			case *ssa.Call:
-				for _, a := range t.Call.Args {
-					if depends(a) {
-						memo[v] = true
-						return true
-					}
-				}
-				memo[v] = false
-				return false
-
-			case *ssa.ChangeType:
-				memo[v] = depends(t.X)
-				return memo[v]
-
-			case *ssa.Convert:
-				memo[v] = depends(t.X)
-				return memo[v]
-
-			case *ssa.MakeInterface:
-				memo[v] = depends(t.X)
-				return memo[v]
-
-			case *ssa.Extract:
-				memo[v] = depends(t.Tuple)
-				return memo[v]
-
-			case *ssa.Field:
-				memo[v] = depends(t.X)
-				return memo[v]
-
-			case *ssa.FieldAddr:
-				memo[v] = depends(t.X)
-				return memo[v]
-
-			case *ssa.Index:
-				memo[v] = depends(t.X) || depends(t.Index)
-				return memo[v]
-
-			case *ssa.IndexAddr:
-				memo[v] = depends(t.X) || depends(t.Index)
-				return memo[v]
-
-			case *ssa.Slice:
-				ok := depends(t.X)
-				if t.Low != nil {
-					ok = ok || depends(t.Low)
-				}
-				if t.High != nil {
-					ok = ok || depends(t.High)
-				}
-				if t.Max != nil {
-					ok = ok || depends(t.Max)
-				}
-				memo[v] = ok
-				return ok
-
-			case *ssa.Lookup:
-				memo[v] = depends(t.X) || depends(t.Index)
-				return memo[v]
-
-			default:
-				memo[v] = false
-				return false
-			}
-		}
+		dep := taint.NewDepender(secretParams)
 
 		for _, b := range fn.Blocks {
 			for _, ins := range b.Instrs {
@@ -142,12 +31,10 @@ func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 				if !ok {
 					continue
 				}
-
-				if !depends(i.Cond) {
+				if !dep.Depends(i.Cond) {
 					continue
 				}
 
-				// SSA instructions sometimes have NoPos. Use the condition position first.
 				pos := i.Cond.Pos()
 				if pos == token.NoPos {
 					pos = i.Pos()
@@ -173,7 +60,6 @@ func secretParamSetForFn(fn *ssa.Function, secrets annotations.Secrets) map[stri
 		return set
 	}
 
-	// Try FullName (types.Func), then fallback to String().
 	if tf, ok := fn.Object().(*types.Func); ok && tf != nil {
 		if m, ok := secrets.FuncSecretParams[tf.FullName()]; ok {
 			for k := range m {
