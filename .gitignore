@@ -16,5 +16,5 @@ coverage.out
 # OS
 .DS_Store
 
-# Local build output
-ctguard
+# Example packages to run tests on
+examples/
