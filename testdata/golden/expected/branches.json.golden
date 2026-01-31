@@ -1,0 +1,12 @@
+[
+  {
+    "pos": "testdata/src/branches/branches.go:7:12",
+    "message": "CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/branches.secretBranch",
+    "rule": "CT001"
+  },
+  {
+    "pos": "testdata/src/branches/branches.go:14:13",
+    "message": "CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/branches.secretBranch",
+    "rule": "CT001"
+  }
+]

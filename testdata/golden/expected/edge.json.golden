@@ -1,0 +1,57 @@
+[
+  {
+    "pos": "testdata/src/edge/edge.go:20:19",
+    "message": "CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons",
+    "rule": "CT001"
+  },
+  {
+    "pos": "testdata/src/edge/edge.go:21:19",
+    "message": "CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons",
+    "rule": "CT001"
+  },
+  {
+    "pos": "testdata/src/edge/edge.go:31:14",
+    "message": "CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.stringOps",
+    "rule": "CT001"
+  },
+  {
+    "pos": "testdata/src/edge/edge.go:36:39",
+    "message": "CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.stringOps",
+    "rule": "CT001"
+  },
+  {
+    "pos": "testdata/src/edge/edge.go:48:7",
+    "message": "CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.switchOnSecret",
+    "rule": "CT001"
+  },
+  {
+    "pos": "testdata/src/edge/edge.go:50:7",
+    "message": "CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.switchOnSecret",
+    "rule": "CT001"
+  },
+  {
+    "pos": "testdata/src/edge/edge.go:20:19",
+    "message": "CT002: non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons",
+    "rule": "CT002"
+  },
+  {
+    "pos": "testdata/src/edge/edge.go:21:19",
+    "message": "CT002: non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons",
+    "rule": "CT002"
+  },
+  {
+    "pos": "testdata/src/edge/edge.go:22:19",
+    "message": "CT002: non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons",
+    "rule": "CT002"
+  },
+  {
+    "pos": "testdata/src/edge/edge.go:31:14",
+    "message": "CT002: non-constant-time string comparison uses secret data in github.com/oasilturk/ctguard/testdata/src/edge.stringOps",
+    "rule": "CT002"
+  },
+  {
+    "pos": "testdata/src/edge/edge.go:36:20",
+    "message": "CT002: non-constant-time comparison (strings.Compare) uses secret data in github.com/oasilturk/ctguard/testdata/src/edge.stringOps",
+    "rule": "CT002"
+  }
+]

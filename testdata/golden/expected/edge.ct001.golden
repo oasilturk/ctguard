@@ -1,0 +1,6 @@
+testdata/src/edge/edge.go:20:19 CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons
+testdata/src/edge/edge.go:21:19 CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons
+testdata/src/edge/edge.go:31:14 CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.stringOps
+testdata/src/edge/edge.go:36:39 CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.stringOps
+testdata/src/edge/edge.go:48:7 CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.switchOnSecret
+testdata/src/edge/edge.go:50:7 CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.switchOnSecret

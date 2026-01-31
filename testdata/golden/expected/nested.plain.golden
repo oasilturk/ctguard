@@ -1,0 +1,3 @@
+testdata/src/nested/nested.go:8:9 CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/nested.nestedBranches
+testdata/src/nested/nested.go:11:8 CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/nested.nestedBranches
+testdata/src/nested/nested.go:26:18 CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/nested.deepNesting

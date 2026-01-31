@@ -1,0 +1,4 @@
+testdata/src/propagation/propagation.go:10:17 CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/propagation.taintPropagation
+testdata/src/propagation/propagation.go:24:13 CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/propagation.arithmeticTaint
+testdata/src/propagation/propagation.go:29:16 CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/propagation.arithmeticTaint
+testdata/src/propagation/propagation.go:15:17 CT002: non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/propagation.taintPropagation

@@ -1,0 +1,12 @@
+[
+  {
+    "pos": "testdata/src/comparisons/comparisons.go:12:17",
+    "message": "CT002: non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/comparisons.unsafeCompare",
+    "rule": "CT002"
+  },
+  {
+    "pos": "testdata/src/comparisons/comparisons.go:19:16",
+    "message": "CT002: non-constant-time string comparison uses secret data in github.com/oasilturk/ctguard/testdata/src/comparisons.stringCompare",
+    "rule": "CT002"
+  }
+]

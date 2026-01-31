@@ -1,0 +1,2 @@
+testdata/src/branches/branches.go:7:12 CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/branches.secretBranch
+testdata/src/branches/branches.go:14:13 CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/branches.secretBranch
