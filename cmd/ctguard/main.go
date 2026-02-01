@@ -547,8 +547,8 @@ func printSARIF(findings []Finding) {
 		},
 	}
 
-	// Convert findings to SARIF results
-	var results []SarifResult
+	// Convert findings to SARIF results (must be empty array, not null)
+	results := make([]SarifResult, 0)
 	for _, f := range findings {
 		// Extract message without rule prefix
 		msg := f.Message
