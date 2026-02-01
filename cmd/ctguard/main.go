@@ -129,6 +129,11 @@ func printHelp() {
            and similar operations with secret data. Use crypto/subtle
            for constant-time comparisons.
 
+    %sCT003%s  Secret-dependent indexing
+           Detects array, slice, and map indexing where the index
+           depends on secret data. This can leak information through
+           cache-timing side-channels (e.g., S-box lookups).
+
 %sANNOTATIONS%s
     Mark function parameters as secret using comments:
 
@@ -151,6 +156,7 @@ func printHelp() {
 		c.Gray, c.Reset,
 		c.Bold, c.Reset,
 		c.Bold, c.Reset,
+		c.Yellow, c.Reset,
 		c.Yellow, c.Reset,
 		c.Yellow, c.Reset,
 		c.Bold, c.Reset,
@@ -412,6 +418,8 @@ func printPlain(findings []Finding) {
 			ruleColor = c.Magenta
 		} else if strings.HasPrefix(rule, "CT002") {
 			ruleColor = c.Cyan
+		} else if strings.HasPrefix(rule, "CT003") {
+			ruleColor = c.Green
 		}
 
 		// Extract just the message without the rule prefix

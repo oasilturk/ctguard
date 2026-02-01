@@ -1,0 +1,52 @@
+[
+  {
+    "pos": "testdata/src/indexing/indexing.go:84:10",
+    "message": "CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/indexing.rangeWithSecretIndex",
+    "rule": "CT001"
+  },
+  {
+    "pos": "testdata/src/indexing/indexing.go:9:14",
+    "message": "CT003: secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.arrayLookup",
+    "rule": "CT003"
+  },
+  {
+    "pos": "testdata/src/indexing/indexing.go:16:13",
+    "message": "CT003: secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.sliceLookup",
+    "rule": "CT003"
+  },
+  {
+    "pos": "testdata/src/indexing/indexing.go:23:10",
+    "message": "CT003: secret-dependent map lookup in github.com/oasilturk/ctguard/testdata/src/indexing.mapLookup",
+    "rule": "CT003"
+  },
+  {
+    "pos": "testdata/src/indexing/indexing.go:31:14",
+    "message": "CT003: secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.derivedIndex",
+    "rule": "CT003"
+  },
+  {
+    "pos": "testdata/src/indexing/indexing.go:50:11",
+    "message": "CT003: secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.multipleAccesses",
+    "rule": "CT003"
+  },
+  {
+    "pos": "testdata/src/indexing/indexing.go:51:11",
+    "message": "CT003: secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.multipleAccesses",
+    "rule": "CT003"
+  },
+  {
+    "pos": "testdata/src/indexing/indexing.go:61:13",
+    "message": "CT003: secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.sboxTransform",
+    "rule": "CT003"
+  },
+  {
+    "pos": "testdata/src/indexing/indexing.go:68:12",
+    "message": "CT003: secret-dependent map lookup in github.com/oasilturk/ctguard/testdata/src/indexing.mapWithOk",
+    "rule": "CT003"
+  },
+  {
+    "pos": "testdata/src/indexing/indexing.go:76:15",
+    "message": "CT003: secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.nestedIndexing",
+    "rule": "CT003"
+  }
+]

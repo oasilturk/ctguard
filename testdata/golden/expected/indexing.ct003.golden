@@ -1,0 +1,9 @@
+testdata/src/indexing/indexing.go:9:14 CT003: secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.arrayLookup
+testdata/src/indexing/indexing.go:16:13 CT003: secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.sliceLookup
+testdata/src/indexing/indexing.go:23:10 CT003: secret-dependent map lookup in github.com/oasilturk/ctguard/testdata/src/indexing.mapLookup
+testdata/src/indexing/indexing.go:31:14 CT003: secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.derivedIndex
+testdata/src/indexing/indexing.go:50:11 CT003: secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.multipleAccesses
+testdata/src/indexing/indexing.go:51:11 CT003: secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.multipleAccesses
+testdata/src/indexing/indexing.go:61:13 CT003: secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.sboxTransform
+testdata/src/indexing/indexing.go:68:12 CT003: secret-dependent map lookup in github.com/oasilturk/ctguard/testdata/src/indexing.mapWithOk
+testdata/src/indexing/indexing.go:76:15 CT003: secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.nestedIndexing

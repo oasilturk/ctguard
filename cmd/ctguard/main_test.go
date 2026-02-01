@@ -95,6 +95,19 @@ func TestGolden(t *testing.T) {
 			args:       []string{},
 			goldenFile: "clean.plain.golden",
 		},
+		// Package 'indexing' - CT003 (secret-dependent indexing)
+		{
+			name:       "indexing_plain",
+			target:     "./testdata/src/indexing/",
+			args:       []string{},
+			goldenFile: "indexing.plain.golden",
+		},
+		{
+			name:       "indexing_json",
+			target:     "./testdata/src/indexing/",
+			args:       []string{"-format=json"},
+			goldenFile: "indexing.json.golden",
+		},
 		// Rule filtering
 		{
 			name:       "edge_ct001_only",
@@ -107,6 +120,12 @@ func TestGolden(t *testing.T) {
 			target:     "./testdata/src/edge/",
 			args:       []string{"-rules=CT002"},
 			goldenFile: "edge.ct002.golden",
+		},
+		{
+			name:       "indexing_ct003_only",
+			target:     "./testdata/src/indexing/",
+			args:       []string{"-rules=CT003"},
+			goldenFile: "indexing.ct003.golden",
 		},
 	}
 
