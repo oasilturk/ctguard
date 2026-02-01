@@ -151,6 +151,31 @@ func TestGolden(t *testing.T) {
 			args:       []string{"-rules=CT003"},
 			goldenFile: "indexing.ct003.golden",
 		},
+		// CT004 tests
+		{
+			name:       "exposure_plain",
+			target:     "./testdata/src/exposure/",
+			args:       []string{},
+			goldenFile: "exposure.plain.golden",
+		},
+		{
+			name:       "exposure_json",
+			target:     "./testdata/src/exposure/",
+			args:       []string{"-format=json"},
+			goldenFile: "exposure.json.golden",
+		},
+		{
+			name:       "exposure_sarif",
+			target:     "./testdata/src/exposure/",
+			args:       []string{"-format=sarif"},
+			goldenFile: "exposure.sarif.golden",
+		},
+		{
+			name:       "exposure_ct004_only",
+			target:     "./testdata/src/exposure/",
+			args:       []string{"-rules=CT004"},
+			goldenFile: "exposure.ct004.golden",
+		},
 	}
 
 	for _, tc := range cases {

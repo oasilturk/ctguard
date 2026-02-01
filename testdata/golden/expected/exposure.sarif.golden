@@ -70,62 +70,188 @@
       },
       "results": [
         {
-          "ruleId": "CT001",
+          "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons"
+            "text": "secret data passed to fmt.Print in github.com/oasilturk/ctguard/testdata/src/exposure.printSecret"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/edge/edge.go",
+                  "uri": "testdata/src/exposure/exposure.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 20,
-                  "startColumn": 19
+                  "startLine": 15,
+                  "startColumn": 11
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT001",
+          "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons"
+            "text": "secret data passed to fmt.Printf in github.com/oasilturk/ctguard/testdata/src/exposure.printSecret"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/edge/edge.go",
+                  "uri": "testdata/src/exposure/exposure.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 21,
-                  "startColumn": 19
+                  "startLine": 16,
+                  "startColumn": 12
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT001",
+          "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.stringOps"
+            "text": "secret data passed to fmt.Println in github.com/oasilturk/ctguard/testdata/src/exposure.printSecret"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/edge/edge.go",
+                  "uri": "testdata/src/exposure/exposure.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 31,
+                  "startLine": 17,
+                  "startColumn": 13
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT004",
+          "level": "error",
+          "message": {
+            "text": "secret data passed to fmt.Sprint in github.com/oasilturk/ctguard/testdata/src/exposure.sprintSecret"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/exposure/exposure.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 24,
+                  "startColumn": 16
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT004",
+          "level": "error",
+          "message": {
+            "text": "secret data passed to fmt.Sprintf in github.com/oasilturk/ctguard/testdata/src/exposure.sprintSecret"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/exposure/exposure.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 25,
+                  "startColumn": 17
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT004",
+          "level": "error",
+          "message": {
+            "text": "secret data passed to fmt.Sprintln in github.com/oasilturk/ctguard/testdata/src/exposure.sprintSecret"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/exposure/exposure.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 26,
+                  "startColumn": 21
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT004",
+          "level": "error",
+          "message": {
+            "text": "secret data passed to fmt.Fprint in github.com/oasilturk/ctguard/testdata/src/exposure.fprintSecret"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/exposure/exposure.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 33,
+                  "startColumn": 12
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT004",
+          "level": "error",
+          "message": {
+            "text": "secret data passed to fmt.Fprintf in github.com/oasilturk/ctguard/testdata/src/exposure.fprintSecret"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/exposure/exposure.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 34,
+                  "startColumn": 13
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT004",
+          "level": "error",
+          "message": {
+            "text": "secret data passed to fmt.Fprintln in github.com/oasilturk/ctguard/testdata/src/exposure.fprintSecret"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/exposure/exposure.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 35,
                   "startColumn": 14
                 }
               }
@@ -133,168 +259,147 @@
           ]
         },
         {
-          "ruleId": "CT001",
+          "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.stringOps"
+            "text": "secret data passed to fmt.Errorf in github.com/oasilturk/ctguard/testdata/src/exposure.errorWithSecret"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/edge/edge.go",
+                  "uri": "testdata/src/exposure/exposure.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 36,
-                  "startColumn": 39
+                  "startLine": 42,
+                  "startColumn": 19
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT001",
+          "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.switchOnSecret"
+            "text": "secret data passed to log.Print in github.com/oasilturk/ctguard/testdata/src/exposure.logSecret"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/edge/edge.go",
+                  "uri": "testdata/src/exposure/exposure.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 48,
-                  "startColumn": 7
+                  "startLine": 49,
+                  "startColumn": 11
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT001",
+          "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.switchOnSecret"
+            "text": "secret data passed to log.Printf in github.com/oasilturk/ctguard/testdata/src/exposure.logSecret"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/edge/edge.go",
+                  "uri": "testdata/src/exposure/exposure.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
                   "startLine": 50,
-                  "startColumn": 7
+                  "startColumn": 12
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT002",
+          "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons"
+            "text": "secret data passed to log.Println in github.com/oasilturk/ctguard/testdata/src/exposure.logSecret"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/edge/edge.go",
+                  "uri": "testdata/src/exposure/exposure.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 20,
-                  "startColumn": 19
+                  "startLine": 51,
+                  "startColumn": 13
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT002",
+          "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons"
+            "text": "secret data passed to fmt.Println in github.com/oasilturk/ctguard/testdata/src/exposure.derivedSecret"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/edge/edge.go",
+                  "uri": "testdata/src/exposure/exposure.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 21,
-                  "startColumn": 19
+                  "startLine": 59,
+                  "startColumn": 13
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT002",
+          "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons"
+            "text": "secret data passed to fmt.Println in github.com/oasilturk/ctguard/testdata/src/exposure.multipleSecrets"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/edge/edge.go",
+                  "uri": "testdata/src/exposure/exposure.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 22,
-                  "startColumn": 19
+                  "startLine": 80,
+                  "startColumn": 13
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT002",
+          "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "non-constant-time string comparison uses secret data in github.com/oasilturk/ctguard/testdata/src/edge.stringOps"
+            "text": "secret data passed to fmt.Println in github.com/oasilturk/ctguard/testdata/src/exposure.multipleSecrets"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/edge/edge.go",
+                  "uri": "testdata/src/exposure/exposure.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 31,
-                  "startColumn": 14
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT002",
-          "level": "error",
-          "message": {
-            "text": "non-constant-time comparison (strings.Compare) uses secret data in github.com/oasilturk/ctguard/testdata/src/edge.stringOps"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/edge/edge.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 36,
-                  "startColumn": 20
+                  "startLine": 81,
+                  "startColumn": 13
                 }
               }
             }

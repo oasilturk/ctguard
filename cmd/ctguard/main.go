@@ -201,6 +201,11 @@ func printHelp() {
            depends on secret data. This can leak information through
            cache-timing side-channels (e.g., S-box lookups).
 
+    %sCT004%s  Secret data exposure
+           Detects when secret data is passed to logging, printing,
+           or error formatting functions (fmt.Print*, log.*, fmt.Errorf).
+           Secrets may be exposed in logs, console output, or error messages.
+
 %sANNOTATIONS%s
     Mark function parameters as secret using comments:
 
@@ -224,6 +229,7 @@ func printHelp() {
 		c.Gray, c.Reset,
 		c.Bold, c.Reset,
 		c.Bold, c.Reset,
+		c.Yellow, c.Reset,
 		c.Yellow, c.Reset,
 		c.Yellow, c.Reset,
 		c.Yellow, c.Reset,
@@ -491,6 +497,8 @@ func printPlain(findings []Finding) {
 			ruleColor = c.Cyan
 		} else if strings.HasPrefix(rule, "CT003") {
 			ruleColor = c.Green
+		} else if strings.HasPrefix(rule, "CT004") {
+			ruleColor = c.Red
 		}
 
 		// Extract just the message without the rule prefix
@@ -543,6 +551,14 @@ func printSARIF(findings []Finding) {
 			ShortDescription: SarifMessage{Text: "Secret-dependent indexing"},
 			FullDescription:  SarifMessage{Text: "Detects array, slice, and map indexing where the index depends on secret data. This can leak information through cache-timing side-channels."},
 			HelpURI:          "https://github.com/oasilturk/ctguard#ct003",
+			DefaultConfig:    SarifDefaultConfig{Level: "error"},
+		},
+		{
+			ID:               "CT004",
+			Name:             "SecretDataExposure",
+			ShortDescription: SarifMessage{Text: "Secret data exposure"},
+			FullDescription:  SarifMessage{Text: "Detects when secret data is passed to logging, printing, or error formatting functions. Secrets may be exposed in logs, console output, or error messages."},
+			HelpURI:          "https://github.com/oasilturk/ctguard#ct004",
 			DefaultConfig:    SarifDefaultConfig{Level: "error"},
 		},
 	}

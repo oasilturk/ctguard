@@ -31,5 +31,9 @@ func run(pass *analysis.Pass) (any, error) {
 		pass.Report(d)
 	}
 
+	for _, d := range rules.RunCT004(pass, ssaRes, secrets) {
+		pass.Report(d)
+	}
+
 	return nil, nil
 }

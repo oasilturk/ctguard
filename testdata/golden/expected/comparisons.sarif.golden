@@ -50,6 +50,20 @@
               "defaultConfiguration": {
                 "level": "error"
               }
+            },
+            {
+              "id": "CT004",
+              "name": "SecretDataExposure",
+              "shortDescription": {
+                "text": "Secret data exposure"
+              },
+              "fullDescription": {
+                "text": "Detects when secret data is passed to logging, printing, or error formatting functions. Secrets may be exposed in logs, console output, or error messages."
+              },
+              "helpUri": "https://github.com/oasilturk/ctguard#ct004",
+              "defaultConfiguration": {
+                "level": "error"
+              }
             }
           ]
         }
