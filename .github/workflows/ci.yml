@@ -40,6 +40,7 @@ jobs:
       - name: Upload SARIF to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
         if: always()
+        continue-on-error: true  //TODO: Enable code scanning in the repo settings
         with:
           sarif_file: ctguard-results.sarif
           category: ctguard
