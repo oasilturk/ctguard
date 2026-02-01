@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "ctguard",
+          "version": "<VERSION>",
+          "informationUri": "https://github.com/oasilturk/ctguard",
+          "rules": [
+            {
+              "id": "CT001",
+              "name": "SecretDependentBranch",
+              "shortDescription": {
+                "text": "Secret-dependent branch"
+              },
+              "fullDescription": {
+                "text": "Detects control flow that depends on secret data, which can leak information through timing differences."
+              },
+              "helpUri": "https://github.com/oasilturk/ctguard#ct001",
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "CT002",
+              "name": "NonConstantTimeComparison",
+              "shortDescription": {
+                "text": "Non-constant-time comparison"
+              },
+              "fullDescription": {
+                "text": "Detects use of variable-time comparison operations (bytes.Equal, strings.Compare, ==) with secret data. Use crypto/subtle for constant-time comparisons."
+              },
+              "helpUri": "https://github.com/oasilturk/ctguard#ct002",
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "CT003",
+              "name": "SecretDependentIndexing",
+              "shortDescription": {
+                "text": "Secret-dependent indexing"
+              },
+              "fullDescription": {
+                "text": "Detects array, slice, and map indexing where the index depends on secret data. This can leak information through cache-timing side-channels."
+              },
+              "helpUri": "https://github.com/oasilturk/ctguard#ct003",
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "CT001",
+          "level": "error",
+          "message": {
+            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/branches.secretBranch"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/branches/branches.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 7,
+                  "startColumn": 12
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT001",
+          "level": "error",
+          "message": {
+            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/branches.secretBranch"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/branches/branches.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 14,
+                  "startColumn": 13
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

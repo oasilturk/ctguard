@@ -89,6 +89,72 @@ type Finding struct {
 	Rule    string `json:"rule,omitempty"`
 }
 
+// SARIF 2.1.0 structures
+type SarifReport struct {
+	Schema  string     `json:"$schema"`
+	Version string     `json:"version"`
+	Runs    []SarifRun `json:"runs"`
+}
+
+type SarifRun struct {
+	Tool    SarifTool     `json:"tool"`
+	Results []SarifResult `json:"results"`
+}
+
+type SarifTool struct {
+	Driver SarifDriver `json:"driver"`
+}
+
+type SarifDriver struct {
+	Name           string      `json:"name"`
+	Version        string      `json:"version"`
+	InformationURI string      `json:"informationUri"`
+	Rules          []SarifRule `json:"rules"`
+}
+
+type SarifRule struct {
+	ID               string             `json:"id"`
+	Name             string             `json:"name"`
+	ShortDescription SarifMessage       `json:"shortDescription"`
+	FullDescription  SarifMessage       `json:"fullDescription"`
+	HelpURI          string             `json:"helpUri"`
+	DefaultConfig    SarifDefaultConfig `json:"defaultConfiguration"`
+}
+
+type SarifDefaultConfig struct {
+	Level string `json:"level"`
+}
+
+type SarifMessage struct {
+	Text string `json:"text"`
+}
+
+type SarifResult struct {
+	RuleID    string          `json:"ruleId"`
+	Level     string          `json:"level"`
+	Message   SarifMessage    `json:"message"`
+	Locations []SarifLocation `json:"locations"`
+}
+
+type SarifLocation struct {
+	PhysicalLocation SarifPhysicalLocation `json:"physicalLocation"`
+}
+
+type SarifPhysicalLocation struct {
+	ArtifactLocation SarifArtifactLocation `json:"artifactLocation"`
+	Region           *SarifRegion          `json:"region,omitempty"`
+}
+
+type SarifArtifactLocation struct {
+	URI       string `json:"uri"`
+	URIBaseID string `json:"uriBaseId,omitempty"`
+}
+
+type SarifRegion struct {
+	StartLine   int `json:"startLine,omitempty"`
+	StartColumn int `json:"startColumn,omitempty"`
+}
+
 func main() {
 	// go vet -vettool=<this binary> calls us; we switch into vettool mode via env.
 	if os.Getenv(vettoolEnv) == "1" {
@@ -108,10 +174,11 @@ func printHelp() {
     ctguard ./...                      %s# Scan entire project%s
     ctguard -rules=CT001 ./pkg/...     %s# Only check for secret-dependent branches%s
     ctguard -format=json ./...         %s# JSON output for CI integration%s
+    ctguard -format=sarif ./...        %s# SARIF output for GitHub Code Scanning%s
     ctguard -fail=false ./...          %s# Don't fail on findings (for reports)%s
 
 %sFLAGS%s
-    -format string    Output format: plain or json (default "plain")
+    -format string    Output format: plain, json, or sarif (default "plain")
     -rules string     Comma-separated rule IDs or 'all' (default "all")
     -fail             Exit with code 1 if findings exist (default true)
     -quiet            Suppress diagnostic output
@@ -150,6 +217,7 @@ func printHelp() {
 		c.Bold, c.Cyan, c.Reset,
 		c.Bold, c.Reset,
 		c.Bold, c.Reset,
+		c.Gray, c.Reset,
 		c.Gray, c.Reset,
 		c.Gray, c.Reset,
 		c.Gray, c.Reset,
@@ -275,8 +343,8 @@ func runCLI(args []string) int {
 	}
 
 	// Validate format
-	if format != "plain" && format != "json" {
-		fmt.Fprintf(os.Stderr, "%s%serror:%s -format must be 'plain' or 'json'\n", c.Bold, c.Red, c.Reset)
+	if format != "plain" && format != "json" && format != "sarif" {
+		fmt.Fprintf(os.Stderr, "%s%serror:%s -format must be 'plain', 'json', or 'sarif'\n", c.Bold, c.Red, c.Reset)
 		return 2
 	}
 
@@ -316,11 +384,14 @@ func runCLI(args []string) int {
 
 	// Print diagnostics (ONLY our filtered findings; never forward go vet's JSON noise)
 	if !quiet {
-		if format == "json" {
+		switch format {
+		case "json":
 			enc := json.NewEncoder(os.Stdout)
 			enc.SetIndent("", "  ")
 			_ = enc.Encode(findings)
-		} else {
+		case "sarif":
+			printSARIF(findings)
+		default:
 			printPlain(findings)
 		}
 	}
@@ -337,9 +408,9 @@ func runCLI(args []string) int {
 		}
 	}
 
-	// Summary (keep JSON clean -> summary to stderr if format=json)
+	// Summary (keep JSON/SARIF clean -> summary to stderr if format=json or sarif)
 	if summary {
-		printSummary(findings, format == "json")
+		printSummary(findings, format == "json" || format == "sarif")
 	}
 
 	// Exit code policy:
@@ -445,6 +516,106 @@ func printPlain(findings []Finding) {
 				ruleColor, rule, c.Reset, c.Gray+":", c.Reset+msg)
 		}
 	}
+}
+
+func printSARIF(findings []Finding) {
+	// Define rules metadata
+	rules := []SarifRule{
+		{
+			ID:               "CT001",
+			Name:             "SecretDependentBranch",
+			ShortDescription: SarifMessage{Text: "Secret-dependent branch"},
+			FullDescription:  SarifMessage{Text: "Detects control flow that depends on secret data, which can leak information through timing differences."},
+			HelpURI:          "https://github.com/oasilturk/ctguard#ct001",
+			DefaultConfig:    SarifDefaultConfig{Level: "error"},
+		},
+		{
+			ID:               "CT002",
+			Name:             "NonConstantTimeComparison",
+			ShortDescription: SarifMessage{Text: "Non-constant-time comparison"},
+			FullDescription:  SarifMessage{Text: "Detects use of variable-time comparison operations (bytes.Equal, strings.Compare, ==) with secret data. Use crypto/subtle for constant-time comparisons."},
+			HelpURI:          "https://github.com/oasilturk/ctguard#ct002",
+			DefaultConfig:    SarifDefaultConfig{Level: "error"},
+		},
+		{
+			ID:               "CT003",
+			Name:             "SecretDependentIndexing",
+			ShortDescription: SarifMessage{Text: "Secret-dependent indexing"},
+			FullDescription:  SarifMessage{Text: "Detects array, slice, and map indexing where the index depends on secret data. This can leak information through cache-timing side-channels."},
+			HelpURI:          "https://github.com/oasilturk/ctguard#ct003",
+			DefaultConfig:    SarifDefaultConfig{Level: "error"},
+		},
+	}
+
+	// Convert findings to SARIF results
+	var results []SarifResult
+	for _, f := range findings {
+		// Extract message without rule prefix
+		msg := f.Message
+		if idx := strings.Index(msg, ":"); idx > 0 && strings.HasPrefix(msg, "CT") {
+			msg = strings.TrimSpace(msg[idx+1:])
+		}
+
+		result := SarifResult{
+			RuleID:  f.Rule,
+			Level:   "error",
+			Message: SarifMessage{Text: msg},
+		}
+
+		// Parse position (file:line:col)
+		if f.Pos != "" {
+			parts := strings.Split(f.Pos, ":")
+			loc := SarifLocation{
+				PhysicalLocation: SarifPhysicalLocation{
+					ArtifactLocation: SarifArtifactLocation{
+						URI:       parts[0],
+						URIBaseID: "%SRCROOT%",
+					},
+				},
+			}
+
+			if len(parts) >= 2 {
+				line := 0
+				_, _ = fmt.Sscanf(parts[1], "%d", &line)
+				if line > 0 {
+					loc.PhysicalLocation.Region = &SarifRegion{StartLine: line}
+					if len(parts) >= 3 {
+						col := 0
+						_, _ = fmt.Sscanf(parts[2], "%d", &col)
+						if col > 0 {
+							loc.PhysicalLocation.Region.StartColumn = col
+						}
+					}
+				}
+			}
+
+			result.Locations = []SarifLocation{loc}
+		}
+
+		results = append(results, result)
+	}
+
+	report := SarifReport{
+		Schema:  "https://json.schemastore.org/sarif-2.1.0.json",
+		Version: "2.1.0",
+		Runs: []SarifRun{
+			{
+				Tool: SarifTool{
+					Driver: SarifDriver{
+						Name:           "ctguard",
+						Version:        version,
+						InformationURI: "https://github.com/oasilturk/ctguard",
+						Rules:          rules,
+					},
+				},
+				Results: results,
+			},
+		},
+	}
+
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	_ = enc.Encode(report)
 }
 
 func printSummary(findings []Finding, toStderr bool) {

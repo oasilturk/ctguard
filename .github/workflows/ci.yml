@@ -8,6 +8,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
 
@@ -27,3 +30,16 @@ jobs:
 
       - name: Run tests
         run: go test ./...
+
+      - name: Build CTGuard
+        run: go build -o ctguard ./cmd/ctguard
+
+      - name: Run CTGuard (self-check)
+        run: ./ctguard -format=sarif -fail=false ./... > ctguard-results.sarif
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: ctguard-results.sarif
+          category: ctguard

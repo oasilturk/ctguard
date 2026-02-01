@@ -1,0 +1,271 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "ctguard",
+          "version": "<VERSION>",
+          "informationUri": "https://github.com/oasilturk/ctguard",
+          "rules": [
+            {
+              "id": "CT001",
+              "name": "SecretDependentBranch",
+              "shortDescription": {
+                "text": "Secret-dependent branch"
+              },
+              "fullDescription": {
+                "text": "Detects control flow that depends on secret data, which can leak information through timing differences."
+              },
+              "helpUri": "https://github.com/oasilturk/ctguard#ct001",
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "CT002",
+              "name": "NonConstantTimeComparison",
+              "shortDescription": {
+                "text": "Non-constant-time comparison"
+              },
+              "fullDescription": {
+                "text": "Detects use of variable-time comparison operations (bytes.Equal, strings.Compare, ==) with secret data. Use crypto/subtle for constant-time comparisons."
+              },
+              "helpUri": "https://github.com/oasilturk/ctguard#ct002",
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "CT003",
+              "name": "SecretDependentIndexing",
+              "shortDescription": {
+                "text": "Secret-dependent indexing"
+              },
+              "fullDescription": {
+                "text": "Detects array, slice, and map indexing where the index depends on secret data. This can leak information through cache-timing side-channels."
+              },
+              "helpUri": "https://github.com/oasilturk/ctguard#ct003",
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "CT001",
+          "level": "error",
+          "message": {
+            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/indexing.rangeWithSecretIndex"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/indexing/indexing.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 84,
+                  "startColumn": 10
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT003",
+          "level": "error",
+          "message": {
+            "text": "secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.arrayLookup"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/indexing/indexing.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 9,
+                  "startColumn": 14
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT003",
+          "level": "error",
+          "message": {
+            "text": "secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.sliceLookup"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/indexing/indexing.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 16,
+                  "startColumn": 13
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT003",
+          "level": "error",
+          "message": {
+            "text": "secret-dependent map lookup in github.com/oasilturk/ctguard/testdata/src/indexing.mapLookup"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/indexing/indexing.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 23,
+                  "startColumn": 10
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT003",
+          "level": "error",
+          "message": {
+            "text": "secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.derivedIndex"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/indexing/indexing.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 31,
+                  "startColumn": 14
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT003",
+          "level": "error",
+          "message": {
+            "text": "secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.multipleAccesses"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/indexing/indexing.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 50,
+                  "startColumn": 11
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT003",
+          "level": "error",
+          "message": {
+            "text": "secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.multipleAccesses"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/indexing/indexing.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 51,
+                  "startColumn": 11
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT003",
+          "level": "error",
+          "message": {
+            "text": "secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.sboxTransform"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/indexing/indexing.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 61,
+                  "startColumn": 13
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT003",
+          "level": "error",
+          "message": {
+            "text": "secret-dependent map lookup in github.com/oasilturk/ctguard/testdata/src/indexing.mapWithOk"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/indexing/indexing.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 68,
+                  "startColumn": 12
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT003",
+          "level": "error",
+          "message": {
+            "text": "secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.nestedIndexing"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/indexing/indexing.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 76,
+                  "startColumn": 15
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

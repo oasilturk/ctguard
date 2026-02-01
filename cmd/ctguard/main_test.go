@@ -48,6 +48,12 @@ func TestGolden(t *testing.T) {
 			args:       []string{"-format=json"},
 			goldenFile: "branches.json.golden",
 		},
+		{
+			name:       "branches_sarif",
+			target:     "./testdata/src/branches/",
+			args:       []string{"-format=sarif"},
+			goldenFile: "branches.sarif.golden",
+		},
 		// Package 'comparisons' - CT002 (non-constant-time comparisons)
 		{
 			name:       "comparisons_plain",
@@ -60,6 +66,12 @@ func TestGolden(t *testing.T) {
 			target:     "./testdata/src/comparisons/",
 			args:       []string{"-format=json"},
 			goldenFile: "comparisons.json.golden",
+		},
+		{
+			name:       "comparisons_sarif",
+			target:     "./testdata/src/comparisons/",
+			args:       []string{"-format=sarif"},
+			goldenFile: "comparisons.sarif.golden",
 		},
 		// Package 'nested' - nested branches
 		{
@@ -88,6 +100,12 @@ func TestGolden(t *testing.T) {
 			args:       []string{"-format=json"},
 			goldenFile: "edge.json.golden",
 		},
+		{
+			name:       "edge_sarif",
+			target:     "./testdata/src/edge/",
+			args:       []string{"-format=sarif"},
+			goldenFile: "edge.sarif.golden",
+		},
 		// Package 'clean' - no issues expected
 		{
 			name:       "clean_plain",
@@ -107,6 +125,12 @@ func TestGolden(t *testing.T) {
 			target:     "./testdata/src/indexing/",
 			args:       []string{"-format=json"},
 			goldenFile: "indexing.json.golden",
+		},
+		{
+			name:       "indexing_sarif",
+			target:     "./testdata/src/indexing/",
+			args:       []string{"-format=sarif"},
+			goldenFile: "indexing.sarif.golden",
 		},
 		// Rule filtering
 		{
@@ -232,6 +256,12 @@ func normalizeOutput(output string, workDir string) string {
 	// Remove the working directory prefix from paths
 	output = strings.ReplaceAll(output, workDir+"/", "")
 	output = strings.ReplaceAll(output, workDir, ".")
+
+	// Normalize tool version in SARIF output (version can vary between builds)
+	// SARIF schema version is exactly "2.1.0" at top level
+	// Tool version appears after "name": "ctguard" in the driver section
+	toolVersionRegex := regexp.MustCompile(`("name": "ctguard",\n\s+"version": )"[^"]+"`)
+	output = toolVersionRegex.ReplaceAllString(output, `$1"<VERSION>"`)
 
 	// Normalize any remaining absolute paths that might leak through
 	// Match patterns like /Users/xxx/... or /home/xxx/...
