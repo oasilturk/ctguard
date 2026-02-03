@@ -123,19 +123,24 @@ func CollectIgnores(pass *analysis.Pass) Ignores {
 				}
 
 				// This is a function-level ignore
-				funcName := fd.Name.Name
+				// Store under simple function name (always works)
+				simpleName := fd.Name.Name
+				out.FuncIgnores[simpleName] = rules
+
+				// Also store under full method name for methods
 				if fd.Recv != nil && len(fd.Recv.List) > 0 {
-					// Method - include receiver type
+					var fullName string
 					if t, ok := fd.Recv.List[0].Type.(*ast.StarExpr); ok {
 						if ident, ok := t.X.(*ast.Ident); ok {
-							funcName = "(*" + ident.Name + ")." + fd.Name.Name
+							fullName = "(*" + ident.Name + ")." + fd.Name.Name
 						}
 					} else if ident, ok := fd.Recv.List[0].Type.(*ast.Ident); ok {
-						funcName = ident.Name + "." + fd.Name.Name
+						fullName = ident.Name + "." + fd.Name.Name
+					}
+					if fullName != "" {
+						out.FuncIgnores[fullName] = rules
 					}
 				}
-
-				out.FuncIgnores[funcName] = rules
 
 				// Also store with full package path if available
 				if obj := pass.TypesInfo.Defs[fd.Name]; obj != nil {
