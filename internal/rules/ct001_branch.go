@@ -31,6 +31,13 @@ func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 				if !ok {
 					continue
 				}
+
+				// Skip nil comparisons (e.g., "if err != nil")
+				// These don't leak secret VALUES, only whether an error occurred
+				if isNilComparison(i.Cond) {
+					continue
+				}
+
 				secretName := dep.DependsOn(i.Cond)
 				if secretName == "" {
 					continue
@@ -56,6 +63,33 @@ func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 	}
 
 	return diags
+}
+
+// isNilComparison returns true if the condition is a comparison with nil
+// (e.g., "err != nil" or "ptr == nil"). These comparisons don't leak
+// secret values, only whether the value is nil or not.
+func isNilComparison(cond ssa.Value) bool {
+	binop, ok := cond.(*ssa.BinOp)
+	if !ok {
+		return false
+	}
+
+	// Must be == or !=
+	if binop.Op != token.EQL && binop.Op != token.NEQ {
+		return false
+	}
+
+	// Check if either operand is nil
+	return isNilValue(binop.X) || isNilValue(binop.Y)
+}
+
+// isNilValue returns true if v is a nil constant
+func isNilValue(v ssa.Value) bool {
+	c, ok := v.(*ssa.Const)
+	if !ok {
+		return false
+	}
+	return c.Value == nil
 }
 
 func secretParamSetForFn(fn *ssa.Function, secrets annotations.Secrets) map[string]bool {
