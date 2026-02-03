@@ -35,9 +35,12 @@ func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					continue
 				}
 
-				pos := i.Cond.Pos()
+				// Get position for the branch
+				// SSA If instructions often don't have source positions,
+				// so we use the condition's position as best effort
+				pos := i.Pos()
 				if pos == token.NoPos {
-					pos = i.Pos()
+					pos = i.Cond.Pos()
 				}
 				if pos == token.NoPos {
 					pos = fn.Pos()
