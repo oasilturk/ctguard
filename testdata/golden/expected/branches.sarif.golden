@@ -73,7 +73,7 @@
           "ruleId": "CT001",
           "level": "error",
           "message": {
-            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/branches.secretBranch"
+            "text": "branch depends on secret 'secret' in github.com/oasilturk/ctguard/testdata/src/branches.secretBranch"
           },
           "locations": [
             {
@@ -94,7 +94,7 @@
           "ruleId": "CT001",
           "level": "error",
           "message": {
-            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/branches.secretBranch"
+            "text": "branch depends on secret 'secret' in github.com/oasilturk/ctguard/testdata/src/branches.secretBranch"
           },
           "locations": [
             {

@@ -8,27 +8,34 @@ import (
 // secretParams is a set of parameter names, e.g. {"k":true}.
 type Depender struct {
 	secretParams map[string]bool
-	memo         map[ssa.Value]bool
+	memo         map[ssa.Value]string // stores secret name or "" if not tainted
 	inStack      map[ssa.Value]bool
 }
 
 func NewDepender(secretParams map[string]bool) *Depender {
 	return &Depender{
 		secretParams: secretParams,
-		memo:         map[ssa.Value]bool{},
+		memo:         map[ssa.Value]string{},
 		inStack:      map[ssa.Value]bool{},
 	}
 }
 
+// Depends returns true if v depends on any secret parameter.
 func (d *Depender) Depends(v ssa.Value) bool {
+	return d.DependsOn(v) != ""
+}
+
+// DependsOn returns the name of the secret parameter that v depends on,
+// or empty string if v doesn't depend on any secret.
+func (d *Depender) DependsOn(v ssa.Value) string {
 	if v == nil {
-		return false
+		return ""
 	}
-	if val, ok := d.memo[v]; ok {
-		return val
+	if secret, ok := d.memo[v]; ok {
+		return secret
 	}
 	if d.inStack[v] {
-		return false
+		return ""
 	}
 	d.inStack[v] = true
 	defer func() { d.inStack[v] = false }()
@@ -36,91 +43,88 @@ func (d *Depender) Depends(v ssa.Value) bool {
 	// Base case: secret parameter
 	if p, ok := v.(*ssa.Parameter); ok {
 		if d.secretParams[p.Name()] {
-			d.memo[v] = true
-			return true
+			d.memo[v] = p.Name()
+			return p.Name()
 		}
 	}
+
+	var secret string
 
 	switch t := v.(type) {
 	case *ssa.UnOp:
-		d.memo[v] = d.Depends(t.X)
-		return d.memo[v]
+		secret = d.DependsOn(t.X)
 
 	case *ssa.BinOp:
-		d.memo[v] = d.Depends(t.X) || d.Depends(t.Y)
-		return d.memo[v]
+		secret = d.DependsOn(t.X)
+		if secret == "" {
+			secret = d.DependsOn(t.Y)
+		}
 
 	case *ssa.Phi:
 		for _, e := range t.Edges {
-			if d.Depends(e) {
-				d.memo[v] = true
-				return true
+			if s := d.DependsOn(e); s != "" {
+				secret = s
+				break
 			}
 		}
-		d.memo[v] = false
-		return false
 
 	case *ssa.Call:
 		for _, a := range t.Call.Args {
-			if d.Depends(a) {
-				d.memo[v] = true
-				return true
+			if s := d.DependsOn(a); s != "" {
+				secret = s
+				break
 			}
 		}
-		d.memo[v] = false
-		return false
 
 	case *ssa.ChangeType:
-		d.memo[v] = d.Depends(t.X)
-		return d.memo[v]
+		secret = d.DependsOn(t.X)
 
 	case *ssa.Convert:
-		d.memo[v] = d.Depends(t.X)
-		return d.memo[v]
+		secret = d.DependsOn(t.X)
 
 	case *ssa.MakeInterface:
-		d.memo[v] = d.Depends(t.X)
-		return d.memo[v]
+		secret = d.DependsOn(t.X)
 
 	case *ssa.Extract:
-		d.memo[v] = d.Depends(t.Tuple)
-		return d.memo[v]
+		secret = d.DependsOn(t.Tuple)
 
 	case *ssa.Field:
-		d.memo[v] = d.Depends(t.X)
-		return d.memo[v]
+		secret = d.DependsOn(t.X)
 
 	case *ssa.FieldAddr:
-		d.memo[v] = d.Depends(t.X)
-		return d.memo[v]
+		secret = d.DependsOn(t.X)
 
 	case *ssa.Index:
-		d.memo[v] = d.Depends(t.X) || d.Depends(t.Index)
-		return d.memo[v]
+		secret = d.DependsOn(t.X)
+		if secret == "" {
+			secret = d.DependsOn(t.Index)
+		}
 
 	case *ssa.IndexAddr:
-		d.memo[v] = d.Depends(t.X) || d.Depends(t.Index)
-		return d.memo[v]
+		secret = d.DependsOn(t.X)
+		if secret == "" {
+			secret = d.DependsOn(t.Index)
+		}
 
 	case *ssa.Slice:
-		ok := d.Depends(t.X)
-		if t.Low != nil {
-			ok = ok || d.Depends(t.Low)
+		secret = d.DependsOn(t.X)
+		if secret == "" && t.Low != nil {
+			secret = d.DependsOn(t.Low)
 		}
-		if t.High != nil {
-			ok = ok || d.Depends(t.High)
+		if secret == "" && t.High != nil {
+			secret = d.DependsOn(t.High)
 		}
-		if t.Max != nil {
-			ok = ok || d.Depends(t.Max)
+		if secret == "" && t.Max != nil {
+			secret = d.DependsOn(t.Max)
 		}
-		d.memo[v] = ok
-		return ok
 
 	case *ssa.Lookup:
-		d.memo[v] = d.Depends(t.X) || d.Depends(t.Index)
-		return d.memo[v]
-	default:
-		d.memo[v] = false
-		return false
+		secret = d.DependsOn(t.X)
+		if secret == "" {
+			secret = d.DependsOn(t.Index)
+		}
 	}
+
+	d.memo[v] = secret
+	return secret
 }

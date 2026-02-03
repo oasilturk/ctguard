@@ -1,22 +1,22 @@
 [
   {
     "pos": "testdata/src/ignores/ignores.go:38:14",
-    "message": "CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/ignores.partialIgnore",
+    "message": "CT001: branch depends on secret 'key' in github.com/oasilturk/ctguard/testdata/src/ignores.partialIgnore",
     "rule": "CT001"
   },
   {
     "pos": "testdata/src/ignores/ignores.go:48:20",
-    "message": "CT002: non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/ignores.noIgnore",
+    "message": "CT002: bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/ignores.noIgnore",
     "rule": "CT002"
   },
   {
     "pos": "testdata/src/ignores/ignores.go:69:17",
-    "message": "CT002: non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/ignores.ignoreMultiple",
+    "message": "CT002: bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/ignores.ignoreMultiple",
     "rule": "CT002"
   },
   {
     "pos": "testdata/src/ignores/ignores.go:80:20",
-    "message": "CT002: non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/ignores.mixedIgnore",
+    "message": "CT002: bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/ignores.mixedIgnore",
     "rule": "CT002"
   }
 ]

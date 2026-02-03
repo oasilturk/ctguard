@@ -73,7 +73,7 @@
           "ruleId": "CT001",
           "level": "error",
           "message": {
-            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/indexing.rangeWithSecretIndex"
+            "text": "branch depends on secret 'target' in github.com/oasilturk/ctguard/testdata/src/indexing.rangeWithSecretIndex"
           },
           "locations": [
             {
@@ -94,7 +94,7 @@
           "ruleId": "CT003",
           "level": "error",
           "message": {
-            "text": "secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.arrayLookup"
+            "text": "array/slice index depends on secret 'idx' in github.com/oasilturk/ctguard/testdata/src/indexing.arrayLookup"
           },
           "locations": [
             {
@@ -115,7 +115,7 @@
           "ruleId": "CT003",
           "level": "error",
           "message": {
-            "text": "secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.sliceLookup"
+            "text": "array/slice index depends on secret 'key' in github.com/oasilturk/ctguard/testdata/src/indexing.sliceLookup"
           },
           "locations": [
             {
@@ -136,7 +136,7 @@
           "ruleId": "CT003",
           "level": "error",
           "message": {
-            "text": "secret-dependent map lookup in github.com/oasilturk/ctguard/testdata/src/indexing.mapLookup"
+            "text": "map lookup key depends on secret 'secret' in github.com/oasilturk/ctguard/testdata/src/indexing.mapLookup"
           },
           "locations": [
             {
@@ -157,7 +157,7 @@
           "ruleId": "CT003",
           "level": "error",
           "message": {
-            "text": "secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.derivedIndex"
+            "text": "array/slice index depends on secret 'key' in github.com/oasilturk/ctguard/testdata/src/indexing.derivedIndex"
           },
           "locations": [
             {
@@ -178,7 +178,7 @@
           "ruleId": "CT003",
           "level": "error",
           "message": {
-            "text": "secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.multipleAccesses"
+            "text": "array/slice index depends on secret 'i' in github.com/oasilturk/ctguard/testdata/src/indexing.multipleAccesses"
           },
           "locations": [
             {
@@ -199,7 +199,7 @@
           "ruleId": "CT003",
           "level": "error",
           "message": {
-            "text": "secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.multipleAccesses"
+            "text": "array/slice index depends on secret 'i' in github.com/oasilturk/ctguard/testdata/src/indexing.multipleAccesses"
           },
           "locations": [
             {
@@ -220,7 +220,7 @@
           "ruleId": "CT003",
           "level": "error",
           "message": {
-            "text": "secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.sboxTransform"
+            "text": "array/slice index depends on secret 'input' in github.com/oasilturk/ctguard/testdata/src/indexing.sboxTransform"
           },
           "locations": [
             {
@@ -241,7 +241,7 @@
           "ruleId": "CT003",
           "level": "error",
           "message": {
-            "text": "secret-dependent map lookup in github.com/oasilturk/ctguard/testdata/src/indexing.mapWithOk"
+            "text": "map lookup key depends on secret 'key' in github.com/oasilturk/ctguard/testdata/src/indexing.mapWithOk"
           },
           "locations": [
             {
@@ -262,7 +262,7 @@
           "ruleId": "CT003",
           "level": "error",
           "message": {
-            "text": "secret-dependent array/slice index in github.com/oasilturk/ctguard/testdata/src/indexing.nestedIndexing"
+            "text": "array/slice index depends on secret 'i' in github.com/oasilturk/ctguard/testdata/src/indexing.nestedIndexing"
           },
           "locations": [
             {

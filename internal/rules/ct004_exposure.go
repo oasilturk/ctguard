@@ -50,19 +50,19 @@ func RunCT004(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 				}
 
 				// Check if any argument depends on secret
-				usesSecret := false
+				var secretName string
 				argPos := token.NoPos
 				for _, a := range call.Call.Args {
 					if argPos == token.NoPos {
 						argPos = a.Pos()
 					}
-					if ct004ArgDependsOnSecret(a, dep) {
-						usesSecret = true
+					if s := ct004ArgSecretName(a, dep); s != "" {
+						secretName = s
 						break
 					}
 				}
 
-				if !usesSecret {
+				if secretName == "" {
 					continue
 				}
 
@@ -77,8 +77,8 @@ func RunCT004(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 				diags = append(diags, analysis.Diagnostic{
 					Pos: pos,
 					Message: fmt.Sprintf(
-						"CT004: secret data passed to %s.%s in %s",
-						pkgPath, name, fn.String(),
+						"CT004: secret '%s' passed to %s.%s in %s",
+						secretName, pkgPath, name, fn.String(),
 					),
 				})
 			}
@@ -88,19 +88,19 @@ func RunCT004(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 	return diags
 }
 
-// ct004ArgDependsOnSecret checks if an argument (potentially a variadic slice) depends on secret
-func ct004ArgDependsOnSecret(arg ssa.Value, dep *taint.Depender) bool {
+// ct004ArgSecretName returns the secret name if the argument depends on a secret, empty string otherwise
+func ct004ArgSecretName(arg ssa.Value, dep *taint.Depender) string {
 	// Direct check first
-	if dep.Depends(arg) {
-		return true
+	if s := dep.DependsOn(arg); s != "" {
+		return s
 	}
 
 	// Handle variadic slice arguments
 	// For variadic calls like fmt.Println(x, y, z), the args are packed into a slice
 	if slice, ok := arg.(*ssa.Slice); ok {
 		// Check the underlying array
-		if ct004ArgDependsOnSecret(slice.X, dep) {
-			return true
+		if s := ct004ArgSecretName(slice.X, dep); s != "" {
+			return s
 		}
 	}
 
@@ -109,16 +109,16 @@ func ct004ArgDependsOnSecret(arg ssa.Value, dep *taint.Depender) bool {
 		// Check all values stored into this allocation
 		for _, ref := range *alloc.Referrers() {
 			if store, ok := ref.(*ssa.Store); ok {
-				if dep.Depends(store.Val) {
-					return true
+				if s := dep.DependsOn(store.Val); s != "" {
+					return s
 				}
 			}
 			if indexAddr, ok := ref.(*ssa.IndexAddr); ok {
 				// Check what gets stored at this index
 				for _, ref2 := range *indexAddr.Referrers() {
 					if store, ok := ref2.(*ssa.Store); ok {
-						if dep.Depends(store.Val) {
-							return true
+						if s := dep.DependsOn(store.Val); s != "" {
+							return s
 						}
 					}
 				}
@@ -126,7 +126,7 @@ func ct004ArgDependsOnSecret(arg ssa.Value, dep *taint.Depender) bool {
 		}
 	}
 
-	return false
+	return ""
 }
 
 // ct004IsRiskyCall returns true if the function may expose secret data

@@ -30,7 +30,8 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 			for _, ins := range b.Instrs {
 				// Case 1: Index instruction (array/slice element access) - mostly reading
 				if idx, ok := ins.(*ssa.Index); ok {
-					if !dep.Depends(idx.Index) {
+					secretName := dep.DependsOn(idx.Index)
+					if secretName == "" {
 						continue
 					}
 
@@ -44,14 +45,15 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 
 					diags = append(diags, analysis.Diagnostic{
 						Pos:     pos,
-						Message: fmt.Sprintf("CT003: secret-dependent array/slice index in %s", fn.String()),
+						Message: fmt.Sprintf("CT003: array/slice index depends on secret '%s' in %s", secretName, fn.String()),
 					})
 					continue
 				}
 
 				// Case 2: IndexAddr instruction (address of array/slice element) - mostly writing
 				if idx, ok := ins.(*ssa.IndexAddr); ok {
-					if !dep.Depends(idx.Index) {
+					secretName := dep.DependsOn(idx.Index)
+					if secretName == "" {
 						continue
 					}
 
@@ -65,14 +67,15 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 
 					diags = append(diags, analysis.Diagnostic{
 						Pos:     pos,
-						Message: fmt.Sprintf("CT003: secret-dependent array/slice index in %s", fn.String()),
+						Message: fmt.Sprintf("CT003: array/slice index depends on secret '%s' in %s", secretName, fn.String()),
 					})
 					continue
 				}
 
 				// Case 3: Lookup instruction (map access)
 				if lk, ok := ins.(*ssa.Lookup); ok {
-					if !dep.Depends(lk.Index) {
+					secretName := dep.DependsOn(lk.Index)
+					if secretName == "" {
 						continue
 					}
 
@@ -86,7 +89,7 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 
 					diags = append(diags, analysis.Diagnostic{
 						Pos:     pos,
-						Message: fmt.Sprintf("CT003: secret-dependent map lookup in %s", fn.String()),
+						Message: fmt.Sprintf("CT003: map lookup key depends on secret '%s' in %s", secretName, fn.String()),
 					})
 					continue
 				}

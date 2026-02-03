@@ -1,4 +1,4 @@
-testdata/src/ignores/ignores.go:38:14 CT001: secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/ignores.partialIgnore
-testdata/src/ignores/ignores.go:48:20 CT002: non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/ignores.noIgnore
-testdata/src/ignores/ignores.go:69:17 CT002: non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/ignores.ignoreMultiple
-testdata/src/ignores/ignores.go:80:20 CT002: non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/ignores.mixedIgnore
+testdata/src/ignores/ignores.go:38:14 CT001: branch depends on secret 'key' in github.com/oasilturk/ctguard/testdata/src/ignores.partialIgnore
+testdata/src/ignores/ignores.go:48:20 CT002: bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/ignores.noIgnore
+testdata/src/ignores/ignores.go:69:17 CT002: bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/ignores.ignoreMultiple
+testdata/src/ignores/ignores.go:80:20 CT002: bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/ignores.mixedIgnore

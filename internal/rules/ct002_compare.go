@@ -49,18 +49,18 @@ func RunCT002(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						continue
 					}
 
-					usesSecret := false
+					var secretName string
 					argPos := token.NoPos
 					for _, a := range c.Call.Args {
 						if argPos == token.NoPos {
 							argPos = a.Pos()
 						}
-						if dep.Depends(a) {
-							usesSecret = true
+						if s := dep.DependsOn(a); s != "" {
+							secretName = s
 							break
 						}
 					}
-					if !usesSecret {
+					if secretName == "" {
 						continue
 					}
 
@@ -75,8 +75,8 @@ func RunCT002(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					diags = append(diags, analysis.Diagnostic{
 						Pos: pos,
 						Message: fmt.Sprintf(
-							"CT002: non-constant-time comparison (%s.%s) uses secret data in %s",
-							pkgPath, name, fn.String(),
+							"CT002: %s.%s uses secret '%s' in %s",
+							pkgPath, name, secretName, fn.String(),
 						),
 					})
 					continue
@@ -90,7 +90,11 @@ func RunCT002(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					if !isStringValue(bo.X) || !isStringValue(bo.Y) {
 						continue
 					}
-					if !dep.Depends(bo.X) && !dep.Depends(bo.Y) {
+					secretName := dep.DependsOn(bo.X)
+					if secretName == "" {
+						secretName = dep.DependsOn(bo.Y)
+					}
+					if secretName == "" {
 						continue
 					}
 
@@ -104,7 +108,7 @@ func RunCT002(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 
 					diags = append(diags, analysis.Diagnostic{
 						Pos:     pos,
-						Message: fmt.Sprintf("CT002: non-constant-time string comparison uses secret data in %s", fn.String()),
+						Message: fmt.Sprintf("CT002: string comparison uses secret '%s' in %s", secretName, fn.String()),
 					})
 				}
 			}

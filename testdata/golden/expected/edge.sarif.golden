@@ -73,7 +73,7 @@
           "ruleId": "CT001",
           "level": "error",
           "message": {
-            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons"
+            "text": "branch depends on secret 'key' in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons"
           },
           "locations": [
             {
@@ -94,7 +94,7 @@
           "ruleId": "CT001",
           "level": "error",
           "message": {
-            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons"
+            "text": "branch depends on secret 'key' in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons"
           },
           "locations": [
             {
@@ -115,7 +115,7 @@
           "ruleId": "CT001",
           "level": "error",
           "message": {
-            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.stringOps"
+            "text": "branch depends on secret 'password' in github.com/oasilturk/ctguard/testdata/src/edge.stringOps"
           },
           "locations": [
             {
@@ -136,7 +136,7 @@
           "ruleId": "CT001",
           "level": "error",
           "message": {
-            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.stringOps"
+            "text": "branch depends on secret 'password' in github.com/oasilturk/ctguard/testdata/src/edge.stringOps"
           },
           "locations": [
             {
@@ -157,7 +157,7 @@
           "ruleId": "CT001",
           "level": "error",
           "message": {
-            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.switchOnSecret"
+            "text": "branch depends on secret 'mode' in github.com/oasilturk/ctguard/testdata/src/edge.switchOnSecret"
           },
           "locations": [
             {
@@ -178,7 +178,7 @@
           "ruleId": "CT001",
           "level": "error",
           "message": {
-            "text": "secret-dependent branch in github.com/oasilturk/ctguard/testdata/src/edge.switchOnSecret"
+            "text": "branch depends on secret 'mode' in github.com/oasilturk/ctguard/testdata/src/edge.switchOnSecret"
           },
           "locations": [
             {
@@ -199,7 +199,7 @@
           "ruleId": "CT002",
           "level": "error",
           "message": {
-            "text": "non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons"
+            "text": "bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons"
           },
           "locations": [
             {
@@ -220,7 +220,7 @@
           "ruleId": "CT002",
           "level": "error",
           "message": {
-            "text": "non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons"
+            "text": "bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons"
           },
           "locations": [
             {
@@ -241,7 +241,7 @@
           "ruleId": "CT002",
           "level": "error",
           "message": {
-            "text": "non-constant-time comparison (bytes.Equal) uses secret data in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons"
+            "text": "bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons"
           },
           "locations": [
             {
@@ -262,7 +262,7 @@
           "ruleId": "CT002",
           "level": "error",
           "message": {
-            "text": "non-constant-time string comparison uses secret data in github.com/oasilturk/ctguard/testdata/src/edge.stringOps"
+            "text": "string comparison uses secret 'password' in github.com/oasilturk/ctguard/testdata/src/edge.stringOps"
           },
           "locations": [
             {
@@ -283,7 +283,7 @@
           "ruleId": "CT002",
           "level": "error",
           "message": {
-            "text": "non-constant-time comparison (strings.Compare) uses secret data in github.com/oasilturk/ctguard/testdata/src/edge.stringOps"
+            "text": "strings.Compare uses secret 'password' in github.com/oasilturk/ctguard/testdata/src/edge.stringOps"
           },
           "locations": [
             {
