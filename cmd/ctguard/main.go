@@ -172,7 +172,7 @@ func printHelp() {
 
 %sEXAMPLES%s
     ctguard ./...                      %s# Scan entire project%s
-    ctguard -rules=CT001 ./pkg/...     %s# Only check for secret-dependent branches%s
+    ctguard -rules=CT001 ./...         %s# Only check for secret-dependent branches%s
     ctguard -format=json ./...         %s# JSON output for CI integration%s
     ctguard -format=sarif ./...        %s# SARIF output for GitHub Code Scanning%s
     ctguard -fail=false ./...          %s# Don't fail on findings (for reports)%s
@@ -207,10 +207,25 @@ func printHelp() {
            Secrets may be exposed in logs, console output, or error messages.
 
 %sANNOTATIONS%s
-    Mark function parameters as secret using comments:
+    Mark function parameters as secret:
 
         //ctguard:secret key
         func Verify(key []byte, data []byte) bool { ... }
+
+    Suppress specific findings:
+
+        //ctguard:ignore CT002 -- using constant-time internally
+        func SafeCompare(a, b []byte) bool { ... }
+
+        func Process(key []byte) {
+            _ = bytes.Equal(key, x) //ctguard:ignore CT002
+        }
+
+    Ignore formats:
+        //ctguard:ignore              Ignore all rules
+        //ctguard:ignore CT001        Ignore specific rule
+        //ctguard:ignore CT001 CT002  Ignore multiple rules
+        //ctguard:ignore CT001 -- reason   With explanation
 
 %sENVIRONMENT%s
     NO_COLOR    Set to disable colored output

@@ -176,6 +176,19 @@ func TestGolden(t *testing.T) {
 			args:       []string{"-rules=CT004"},
 			goldenFile: "exposure.ct004.golden",
 		},
+		// Ignore annotation tests
+		{
+			name:       "ignores_plain",
+			target:     "./testdata/src/ignores/",
+			args:       []string{},
+			goldenFile: "ignores.plain.golden",
+		},
+		{
+			name:       "ignores_json",
+			target:     "./testdata/src/ignores/",
+			args:       []string{"-format=json"},
+			goldenFile: "ignores.json.golden",
+		},
 	}
 
 	for _, tc := range cases {

@@ -12,18 +12,18 @@ import (
 //
 //ctguard:secret apiKey
 func printSecret(apiKey string) {
-	fmt.Print(apiKey)            // want "CT004"
+	fmt.Print(apiKey)             // want "CT004"
 	fmt.Printf("key: %s", apiKey) // want "CT004"
-	fmt.Println(apiKey)          // want "CT004"
+	fmt.Println(apiKey)           // want "CT004"
 }
 
 // fmt.Sprint* functions
 //
 //ctguard:secret token
 func sprintSecret(token string) string {
-	_ = fmt.Sprint(token)             // want "CT004"
+	_ = fmt.Sprint(token)               // want "CT004"
 	_ = fmt.Sprintf("token: %s", token) // want "CT004"
-	return fmt.Sprintln(token)        // want "CT004"
+	return fmt.Sprintln(token)          // want "CT004"
 }
 
 // fmt.Fprint* functions
@@ -31,7 +31,7 @@ func sprintSecret(token string) string {
 //ctguard:secret password
 func fprintSecret(password string) {
 	fmt.Fprint(os.Stdout, password)            // want "CT004"
-	fmt.Fprintf(os.Stdout, "pw: %s", password)  // want "CT004"
+	fmt.Fprintf(os.Stdout, "pw: %s", password) // want "CT004"
 	fmt.Fprintln(os.Stdout, password)          // want "CT004"
 }
 
@@ -46,9 +46,9 @@ func errorWithSecret(secret string) error {
 //
 //ctguard:secret key
 func logSecret(key string) {
-	log.Print(key)            // want "CT004"
+	log.Print(key)             // want "CT004"
 	log.Printf("key: %s", key) // want "CT004"
-	log.Println(key)          // want "CT004"
+	log.Println(key)           // want "CT004"
 }
 
 // Derived secret - taint propagation
@@ -69,8 +69,8 @@ func safeLogging(message string) {
 //
 //ctguard:secret secret
 func safeUsage(secret string, public string) {
-	_ = len(secret)      // OK - not exposing secret
-	fmt.Println(public)  // OK - public is not secret
+	_ = len(secret)     // OK - not exposing secret
+	fmt.Println(public) // OK - public is not secret
 }
 
 // Multiple secrets
