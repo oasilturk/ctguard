@@ -13,7 +13,7 @@ import (
 	"github.com/oasilturk/ctguard/internal/taint"
 )
 
-// CT001: Secret-dependent branches.
+// CT001: branches whose condition depends on secret data.
 func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets) []analysis.Diagnostic {
 	var diags []analysis.Diagnostic
 
@@ -33,7 +33,6 @@ func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 				}
 
 				// Skip nil comparisons (e.g., "if err != nil")
-				// These don't leak secret VALUES, only whether an error occurred
 				if isNilComparison(i.Cond) {
 					continue
 				}

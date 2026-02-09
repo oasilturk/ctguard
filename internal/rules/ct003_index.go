@@ -12,9 +12,7 @@ import (
 	"github.com/oasilturk/ctguard/internal/taint"
 )
 
-// CT003: Secret-dependent indexing (table lookups).
-// Detects array, slice, and map indexing where the index depends on secret data.
-// This can leak information through cache-timing side-channels.
+// CT003 flags array/slice/map indexing where the index comes from secret data.
 func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets) []analysis.Diagnostic {
 	var diags []analysis.Diagnostic
 
@@ -28,7 +26,7 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 
 		for _, b := range fn.Blocks {
 			for _, ins := range b.Instrs {
-				// Case 1: Index instruction (array/slice element access) - mostly reading
+				// Index (array/slice read)
 				if idx, ok := ins.(*ssa.Index); ok {
 					secretName := dep.DependsOn(idx.Index)
 					if secretName == "" {
@@ -50,7 +48,7 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					continue
 				}
 
-				// Case 2: IndexAddr instruction (address of array/slice element) - mostly writing
+				// IndexAddr (array/slice write)
 				if idx, ok := ins.(*ssa.IndexAddr); ok {
 					secretName := dep.DependsOn(idx.Index)
 					if secretName == "" {
@@ -72,7 +70,7 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					continue
 				}
 
-				// Case 3: Lookup instruction (map access)
+				// Lookup (map access)
 				if lk, ok := ins.(*ssa.Lookup); ok {
 					secretName := dep.DependsOn(lk.Index)
 					if secretName == "" {

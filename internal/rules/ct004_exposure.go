@@ -12,9 +12,7 @@ import (
 	"github.com/oasilturk/ctguard/internal/taint"
 )
 
-// CT004: Secret data exposure through logging, printing, or error messages.
-// Detects when secret-tainted data is passed to output functions that may
-// expose the secret in logs, console output, or error messages.
+// CT004 flags secrets that end up in logs, prints, or error messages.
 func RunCT004(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets) []analysis.Diagnostic {
 	var diags []analysis.Diagnostic
 

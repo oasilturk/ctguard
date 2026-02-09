@@ -8,7 +8,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-// Ignores holds information about which diagnostics should be suppressed.
+// Ignores describes which findings should be skipped.
 type Ignores struct {
 	// LineIgnores maps file:line to a set of rule IDs to ignore (empty set = ignore all)
 	LineIgnores map[string]map[string]bool
@@ -17,7 +17,7 @@ type Ignores struct {
 	FuncIgnores map[string]map[string]bool
 }
 
-// ShouldIgnore returns true if a diagnostic at the given position for the given rule should be ignored.
+// ShouldIgnore reports whether a diagnostic at the given position for the given rule should be ignored.
 func (ig *Ignores) ShouldIgnore(fset *token.FileSet, pos token.Pos, ruleID string, funcName string) bool {
 	if ig == nil {
 		return false

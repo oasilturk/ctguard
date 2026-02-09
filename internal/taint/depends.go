@@ -4,8 +4,7 @@ import (
 	"golang.org/x/tools/go/ssa"
 )
 
-// Depender answers: "Does v depend on any secret parameter?"
-// secretParams is a set of parameter names, e.g. {"k":true}.
+// Depender tracks which SSA values depend on secret parameters.
 type Depender struct {
 	secretParams map[string]bool
 	memo         map[ssa.Value]string // stores secret name or "" if not tainted
@@ -20,13 +19,12 @@ func NewDepender(secretParams map[string]bool) *Depender {
 	}
 }
 
-// Depends returns true if v depends on any secret parameter.
 func (d *Depender) Depends(v ssa.Value) bool {
 	return d.DependsOn(v) != ""
 }
 
-// DependsOn returns the name of the secret parameter that v depends on,
-// or empty string if v doesn't depend on any secret.
+// DependsOn returns the name of the secret this value depends on,
+// or empty string if it's not tainted.
 func (d *Depender) DependsOn(v ssa.Value) string {
 	if v == nil {
 		return ""

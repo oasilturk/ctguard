@@ -13,7 +13,7 @@ import (
 	"github.com/oasilturk/ctguard/internal/taint"
 )
 
-// CT002: non-constant-time comparisons involving secret-tainted data (MVP).
+// CT002: non-constant-time comparisons involving secret-tainted data.
 func RunCT002(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets) []analysis.Diagnostic {
 	var diags []analysis.Diagnostic
 

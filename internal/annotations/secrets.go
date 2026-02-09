@@ -9,7 +9,7 @@ import (
 )
 
 type Secrets struct {
-	// Key: function identity string (we store both FullName and String for robustness).
+	// Key: function identity string (we store both FullName and String).
 	// Value: set of parameter names marked secret for that function.
 	FuncSecretParams map[string]map[string]bool
 }
