@@ -9,7 +9,7 @@ Static analysis tool that finds timing side-channel vulnerabilities in Go code.
 
 | Rule | What it detects |
 |------|-----------------|
-| CT001 | Branches that depend on secret data (`if secretKey == ...`) |
+| CT001 | Branches and loops that depend on secret data (`if secretKey == ...`) |
 | CT002 | Non-constant-time comparisons (`bytes.Equal` on secrets) |
 | CT003 | Array/map indexing with secret indices (cache timing) |
 | CT004 | Secrets leaked to logs or error messages |
