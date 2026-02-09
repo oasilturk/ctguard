@@ -1,0 +1,31 @@
+# CTGuard Configuration
+# See .ctguard.yaml.example for detailed documentation
+
+rules:
+  enable:
+    - all
+  disable:
+  #  - CT003
+  severity:
+    CT001: error
+    CT002: error
+    CT003: warning
+    CT004: error
+
+annotations:
+  secrets:
+    - package: "github.com/oasilturk/ctguard/examples/e"
+      function: "*"       # all functions in the package
+      params: ["key"]
+
+format: plain
+fail: true
+quiet: false
+summary: true
+
+exclude:
+  - "testdata/**"
+  - "vendor/**"
+  - "**/generated/**"
+  - "**/*_test.go"
+  - "**/mock_*.go"

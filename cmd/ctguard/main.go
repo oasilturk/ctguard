@@ -14,6 +14,7 @@ import (
 	"golang.org/x/tools/go/analysis/unitchecker"
 
 	"github.com/oasilturk/ctguard/internal/analyzer"
+	"github.com/oasilturk/ctguard/internal/config"
 )
 
 // Build info (set via ldflags or read from debug.BuildInfo)
@@ -183,6 +184,7 @@ func printHelp() {
     -fail             Exit with code 1 if findings exist (default true)
     -quiet            Suppress diagnostic output
     -summary          Print summary after diagnostics (default true)
+    -config string    Path to config file (default: auto-search for .ctguard.yaml)
     -version          Show version information
     -help             Show this help message
 
@@ -227,6 +229,24 @@ func printHelp() {
         //ctguard:ignore CT001 CT002  Ignore multiple rules
         //ctguard:ignore CT001 -- reason   With explanation
 
+%sCONFIGURATION%s
+    CTGuard searches for a .ctguard.yaml file in:
+    - Current directory (and parent directories)
+    - Home directory
+
+    Example .ctguard.yaml:
+        rules:
+          enable: [CT001, CT002]  # or 'all'
+          disable: [CT003, CT004]
+          severity:
+            CT001: warning
+            CT002: error
+        format: json
+        fail: false
+        exclude:
+          - testdata/**
+          - vendor/**
+
 %sENVIRONMENT%s
     NO_COLOR    Set to disable colored output
 
@@ -248,6 +268,7 @@ func printHelp() {
 		c.Yellow, c.Reset,
 		c.Yellow, c.Reset,
 		c.Yellow, c.Reset,
+		c.Bold, c.Reset,
 		c.Bold, c.Reset,
 		c.Bold, c.Reset,
 		c.Bold, c.Reset,
@@ -284,11 +305,17 @@ func runCLI(args []string) int {
 	}
 
 	var (
-		format  string
-		rules   string
-		fail    bool
-		quiet   bool
-		summary bool
+		configPath string
+		format     string
+		rules      string
+		failSet    bool
+		fail       bool
+		quietSet   bool
+		quiet      bool
+		summarySet bool
+		summary    bool
+		formatSet  bool
+		rulesSet   bool
 	)
 
 	// Manual flag parsing to avoid flag package's default behavior
@@ -316,27 +343,36 @@ func runCLI(args []string) int {
 		}
 
 		switch key {
+		case "config":
+			if v, ok := getValue(); ok {
+				configPath = v
+			}
 		case "format":
+			formatSet = true
 			if v, ok := getValue(); ok {
 				format = v
 			}
 		case "rules":
+			rulesSet = true
 			if v, ok := getValue(); ok {
 				rules = v
 			}
 		case "fail":
+			failSet = true
 			if hasValue {
 				fail = value == "true"
 			} else {
 				fail = true
 			}
 		case "quiet":
+			quietSet = true
 			if hasValue {
 				quiet = value == "true"
 			} else {
 				quiet = true
 			}
 		case "summary":
+			summarySet = true
 			if hasValue {
 				summary = value == "true"
 			} else {
@@ -349,17 +385,47 @@ func runCLI(args []string) int {
 		}
 	}
 
-	// Apply defaults
+	// Load config file (if specified, or auto-search)
+	cfg, err := config.LoadFrom(configPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s%serror:%s failed to load config: %v\n", c.Bold, c.Red, c.Reset, err)
+		return 2
+	}
+
+	// Apply config defaults, CLI flags override config
+	if !formatSet && cfg.Format != "" {
+		format = cfg.Format
+	}
+	if !rulesSet && cfg.GetRules() != "" {
+		rules = cfg.GetRules()
+	}
+	if !failSet {
+		if cfg.Fail != nil {
+			fail = *cfg.Fail
+			failSet = true
+		}
+	}
+	if !quietSet {
+		quiet = cfg.Quiet
+	}
+	if !summarySet {
+		if cfg.Summary != nil {
+			summary = *cfg.Summary
+			summarySet = true
+		}
+	}
+
+	// Apply final defaults if still not set
 	if format == "" {
 		format = "plain"
 	}
 	if rules == "" {
 		rules = "all"
 	}
-	if !fail && !containsFlag(args, "fail") {
+	if !failSet {
 		fail = true
 	}
-	if !summary && !containsFlag(args, "summary") {
+	if !summarySet {
 		summary = true
 	}
 
@@ -399,6 +465,9 @@ func runCLI(args []string) int {
 
 	enabled := enabledRuleSet(rules)
 	findings := filterFindings(allFindings, enabled)
+
+	// Apply exclude patterns from config
+	findings = filterExcludedPaths(findings, cfg.Exclude)
 
 	// "Real error" means: go vet failed AND produced no findings at all (likely build/toolchain error).
 	toolErr := exitCode != 0 && len(allFindings) == 0
@@ -447,15 +516,6 @@ func runCLI(args []string) int {
 	return 0
 }
 
-func containsFlag(args []string, flag string) bool {
-	for _, arg := range args {
-		if strings.Contains(arg, flag) {
-			return true
-		}
-	}
-	return false
-}
-
 func exitCodeFromErr(err error) int {
 	if err == nil {
 		return 0
@@ -495,6 +555,83 @@ func filterFindings(in []Finding, enabled map[string]bool) []Finding {
 		}
 	}
 	return out
+}
+
+func filterExcludedPaths(findings []Finding, excludePatterns []string) []Finding {
+	if len(excludePatterns) == 0 {
+		return findings
+	}
+
+	out := make([]Finding, 0, len(findings))
+	for _, f := range findings {
+		if shouldExclude(f.Pos, excludePatterns) {
+			continue
+		}
+		out = append(out, f)
+	}
+	return out
+}
+
+func shouldExclude(pos string, patterns []string) bool {
+	if pos == "" {
+		return false
+	}
+
+	// Extract file path from position (format: "file:line:col")
+	filePath := pos
+	if idx := strings.Index(pos, ":"); idx > 0 {
+		filePath = pos[:idx]
+	}
+
+	// Normalize path separators and make relative
+	filePath = filepath.Clean(filePath)
+	if cwd, err := os.Getwd(); err == nil {
+		if rel, err := filepath.Rel(cwd, filePath); err == nil {
+			filePath = rel
+		}
+	}
+
+	// Check against each pattern
+	for _, pattern := range patterns {
+		pattern = strings.TrimSpace(pattern)
+		if pattern == "" {
+			continue
+		}
+
+		// Remove quotes if present
+		pattern = strings.Trim(pattern, `"'`)
+
+		// Handle different pattern types
+		if strings.HasSuffix(pattern, "/**") {
+			// "vendor/**" matches "vendor/anything"
+			prefix := strings.TrimSuffix(pattern, "/**")
+			if strings.HasPrefix(filePath, prefix+"/") || filePath == prefix {
+				return true
+			}
+		} else if strings.HasPrefix(pattern, "**/") {
+			// "**/test.go" matches "any/path/test.go"
+			suffix := strings.TrimPrefix(pattern, "**/")
+			if strings.HasSuffix(filePath, suffix) || strings.Contains(filePath, "/"+suffix) {
+				return true
+			}
+		} else if strings.Contains(pattern, "*") {
+			// Use filepath.Match for glob patterns
+			if matched, _ := filepath.Match(pattern, filepath.Base(filePath)); matched {
+				return true
+			}
+			// Also try matching the full path
+			if matched, _ := filepath.Match(pattern, filePath); matched {
+				return true
+			}
+		} else {
+			// Exact match or prefix match
+			if filePath == pattern || strings.HasPrefix(filePath, pattern+"/") {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 func printPlain(findings []Finding) {

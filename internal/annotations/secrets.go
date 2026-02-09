@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
+
+	"github.com/oasilturk/ctguard/internal/config"
 )
 
 type Secrets struct {
@@ -19,6 +21,12 @@ func CollectSecrets(pass *analysis.Pass) Secrets {
 		FuncSecretParams: map[string]map[string]bool{},
 	}
 
+	// Load config file (if exists) for config-based annotations
+	// Config is cached, so this is fast after first call
+	cfg, _ := config.Load() // Ignore errors, fallback to code comments only
+
+	// First pass: collect secrets from code comments (highest priority)
+	codeSecrets := map[string]map[string]bool{}
 	for _, f := range pass.Files {
 		for _, decl := range f.Decls {
 			fd, ok := decl.(*ast.FuncDecl)
@@ -42,9 +50,52 @@ func CollectSecrets(pass *analysis.Pass) Secrets {
 				set[n] = true
 			}
 
-			// Store under both keys to avoid identity mismatches between AST/types and SSA.
+			// Store under both keys
+			codeSecrets[fnObj.FullName()] = set
+			codeSecrets[fnObj.String()] = set
 			out.FuncSecretParams[fnObj.FullName()] = set
 			out.FuncSecretParams[fnObj.String()] = set
+		}
+	}
+
+	// Second pass: apply config-based annotations (only if not in code comments)
+	if cfg != nil && len(cfg.Annotations.Secrets) > 0 {
+		for _, f := range pass.Files {
+			for _, decl := range f.Decls {
+				fd, ok := decl.(*ast.FuncDecl)
+				if !ok || fd.Name == nil {
+					continue
+				}
+
+				obj := pass.TypesInfo.Defs[fd.Name]
+				fnObj, ok := obj.(*types.Func)
+				if !ok || fnObj == nil {
+					continue
+				}
+
+				// Skip if already defined via code comments (code > config)
+				if _, exists := codeSecrets[fnObj.FullName()]; exists {
+					continue
+				}
+
+				// Check if function matches any config annotation
+				pkg := fnObj.Pkg()
+				if pkg == nil {
+					continue
+				}
+				pkgPath := pkg.Path()
+				funcName := fnObj.Name()
+
+				configParams := cfg.GetSecretParams(pkgPath, funcName)
+				if len(configParams) > 0 {
+					set := map[string]bool{}
+					for _, p := range configParams {
+						set[p] = true
+					}
+					out.FuncSecretParams[fnObj.FullName()] = set
+					out.FuncSecretParams[fnObj.String()] = set
+				}
+			}
 		}
 	}
 

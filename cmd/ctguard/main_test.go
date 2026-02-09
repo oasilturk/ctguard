@@ -269,7 +269,19 @@ func getProjectRoot(t *testing.T) string {
 func runCtguard(t *testing.T, exe string, workDir string, args []string) string {
 	t.Helper()
 
-	cmd := exec.Command(exe, args...)
+	// Create a temporary empty config to prevent .ctguard.yaml from being loaded
+	tmpConfig, err := os.CreateTemp("", "ctguard-test-*.yaml")
+	if err != nil {
+		t.Fatalf("failed to create temp config: %v", err)
+	}
+	defer func() { _ = os.Remove(tmpConfig.Name()) }()
+	_, _ = tmpConfig.WriteString("# Empty test config\n")
+	_ = tmpConfig.Close()
+
+	// Prepend -config flag to args
+	testArgs := append([]string{"-config=" + tmpConfig.Name()}, args...)
+
+	cmd := exec.Command(exe, testArgs...)
 	cmd.Dir = workDir
 	cmd.Env = append(os.Environ(), "NO_COLOR=1")
 

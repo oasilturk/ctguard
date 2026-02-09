@@ -3,6 +3,7 @@
 /dist/
 *.exe
 *.out
+ctguard
 
 # Go build cache / test artifacts
 *.test
@@ -16,5 +17,6 @@ coverage.out
 # OS
 .DS_Store
 
-# Example packages to run tests on
+# Example packages
 examples/
+.ctguard.yaml
