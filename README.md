@@ -132,12 +132,9 @@ When you have a legitimate reason to ignore a finding:
 
 ```go
 //ctguard:secret token
-func ValidateToken(token string) bool {
-    hash := sha256.Sum256([]byte(token))
-    expected := loadExpectedHash()
-    
-    //ctguard:ignore CT002 -- comparing hashes, not the secret itself
-    return bytes.Equal(hash[:], expected)
+func ParseToken(token string) bool {
+    //ctguard:ignore CT002 -- comparing constant prefix for parsing
+    return strings.HasPrefix(token, "Bearer ")
 }
 ```
 
