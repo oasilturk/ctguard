@@ -3,7 +3,9 @@
 [![Go](https://github.com/oasilturk/ctguard/actions/workflows/ci.yml/badge.svg)](https://github.com/oasilturk/ctguard/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Static analysis tool that finds timing side-channel vulnerabilities in Go code.
+**Catch timing side-channel vulnerabilities in your Go code.**
+
+CTGuard finds vulnerabilities in code where secret data can be leaked through execution time, like when you compare passwords with `==` or branch on private keys.
 
 ## What It Catches
 
@@ -13,6 +15,28 @@ Static analysis tool that finds timing side-channel vulnerabilities in Go code.
 | CT002 | Non-constant-time comparisons (`bytes.Equal` on secrets) |
 | CT003 | Array/map indexing with secret indices (cache timing) |
 | CT004 | Secrets leaked to logs or error messages |
+
+## Quick Example
+
+**❌ Vulnerable Code:**
+```go
+//ctguard:secret password
+func Authenticate(password string) bool {
+    hash := sha256.Sum256([]byte(password))  // taint propagates to hash
+    expected := loadExpectedHash()
+    return bytes.Equal(hash[:], expected)  // timing leak! exec time is indirectly dependent on a secret
+}
+```
+
+**✅ Fixed:**
+```go
+//ctguard:secret password
+func Authenticate(password string) bool {
+    hash := sha256.Sum256([]byte(password))  // taint propagates to hash
+    expected := loadExpectedHash()
+    return subtle.ConstantTimeCompare(hash[:], expected) == 1  // NO timing leak! exec time is NOT dependent on a secret
+}
+```
 
 ## Install
 
@@ -37,68 +61,7 @@ Run it:
 ctguard ./...
 ```
 
-## Suppressing Findings
-
-Sometimes you know better. Use `//ctguard:ignore`:
-
-```go
-//ctguard:ignore CT002 -- I know what I'm doing
-return bytes.Equal(key, expected)
-```
-
-Or ignore everything in a function:
-
-```go
-//ctguard:ignore
-//ctguard:secret key
-func SafeCompare(key []byte) bool {
-    // Nothing in here will be flagged
-}
-```
-
-## Configuration
-
-CTGuard supports configuration files for consistent settings across your project. Create a `.ctguard.yaml` in your project root:
-
-```yaml
-rules:
-  enable:
-    - all              # Or list specific rules: [CT001, CT002]
-  disable:
-    - CT003            # Optionally disable specific rules
-
-# Config-based secret annotations (useful for vendor/3rd-party code)
-annotations:
-  secrets:
-    - package: "github.com/vendor/crypto"
-      function: "VerifyMAC"
-      params: ["mac", "key"]
-
-format: plain          # Output format: plain, json, or sarif
-fail: true             # Exit with error code on findings
-summary: true          # Show summary after scan
-exclude:
-  - "vendor/**"        # Exclude patterns
-  - "**/*_test.go"
-```
-
-CTGuard will automatically search for `.ctguard.yaml` in:
-- Current directory (and parent directories)
-- Home directory (`~/.ctguard.yaml`)
-
-Or specify a config file explicitly:
-
-```bash
-ctguard -config=path/to/config.yaml ./...
-```
-
-**Priority:** Code comments (`//ctguard:secret`) always override config file annotations.
-
-**Note:** CLI flags always override config file settings.
-
-See [.ctguard.yaml.example](.ctguard.yaml.example) for a complete configuration example.
-
-## Output Formats
+**Output formats:**
 
 ```bash
 ctguard ./...                    # Plain text (default)
@@ -106,30 +69,76 @@ ctguard -format=json ./...       # JSON
 ctguard -format=sarif ./...      # SARIF (for GitHub Code Scanning)
 ```
 
-## CI Integration
+## Configuration
+
+Create `.ctguard.yaml` in your project:
 
 ```yaml
-- name: Install CTGuard
-  run: go install github.com/oasilturk/ctguard/cmd/ctguard@latest
+rules:
+  enable: [all]
+  disable: [CT003]  # optionally disable rules
 
-- name: Run CTGuard
-  run: ctguard ./...
+exclude:
+  - "vendor/**"
+  - "**/*_test.go"
 ```
 
-For GitHub Code Scanning:
+<details>
+<summary><b>Advanced Configuration</b></summary>
 
 ```yaml
-- run: ctguard -format=sarif -fail=false ./... > ctguard.sarif
+# For vendor code without modifying it
+annotations:
+  secrets:
+    - package: "github.com/vendor/crypto"
+      function: "Verify"
+      params: ["key"]
 
+format: json      # plain, json, or sarif
+fail: true        # exit code on findings
+summary: true     # show stats
+```
+
+See [.ctguard.yaml.example](.ctguard.yaml.example) for all options.
+</details>
+
+## CI Integration
+
+**GitHub Actions:**
+```yaml
+- run: go install github.com/oasilturk/ctguard/cmd/ctguard@latest
+- run: ctguard ./...
+```
+
+**With GitHub Code Scanning:**
+```yaml
+- run: ctguard -format=sarif ./... > ctguard.sarif
 - uses: github/codeql-action/upload-sarif@v4
   with:
     sarif_file: ctguard.sarif
 ```
 
-## Contributing
+## Suppressing Findings
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). PRs welcome!
+When you have a legitimate reason to ignore a finding:
+
+```go
+//ctguard:secret token
+func ValidateToken(token string) bool {
+    hash := sha256.Sum256([]byte(token))
+    expected := loadExpectedHash()
+    
+    //ctguard:ignore CT002 -- comparing hashes, not the secret itself
+    return bytes.Equal(hash[:], expected)
+}
+```
+
+## Learn More
+
+- [Contributing Guide](CONTRIBUTING.md)
+- [Security Policy](SECURITY.md)
+- [Example Config](.ctguard.yaml.example)
 
 ## License
 
-MIT
+MIT © [oasilturk](https://github.com/oasilturk)
