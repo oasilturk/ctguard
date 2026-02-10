@@ -1,10 +1,10 @@
-testdata/src/indexing/indexing.go:84:10 CT001: branch depends on secret 'target' in github.com/oasilturk/ctguard/testdata/src/indexing.rangeWithSecretIndex
-testdata/src/indexing/indexing.go:9:14 CT003: array/slice index depends on secret 'idx' in github.com/oasilturk/ctguard/testdata/src/indexing.arrayLookup
-testdata/src/indexing/indexing.go:16:13 CT003: array/slice index depends on secret 'key' in github.com/oasilturk/ctguard/testdata/src/indexing.sliceLookup
-testdata/src/indexing/indexing.go:23:10 CT003: map lookup key depends on secret 'secret' in github.com/oasilturk/ctguard/testdata/src/indexing.mapLookup
-testdata/src/indexing/indexing.go:31:14 CT003: array/slice index depends on secret 'key' in github.com/oasilturk/ctguard/testdata/src/indexing.derivedIndex
-testdata/src/indexing/indexing.go:50:11 CT003: array/slice index depends on secret 'i' in github.com/oasilturk/ctguard/testdata/src/indexing.multipleAccesses
-testdata/src/indexing/indexing.go:51:11 CT003: array/slice index depends on secret 'i' in github.com/oasilturk/ctguard/testdata/src/indexing.multipleAccesses
-testdata/src/indexing/indexing.go:61:13 CT003: array/slice index depends on secret 'input' in github.com/oasilturk/ctguard/testdata/src/indexing.sboxTransform
-testdata/src/indexing/indexing.go:68:12 CT003: map lookup key depends on secret 'key' in github.com/oasilturk/ctguard/testdata/src/indexing.mapWithOk
-testdata/src/indexing/indexing.go:76:15 CT003: array/slice index depends on secret 'i' in github.com/oasilturk/ctguard/testdata/src/indexing.nestedIndexing
+testdata/src/indexing/indexing.go:84:10 CT001: branch depends on secret 'target'
+testdata/src/indexing/indexing.go:9:14 CT003: array/slice index depends on secret 'idx'
+testdata/src/indexing/indexing.go:16:13 CT003: array/slice index depends on secret 'key'
+testdata/src/indexing/indexing.go:23:10 CT003: map lookup key depends on secret 'secret'
+testdata/src/indexing/indexing.go:31:14 CT003: array/slice index depends on secret 'key'
+testdata/src/indexing/indexing.go:50:11 CT003: array/slice index depends on secret 'i'
+testdata/src/indexing/indexing.go:51:11 CT003: array/slice index depends on secret 'i'
+testdata/src/indexing/indexing.go:61:13 CT003: array/slice index depends on secret 'input'
+testdata/src/indexing/indexing.go:68:12 CT003: map lookup key depends on secret 'key'
+testdata/src/indexing/indexing.go:76:15 CT003: array/slice index depends on secret 'i'

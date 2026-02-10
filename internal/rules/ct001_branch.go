@@ -55,7 +55,7 @@ func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 
 				diags = append(diags, analysis.Diagnostic{
 					Pos:     pos,
-					Message: fmt.Sprintf("CT001: branch depends on secret '%s' in %s", secretName, fn.String()),
+					Message: fmt.Sprintf("CT001: branch depends on secret '%s'", secretName),
 				})
 			}
 		}

@@ -1,11 +1,11 @@
-testdata/src/edge/edge.go:20:19 CT001: branch depends on secret 'key' in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons
-testdata/src/edge/edge.go:21:19 CT001: branch depends on secret 'key' in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons
-testdata/src/edge/edge.go:31:14 CT001: branch depends on secret 'password' in github.com/oasilturk/ctguard/testdata/src/edge.stringOps
-testdata/src/edge/edge.go:36:39 CT001: branch depends on secret 'password' in github.com/oasilturk/ctguard/testdata/src/edge.stringOps
-testdata/src/edge/edge.go:48:7 CT001: branch depends on secret 'mode' in github.com/oasilturk/ctguard/testdata/src/edge.switchOnSecret
-testdata/src/edge/edge.go:50:7 CT001: branch depends on secret 'mode' in github.com/oasilturk/ctguard/testdata/src/edge.switchOnSecret
-testdata/src/edge/edge.go:20:19 CT002: bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons
-testdata/src/edge/edge.go:21:19 CT002: bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons
-testdata/src/edge/edge.go:22:19 CT002: bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/edge.multipleComparisons
-testdata/src/edge/edge.go:31:14 CT002: string comparison uses secret 'password' in github.com/oasilturk/ctguard/testdata/src/edge.stringOps
-testdata/src/edge/edge.go:36:20 CT002: strings.Compare uses secret 'password' in github.com/oasilturk/ctguard/testdata/src/edge.stringOps
+testdata/src/edge/edge.go:20:19 CT001: branch depends on secret 'key'
+testdata/src/edge/edge.go:21:19 CT001: branch depends on secret 'key'
+testdata/src/edge/edge.go:31:14 CT001: branch depends on secret 'password'
+testdata/src/edge/edge.go:36:39 CT001: branch depends on secret 'password'
+testdata/src/edge/edge.go:48:7 CT001: branch depends on secret 'mode'
+testdata/src/edge/edge.go:50:7 CT001: branch depends on secret 'mode'
+testdata/src/edge/edge.go:20:19 CT002: bytes.Equal uses secret 'key'
+testdata/src/edge/edge.go:21:19 CT002: bytes.Equal uses secret 'key'
+testdata/src/edge/edge.go:22:19 CT002: bytes.Equal uses secret 'key'
+testdata/src/edge/edge.go:31:14 CT002: string comparison uses secret 'password'
+testdata/src/edge/edge.go:36:20 CT002: strings.Compare uses secret 'password'

@@ -25,7 +25,9 @@ test-golden:
 golden-update:
 	go test ./cmd/ctguard -update -run TestGolden -v
 
-ci: fmt lint test
+ci: fmt lint
+	go clean -testcache
+	go test ./...
 
 clean:
 	rm -rf bin/

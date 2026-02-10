@@ -1,4 +1,11 @@
-testdata/src/ignores/ignores.go:38:14 CT001: branch depends on secret 'key' in github.com/oasilturk/ctguard/testdata/src/ignores.partialIgnore
-testdata/src/ignores/ignores.go:48:20 CT002: bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/ignores.noIgnore
-testdata/src/ignores/ignores.go:69:17 CT002: bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/ignores.ignoreMultiple
-testdata/src/ignores/ignores.go:80:20 CT002: bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/ignores.mixedIgnore
+testdata/src/ignores/ignores.go:38:14 CT001: branch depends on secret 'key'
+testdata/src/ignores/ignores.go:56:14 CT001: branch depends on secret 'key'
+testdata/src/ignores/ignores.go:66:14 CT001: branch depends on secret 'key'
+testdata/src/ignores/ignores.go:77:14 CT001: branch depends on secret 'key'
+testdata/src/ignores/ignores.go:15:20 CT002: bytes.Equal uses secret 'key'
+testdata/src/ignores/ignores.go:39:21 CT002: bytes.Equal uses secret 'key'
+testdata/src/ignores/ignores.go:48:20 CT002: bytes.Equal uses secret 'key'
+testdata/src/ignores/ignores.go:69:17 CT002: bytes.Equal uses secret 'key'
+testdata/src/ignores/ignores.go:80:20 CT002: bytes.Equal uses secret 'key'
+testdata/src/ignores/ignores.go:57:14 CT004: secret 'key' passed to fmt.Println
+testdata/src/ignores/ignores.go:67:14 CT004: secret 'key' passed to fmt.Println

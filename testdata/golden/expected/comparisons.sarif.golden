@@ -73,7 +73,7 @@
           "ruleId": "CT002",
           "level": "error",
           "message": {
-            "text": "bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/comparisons.unsafeCompare"
+            "text": "bytes.Equal uses secret 'key'"
           },
           "locations": [
             {
@@ -94,7 +94,7 @@
           "ruleId": "CT002",
           "level": "error",
           "message": {
-            "text": "string comparison uses secret 'password' in github.com/oasilturk/ctguard/testdata/src/comparisons.stringCompare"
+            "text": "string comparison uses secret 'password'"
           },
           "locations": [
             {

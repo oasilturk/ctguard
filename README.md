@@ -28,7 +28,7 @@ func Authenticate(password string) bool {
 }
 ```
 ```
-auth.go:5:12 CT002: non-constant-time comparison on secret-derived data
+auth.go:5:12 CT002: bytes.Equal uses secret 'password'
 ```
 
 **✅ Fixed:**

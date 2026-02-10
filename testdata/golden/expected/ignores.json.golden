@@ -1,22 +1,57 @@
 [
   {
     "pos": "testdata/src/ignores/ignores.go:38:14",
-    "message": "CT001: branch depends on secret 'key' in github.com/oasilturk/ctguard/testdata/src/ignores.partialIgnore",
+    "message": "CT001: branch depends on secret 'key'",
     "rule": "CT001"
   },
   {
+    "pos": "testdata/src/ignores/ignores.go:56:14",
+    "message": "CT001: branch depends on secret 'key'",
+    "rule": "CT001"
+  },
+  {
+    "pos": "testdata/src/ignores/ignores.go:66:14",
+    "message": "CT001: branch depends on secret 'key'",
+    "rule": "CT001"
+  },
+  {
+    "pos": "testdata/src/ignores/ignores.go:77:14",
+    "message": "CT001: branch depends on secret 'key'",
+    "rule": "CT001"
+  },
+  {
+    "pos": "testdata/src/ignores/ignores.go:15:20",
+    "message": "CT002: bytes.Equal uses secret 'key'",
+    "rule": "CT002"
+  },
+  {
+    "pos": "testdata/src/ignores/ignores.go:39:21",
+    "message": "CT002: bytes.Equal uses secret 'key'",
+    "rule": "CT002"
+  },
+  {
     "pos": "testdata/src/ignores/ignores.go:48:20",
-    "message": "CT002: bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/ignores.noIgnore",
+    "message": "CT002: bytes.Equal uses secret 'key'",
     "rule": "CT002"
   },
   {
     "pos": "testdata/src/ignores/ignores.go:69:17",
-    "message": "CT002: bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/ignores.ignoreMultiple",
+    "message": "CT002: bytes.Equal uses secret 'key'",
     "rule": "CT002"
   },
   {
     "pos": "testdata/src/ignores/ignores.go:80:20",
-    "message": "CT002: bytes.Equal uses secret 'key' in github.com/oasilturk/ctguard/testdata/src/ignores.mixedIgnore",
+    "message": "CT002: bytes.Equal uses secret 'key'",
     "rule": "CT002"
+  },
+  {
+    "pos": "testdata/src/ignores/ignores.go:57:14",
+    "message": "CT004: secret 'key' passed to fmt.Println",
+    "rule": "CT004"
+  },
+  {
+    "pos": "testdata/src/ignores/ignores.go:67:14",
+    "message": "CT004: secret 'key' passed to fmt.Println",
+    "rule": "CT004"
   }
 ]

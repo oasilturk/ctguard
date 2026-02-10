@@ -73,7 +73,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'apiKey' passed to fmt.Print in github.com/oasilturk/ctguard/testdata/src/exposure.printSecret"
+            "text": "secret 'apiKey' passed to fmt.Print"
           },
           "locations": [
             {
@@ -94,7 +94,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'apiKey' passed to fmt.Printf in github.com/oasilturk/ctguard/testdata/src/exposure.printSecret"
+            "text": "secret 'apiKey' passed to fmt.Printf"
           },
           "locations": [
             {
@@ -115,7 +115,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'apiKey' passed to fmt.Println in github.com/oasilturk/ctguard/testdata/src/exposure.printSecret"
+            "text": "secret 'apiKey' passed to fmt.Println"
           },
           "locations": [
             {
@@ -136,7 +136,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'token' passed to fmt.Sprint in github.com/oasilturk/ctguard/testdata/src/exposure.sprintSecret"
+            "text": "secret 'token' passed to fmt.Sprint"
           },
           "locations": [
             {
@@ -157,7 +157,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'token' passed to fmt.Sprintf in github.com/oasilturk/ctguard/testdata/src/exposure.sprintSecret"
+            "text": "secret 'token' passed to fmt.Sprintf"
           },
           "locations": [
             {
@@ -178,7 +178,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'token' passed to fmt.Sprintln in github.com/oasilturk/ctguard/testdata/src/exposure.sprintSecret"
+            "text": "secret 'token' passed to fmt.Sprintln"
           },
           "locations": [
             {
@@ -199,7 +199,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'password' passed to fmt.Fprint in github.com/oasilturk/ctguard/testdata/src/exposure.fprintSecret"
+            "text": "secret 'password' passed to fmt.Fprint"
           },
           "locations": [
             {
@@ -220,7 +220,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'password' passed to fmt.Fprintf in github.com/oasilturk/ctguard/testdata/src/exposure.fprintSecret"
+            "text": "secret 'password' passed to fmt.Fprintf"
           },
           "locations": [
             {
@@ -241,7 +241,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'password' passed to fmt.Fprintln in github.com/oasilturk/ctguard/testdata/src/exposure.fprintSecret"
+            "text": "secret 'password' passed to fmt.Fprintln"
           },
           "locations": [
             {
@@ -262,7 +262,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'secret' passed to fmt.Errorf in github.com/oasilturk/ctguard/testdata/src/exposure.errorWithSecret"
+            "text": "secret 'secret' passed to fmt.Errorf"
           },
           "locations": [
             {
@@ -283,7 +283,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'key' passed to log.Print in github.com/oasilturk/ctguard/testdata/src/exposure.logSecret"
+            "text": "secret 'key' passed to log.Print"
           },
           "locations": [
             {
@@ -304,7 +304,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'key' passed to log.Printf in github.com/oasilturk/ctguard/testdata/src/exposure.logSecret"
+            "text": "secret 'key' passed to log.Printf"
           },
           "locations": [
             {
@@ -325,7 +325,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'key' passed to log.Println in github.com/oasilturk/ctguard/testdata/src/exposure.logSecret"
+            "text": "secret 'key' passed to log.Println"
           },
           "locations": [
             {
@@ -346,7 +346,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'secret' passed to fmt.Println in github.com/oasilturk/ctguard/testdata/src/exposure.derivedSecret"
+            "text": "secret 'secret' passed to fmt.Println"
           },
           "locations": [
             {
@@ -367,7 +367,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'key' passed to fmt.Println in github.com/oasilturk/ctguard/testdata/src/exposure.multipleSecrets"
+            "text": "secret 'key' passed to fmt.Println"
           },
           "locations": [
             {
@@ -388,7 +388,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'token' passed to fmt.Println in github.com/oasilturk/ctguard/testdata/src/exposure.multipleSecrets"
+            "text": "secret 'token' passed to fmt.Println"
           },
           "locations": [
             {

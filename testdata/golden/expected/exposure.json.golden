@@ -1,82 +1,82 @@
 [
   {
     "pos": "testdata/src/exposure/exposure.go:15:11",
-    "message": "CT004: secret 'apiKey' passed to fmt.Print in github.com/oasilturk/ctguard/testdata/src/exposure.printSecret",
+    "message": "CT004: secret 'apiKey' passed to fmt.Print",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:16:12",
-    "message": "CT004: secret 'apiKey' passed to fmt.Printf in github.com/oasilturk/ctguard/testdata/src/exposure.printSecret",
+    "message": "CT004: secret 'apiKey' passed to fmt.Printf",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:17:13",
-    "message": "CT004: secret 'apiKey' passed to fmt.Println in github.com/oasilturk/ctguard/testdata/src/exposure.printSecret",
+    "message": "CT004: secret 'apiKey' passed to fmt.Println",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:24:16",
-    "message": "CT004: secret 'token' passed to fmt.Sprint in github.com/oasilturk/ctguard/testdata/src/exposure.sprintSecret",
+    "message": "CT004: secret 'token' passed to fmt.Sprint",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:25:17",
-    "message": "CT004: secret 'token' passed to fmt.Sprintf in github.com/oasilturk/ctguard/testdata/src/exposure.sprintSecret",
+    "message": "CT004: secret 'token' passed to fmt.Sprintf",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:26:21",
-    "message": "CT004: secret 'token' passed to fmt.Sprintln in github.com/oasilturk/ctguard/testdata/src/exposure.sprintSecret",
+    "message": "CT004: secret 'token' passed to fmt.Sprintln",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:33:12",
-    "message": "CT004: secret 'password' passed to fmt.Fprint in github.com/oasilturk/ctguard/testdata/src/exposure.fprintSecret",
+    "message": "CT004: secret 'password' passed to fmt.Fprint",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:34:13",
-    "message": "CT004: secret 'password' passed to fmt.Fprintf in github.com/oasilturk/ctguard/testdata/src/exposure.fprintSecret",
+    "message": "CT004: secret 'password' passed to fmt.Fprintf",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:35:14",
-    "message": "CT004: secret 'password' passed to fmt.Fprintln in github.com/oasilturk/ctguard/testdata/src/exposure.fprintSecret",
+    "message": "CT004: secret 'password' passed to fmt.Fprintln",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:42:19",
-    "message": "CT004: secret 'secret' passed to fmt.Errorf in github.com/oasilturk/ctguard/testdata/src/exposure.errorWithSecret",
+    "message": "CT004: secret 'secret' passed to fmt.Errorf",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:49:11",
-    "message": "CT004: secret 'key' passed to log.Print in github.com/oasilturk/ctguard/testdata/src/exposure.logSecret",
+    "message": "CT004: secret 'key' passed to log.Print",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:50:12",
-    "message": "CT004: secret 'key' passed to log.Printf in github.com/oasilturk/ctguard/testdata/src/exposure.logSecret",
+    "message": "CT004: secret 'key' passed to log.Printf",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:51:13",
-    "message": "CT004: secret 'key' passed to log.Println in github.com/oasilturk/ctguard/testdata/src/exposure.logSecret",
+    "message": "CT004: secret 'key' passed to log.Println",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:59:13",
-    "message": "CT004: secret 'secret' passed to fmt.Println in github.com/oasilturk/ctguard/testdata/src/exposure.derivedSecret",
+    "message": "CT004: secret 'secret' passed to fmt.Println",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:80:13",
-    "message": "CT004: secret 'key' passed to fmt.Println in github.com/oasilturk/ctguard/testdata/src/exposure.multipleSecrets",
+    "message": "CT004: secret 'key' passed to fmt.Println",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:81:13",
-    "message": "CT004: secret 'token' passed to fmt.Println in github.com/oasilturk/ctguard/testdata/src/exposure.multipleSecrets",
+    "message": "CT004: secret 'token' passed to fmt.Println",
     "rule": "CT004"
   }
 ]

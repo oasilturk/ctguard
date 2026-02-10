@@ -75,8 +75,8 @@ func RunCT004(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 				diags = append(diags, analysis.Diagnostic{
 					Pos: pos,
 					Message: fmt.Sprintf(
-						"CT004: secret '%s' passed to %s.%s in %s",
-						secretName, pkgPath, name, fn.String(),
+						"CT004: secret '%s' passed to %s.%s",
+						secretName, pkgPath, name,
 					),
 				})
 			}
