@@ -24,8 +24,11 @@ CTGuard finds vulnerabilities in code where secret data can be leaked through ex
 func Authenticate(password string) bool {
     hash := sha256.Sum256([]byte(password))  // taint propagates to hash
     expected := loadExpectedHash()
-    return bytes.Equal(hash[:], expected)  // timing leak! exec time is indirectly dependent on a secret
+    return bytes.Equal(hash[:], expected)  // timing leak! exec time depends on a secret
 }
+```
+```
+auth.go:5:12 CT002: non-constant-time comparison on secret-derived data
 ```
 
 **✅ Fixed:**
@@ -34,8 +37,11 @@ func Authenticate(password string) bool {
 func Authenticate(password string) bool {
     hash := sha256.Sum256([]byte(password))  // taint propagates to hash
     expected := loadExpectedHash()
-    return subtle.ConstantTimeCompare(hash[:], expected) == 1  // NO timing leak! exec time is NOT dependent on a secret
+    return subtle.ConstantTimeCompare(hash[:], expected) == 1  // NO timing leak!
 }
+```
+```
+✓ No issues found
 ```
 
 ## Install
