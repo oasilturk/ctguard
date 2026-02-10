@@ -7,6 +7,8 @@
 
 CTGuard finds vulnerabilities in code where secret data can be leaked through execution time, like when you compare passwords with `==` or branch on private keys.
 
+![CTGuard Demo](demo/demo.gif)
+
 ## What It Catches
 
 | Rule | What it detects |
