@@ -42,8 +42,9 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					}
 
 					diags = append(diags, analysis.Diagnostic{
-						Pos:     pos,
-						Message: fmt.Sprintf("CT003: array/slice index depends on secret '%s'", secretName),
+						Pos:      pos,
+						Message:  fmt.Sprintf("CT003: array/slice index depends on secret '%s'", secretName),
+						Category: fn.String(),
 					})
 					continue
 				}
@@ -64,8 +65,9 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					}
 
 					diags = append(diags, analysis.Diagnostic{
-						Pos:     pos,
-						Message: fmt.Sprintf("CT003: array/slice index depends on secret '%s'", secretName),
+						Pos:      pos,
+						Message:  fmt.Sprintf("CT003: array/slice index depends on secret '%s'", secretName),
+						Category: fn.String(),
 					})
 					continue
 				}
@@ -86,8 +88,9 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					}
 
 					diags = append(diags, analysis.Diagnostic{
-						Pos:     pos,
-						Message: fmt.Sprintf("CT003: map lookup key depends on secret '%s'", secretName),
+						Pos:      pos,
+						Message:  fmt.Sprintf("CT003: map lookup key depends on secret '%s'", secretName),
+						Category: fn.String(),
 					})
 					continue
 				}

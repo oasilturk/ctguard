@@ -31,7 +31,8 @@ func run(pass *analysis.Pass) (any, error) {
 
 	// Filter and report diagnostics
 	for _, d := range allDiags {
-		ruleID, funcName := extractDiagInfo(d.Message)
+		ruleID := extractRuleID(d.Message)
+		funcName := extractFuncName(d.Category)
 		if ignores.ShouldIgnore(pass.Fset, d.Pos, ruleID, funcName) {
 			continue
 		}
@@ -41,22 +42,24 @@ func run(pass *analysis.Pass) (any, error) {
 	return nil, nil
 }
 
-// extractDiagInfo extracts rule ID and function name from a diagnostic message.
-// Messages are formatted like: "CT001: ... in package.functionName"
-func extractDiagInfo(msg string) (ruleID string, funcName string) {
-	// Extract rule ID (first word before colon)
+// extractRuleID extracts the rule ID from diagnostic message.
+// Messages are formatted like: "CT001: ..."
+func extractRuleID(msg string) string {
 	if idx := strings.Index(msg, ":"); idx > 0 {
-		ruleID = strings.TrimSpace(msg[:idx])
+		return strings.TrimSpace(msg[:idx])
 	}
+	return ""
+}
 
-	// Extract function name (after " in ")
-	if idx := strings.LastIndex(msg, " in "); idx > 0 {
-		funcName = strings.TrimSpace(msg[idx+4:])
-		// Get just the function name without package path
-		if lastDot := strings.LastIndex(funcName, "."); lastDot > 0 {
-			funcName = funcName[lastDot+1:]
-		}
+// extractFuncName extracts the function name from diagnostic category.
+// Category contains full SSA function string like "package.functionName"
+func extractFuncName(category string) string {
+	if category == "" {
+		return ""
 	}
-
-	return ruleID, funcName
+	// Get just the function name without package path
+	if lastDot := strings.LastIndex(category, "."); lastDot > 0 {
+		return category[lastDot+1:]
+	}
+	return category
 }

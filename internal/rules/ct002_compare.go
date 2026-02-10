@@ -78,6 +78,7 @@ func RunCT002(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 							"CT002: %s.%s uses secret '%s'",
 							pkgPath, name, secretName,
 						),
+						Category: fn.String(),
 					})
 					continue
 				}
@@ -107,8 +108,9 @@ func RunCT002(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					}
 
 					diags = append(diags, analysis.Diagnostic{
-						Pos:     pos,
-						Message: fmt.Sprintf("CT002: string comparison uses secret '%s'", secretName),
+						Pos:      pos,
+						Message:  fmt.Sprintf("CT002: string comparison uses secret '%s'", secretName),
+						Category: fn.String(),
 					})
 				}
 			}

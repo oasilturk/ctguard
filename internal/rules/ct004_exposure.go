@@ -78,6 +78,7 @@ func RunCT004(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						"CT004: secret '%s' passed to %s.%s",
 						secretName, pkgPath, name,
 					),
+					Category: fn.String(),
 				})
 			}
 		}
