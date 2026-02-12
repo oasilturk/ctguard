@@ -136,14 +136,40 @@ type ct002CallKey struct {
 }
 
 var ct002Allow = map[ct002CallKey]struct{}{
-	{pkg: "crypto/subtle", name: "ConstantTimeCompare"}: {},
+	// crypto/subtle — all functions are constant-time by design
+	{pkg: "crypto/subtle", name: "ConstantTimeCompare"}:  {},
+	{pkg: "crypto/subtle", name: "ConstantTimeSelect"}:   {},
+	{pkg: "crypto/subtle", name: "ConstantTimeByteEq"}:   {},
+	{pkg: "crypto/subtle", name: "ConstantTimeEq"}:       {},
+	{pkg: "crypto/subtle", name: "ConstantTimeLessOrEq"}: {},
+	{pkg: "crypto/subtle", name: "ConstantTimeCopy"}:     {},
+	{pkg: "crypto/subtle", name: "XORBytes"}:             {},
+	// crypto/hmac — Equal uses crypto/subtle internally
+	{pkg: "crypto/hmac", name: "Equal"}: {},
 }
 
 var ct002Deny = map[ct002CallKey]struct{}{
-	{pkg: "bytes", name: "Equal"}:       {},
-	{pkg: "bytes", name: "Compare"}:     {},
-	{pkg: "strings", name: "Compare"}:   {},
-	{pkg: "strings", name: "EqualFold"}: {},
+	// bytes — non-constant-time comparison / search
+	{pkg: "bytes", name: "Equal"}:        {},
+	{pkg: "bytes", name: "Compare"}:      {},
+	{pkg: "bytes", name: "HasPrefix"}:    {},
+	{pkg: "bytes", name: "HasSuffix"}:    {},
+	{pkg: "bytes", name: "Contains"}:     {},
+	{pkg: "bytes", name: "ContainsAny"}:  {},
+	{pkg: "bytes", name: "ContainsRune"}: {},
+	{pkg: "bytes", name: "Index"}:        {},
+	{pkg: "bytes", name: "LastIndex"}:    {},
+	// strings — non-constant-time comparison / search
+	{pkg: "strings", name: "Compare"}:      {},
+	{pkg: "strings", name: "EqualFold"}:    {},
+	{pkg: "strings", name: "HasPrefix"}:    {},
+	{pkg: "strings", name: "HasSuffix"}:    {},
+	{pkg: "strings", name: "Contains"}:     {},
+	{pkg: "strings", name: "ContainsAny"}:  {},
+	{pkg: "strings", name: "ContainsRune"}: {},
+	{pkg: "strings", name: "Index"}:        {},
+	{pkg: "strings", name: "LastIndex"}:    {},
+	// reflect — deep comparison is non-constant-time
 	{pkg: "reflect", name: "DeepEqual"}: {},
 }
 

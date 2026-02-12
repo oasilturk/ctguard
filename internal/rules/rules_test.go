@@ -14,7 +14,9 @@ func TestCT002Policy(t *testing.T) {
 		wantAllowed bool
 		wantRisky   bool
 	}{
-		// Allowed (constant-time)
+		// --- Allowed (constant-time) ---
+
+		// crypto/subtle
 		{
 			name:        "crypto/subtle.ConstantTimeCompare is allowed",
 			pkgPath:     "crypto/subtle",
@@ -22,7 +24,60 @@ func TestCT002Policy(t *testing.T) {
 			wantAllowed: true,
 			wantRisky:   false,
 		},
-		// Denied (non-constant-time)
+		{
+			name:        "crypto/subtle.ConstantTimeSelect is allowed",
+			pkgPath:     "crypto/subtle",
+			funcName:    "ConstantTimeSelect",
+			wantAllowed: true,
+			wantRisky:   false,
+		},
+		{
+			name:        "crypto/subtle.ConstantTimeByteEq is allowed",
+			pkgPath:     "crypto/subtle",
+			funcName:    "ConstantTimeByteEq",
+			wantAllowed: true,
+			wantRisky:   false,
+		},
+		{
+			name:        "crypto/subtle.ConstantTimeEq is allowed",
+			pkgPath:     "crypto/subtle",
+			funcName:    "ConstantTimeEq",
+			wantAllowed: true,
+			wantRisky:   false,
+		},
+		{
+			name:        "crypto/subtle.ConstantTimeLessOrEq is allowed",
+			pkgPath:     "crypto/subtle",
+			funcName:    "ConstantTimeLessOrEq",
+			wantAllowed: true,
+			wantRisky:   false,
+		},
+		{
+			name:        "crypto/subtle.ConstantTimeCopy is allowed",
+			pkgPath:     "crypto/subtle",
+			funcName:    "ConstantTimeCopy",
+			wantAllowed: true,
+			wantRisky:   false,
+		},
+		{
+			name:        "crypto/subtle.XORBytes is allowed",
+			pkgPath:     "crypto/subtle",
+			funcName:    "XORBytes",
+			wantAllowed: true,
+			wantRisky:   false,
+		},
+		// crypto/hmac
+		{
+			name:        "crypto/hmac.Equal is allowed",
+			pkgPath:     "crypto/hmac",
+			funcName:    "Equal",
+			wantAllowed: true,
+			wantRisky:   false,
+		},
+
+		// --- Denied (non-constant-time) ---
+
+		// bytes
 		{
 			name:        "bytes.Equal is risky",
 			pkgPath:     "bytes",
@@ -38,6 +93,56 @@ func TestCT002Policy(t *testing.T) {
 			wantRisky:   true,
 		},
 		{
+			name:        "bytes.HasPrefix is risky",
+			pkgPath:     "bytes",
+			funcName:    "HasPrefix",
+			wantAllowed: false,
+			wantRisky:   true,
+		},
+		{
+			name:        "bytes.HasSuffix is risky",
+			pkgPath:     "bytes",
+			funcName:    "HasSuffix",
+			wantAllowed: false,
+			wantRisky:   true,
+		},
+		{
+			name:        "bytes.Contains is risky",
+			pkgPath:     "bytes",
+			funcName:    "Contains",
+			wantAllowed: false,
+			wantRisky:   true,
+		},
+		{
+			name:        "bytes.ContainsAny is risky",
+			pkgPath:     "bytes",
+			funcName:    "ContainsAny",
+			wantAllowed: false,
+			wantRisky:   true,
+		},
+		{
+			name:        "bytes.ContainsRune is risky",
+			pkgPath:     "bytes",
+			funcName:    "ContainsRune",
+			wantAllowed: false,
+			wantRisky:   true,
+		},
+		{
+			name:        "bytes.Index is risky",
+			pkgPath:     "bytes",
+			funcName:    "Index",
+			wantAllowed: false,
+			wantRisky:   true,
+		},
+		{
+			name:        "bytes.LastIndex is risky",
+			pkgPath:     "bytes",
+			funcName:    "LastIndex",
+			wantAllowed: false,
+			wantRisky:   true,
+		},
+		// strings
+		{
 			name:        "strings.Compare is risky",
 			pkgPath:     "strings",
 			funcName:    "Compare",
@@ -52,13 +157,64 @@ func TestCT002Policy(t *testing.T) {
 			wantRisky:   true,
 		},
 		{
+			name:        "strings.HasPrefix is risky",
+			pkgPath:     "strings",
+			funcName:    "HasPrefix",
+			wantAllowed: false,
+			wantRisky:   true,
+		},
+		{
+			name:        "strings.HasSuffix is risky",
+			pkgPath:     "strings",
+			funcName:    "HasSuffix",
+			wantAllowed: false,
+			wantRisky:   true,
+		},
+		{
+			name:        "strings.Contains is risky",
+			pkgPath:     "strings",
+			funcName:    "Contains",
+			wantAllowed: false,
+			wantRisky:   true,
+		},
+		{
+			name:        "strings.ContainsAny is risky",
+			pkgPath:     "strings",
+			funcName:    "ContainsAny",
+			wantAllowed: false,
+			wantRisky:   true,
+		},
+		{
+			name:        "strings.ContainsRune is risky",
+			pkgPath:     "strings",
+			funcName:    "ContainsRune",
+			wantAllowed: false,
+			wantRisky:   true,
+		},
+		{
+			name:        "strings.Index is risky",
+			pkgPath:     "strings",
+			funcName:    "Index",
+			wantAllowed: false,
+			wantRisky:   true,
+		},
+		{
+			name:        "strings.LastIndex is risky",
+			pkgPath:     "strings",
+			funcName:    "LastIndex",
+			wantAllowed: false,
+			wantRisky:   true,
+		},
+		// reflect
+		{
 			name:        "reflect.DeepEqual is risky",
 			pkgPath:     "reflect",
 			funcName:    "DeepEqual",
 			wantAllowed: false,
 			wantRisky:   true,
 		},
-		// Unknown (neither allowed nor risky)
+
+		// --- Unknown (neither allowed nor risky) ---
 		{
 			name:        "unknown function is neutral",
 			pkgPath:     "fmt",
