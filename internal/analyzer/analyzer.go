@@ -8,6 +8,7 @@ import (
 
 	"github.com/oasilturk/ctguard/internal/annotations"
 	"github.com/oasilturk/ctguard/internal/rules"
+	"github.com/oasilturk/ctguard/internal/taint"
 )
 
 var Analyzer = &analysis.Analyzer{
@@ -22,15 +23,16 @@ func run(pass *analysis.Pass) (any, error) {
 	secrets := annotations.CollectSecrets(pass)
 	ignores := annotations.CollectIgnores(pass)
 
-	// Collect all diagnostics
-	var allDiags []analysis.Diagnostic
-	allDiags = append(allDiags, rules.RunCT001(pass, ssaRes, secrets)...)
-	allDiags = append(allDiags, rules.RunCT002(pass, ssaRes, secrets)...)
-	allDiags = append(allDiags, rules.RunCT003(pass, ssaRes, secrets)...)
-	allDiags = append(allDiags, rules.RunCT004(pass, ssaRes, secrets)...)
-	allDiags = append(allDiags, rules.RunCT005(pass, ssaRes, secrets)...)
+	ipAnalyzer := taint.NewInterproceduralAnalyzer(ssaRes, secrets)
+	ipAnalyzer.Analyze()
 
-	// Filter and report diagnostics
+	var allDiags []analysis.Diagnostic
+	allDiags = append(allDiags, rules.RunCT001(pass, ssaRes, secrets, ipAnalyzer)...)
+	allDiags = append(allDiags, rules.RunCT002(pass, ssaRes, secrets, ipAnalyzer)...)
+	allDiags = append(allDiags, rules.RunCT003(pass, ssaRes, secrets, ipAnalyzer)...)
+	allDiags = append(allDiags, rules.RunCT004(pass, ssaRes, secrets, ipAnalyzer)...)
+	allDiags = append(allDiags, rules.RunCT005(pass, ssaRes, secrets, ipAnalyzer)...)
+
 	for _, d := range allDiags {
 		ruleID := extractRuleID(d.Message)
 		funcName := extractFuncName(d.Category)

@@ -61,7 +61,7 @@ func ct005Policy(pkgPath, name string) (allowed bool, risky bool) {
 }
 
 // CT005 flags variable-time arithmetic operations on secret-tainted data.
-func RunCT005(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets) []analysis.Diagnostic {
+func RunCT005(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets, ipAnalyzer *taint.InterproceduralAnalyzer) []analysis.Diagnostic {
 	var diags []analysis.Diagnostic
 
 	for _, fn := range ssaRes.SrcFuncs {
@@ -69,7 +69,7 @@ func RunCT005(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 			continue
 		}
 
-		secretParams := secretParamSetForFn(fn, secrets)
+		secretParams := ipAnalyzer.GetSecretParams(fn)
 		dep := taint.NewDepender(secretParams)
 
 		for _, b := range fn.Blocks {

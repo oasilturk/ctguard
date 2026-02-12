@@ -14,7 +14,7 @@ import (
 )
 
 // CT001: branches whose condition depends on secret data.
-func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets) []analysis.Diagnostic {
+func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets, ipAnalyzer *taint.InterproceduralAnalyzer) []analysis.Diagnostic {
 	var diags []analysis.Diagnostic
 
 	for _, fn := range ssaRes.SrcFuncs {
@@ -22,7 +22,7 @@ func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 			continue
 		}
 
-		secretParams := secretParamSetForFn(fn, secrets)
+		secretParams := ipAnalyzer.GetSecretParams(fn)
 		dep := taint.NewDepender(secretParams)
 
 		for _, b := range fn.Blocks {

@@ -13,7 +13,7 @@ import (
 )
 
 // CT003 flags array/slice/map indexing where the index comes from secret data.
-func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets) []analysis.Diagnostic {
+func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets, ipAnalyzer *taint.InterproceduralAnalyzer) []analysis.Diagnostic {
 	var diags []analysis.Diagnostic
 
 	for _, fn := range ssaRes.SrcFuncs {
@@ -21,7 +21,7 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 			continue
 		}
 
-		secretParams := secretParamSetForFn(fn, secrets)
+		secretParams := ipAnalyzer.GetSecretParams(fn)
 		dep := taint.NewDepender(secretParams)
 
 		for _, b := range fn.Blocks {
