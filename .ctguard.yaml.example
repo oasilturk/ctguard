@@ -11,6 +11,7 @@ rules:
     CT002: error
     CT003: warning
     CT004: error
+    CT005: error
 
 annotations:
   secrets:

@@ -208,6 +208,11 @@ func printHelp() {
            or error formatting functions (fmt.Print*, log.*, fmt.Errorf).
            Secrets may be exposed in logs, console output, or error messages.
 
+    %sCT005%s  Variable-time arithmetic operations
+           Detects use of division (/), modulo (%%), shifts (<<, >>), and
+           variable-time library functions (math.Mod, math/big) with secret
+           data. Use bit masking or crypto/subtle for constant-time operations.
+
 %sANNOTATIONS%s
     Mark function parameters as secret:
 
@@ -236,7 +241,7 @@ func printHelp() {
 
     Example .ctguard.yaml:
         rules:
-          enable: [CT001, CT002]  # or 'all'
+          enable: [CT001, CT002, CT005]  # or 'all'
           disable: [CT003, CT004]
           severity:
             CT001: warning
@@ -264,6 +269,7 @@ func printHelp() {
 		c.Gray, c.Reset,
 		c.Bold, c.Reset,
 		c.Bold, c.Reset,
+		c.Yellow, c.Reset,
 		c.Yellow, c.Reset,
 		c.Yellow, c.Reset,
 		c.Yellow, c.Reset,
@@ -651,6 +657,8 @@ func printPlain(findings []Finding) {
 			ruleColor = c.Green
 		} else if strings.HasPrefix(rule, "CT004") {
 			ruleColor = c.Red
+		} else if strings.HasPrefix(rule, "CT005") {
+			ruleColor = c.Blue
 		}
 
 		// Extract just the message without the rule prefix
@@ -711,6 +719,14 @@ func printSARIF(findings []Finding) {
 			ShortDescription: SarifMessage{Text: "Secret data exposure"},
 			FullDescription:  SarifMessage{Text: "Detects when secret data is passed to logging, printing, or error formatting functions. Secrets may be exposed in logs, console output, or error messages."},
 			HelpURI:          "https://github.com/oasilturk/ctguard#ct004",
+			DefaultConfig:    SarifDefaultConfig{Level: "error"},
+		},
+		{
+			ID:               "CT005",
+			Name:             "VariableTimeArithmetic",
+			ShortDescription: SarifMessage{Text: "Variable-time arithmetic"},
+			FullDescription:  SarifMessage{Text: "Detects use of variable-time arithmetic operations (/, %, <<, >>) with secret data. Use crypto/subtle for constant-time arithmetic."},
+			HelpURI:          "https://github.com/oasilturk/ctguard#ct005",
 			DefaultConfig:    SarifDefaultConfig{Level: "error"},
 		},
 	}

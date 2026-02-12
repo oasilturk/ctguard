@@ -59,3 +59,9 @@ func TestEdgeCases(t *testing.T) {
 	testdata := getTestdataPath(t)
 	analysistest.Run(t, testdata, analyzer.Analyzer, "edge")
 }
+
+// TestArithmetic tests detection of variable-time arithmetic operations
+func TestArithmetic(t *testing.T) {
+	testdata := getTestdataPath(t)
+	analysistest.Run(t, testdata, analyzer.Analyzer, "arithmetic")
+}

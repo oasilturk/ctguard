@@ -192,7 +192,7 @@ func (c *Config) IsRuleEnabled(ruleID string) bool {
 func (c *Config) GetRules() string {
 	if len(c.Rules.Enable) == 0 || contains(c.Rules.Enable, "all") || contains(c.Rules.Enable, "*") {
 		if len(c.Rules.Disable) > 0 {
-			allRules := []string{"CT001", "CT002", "CT003", "CT004"}
+			allRules := []string{"CT001", "CT002", "CT003", "CT004", "CT005"}
 			var enabled []string
 			for _, rule := range allRules {
 				if !contains(c.Rules.Disable, rule) {

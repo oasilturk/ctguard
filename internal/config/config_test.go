@@ -182,7 +182,7 @@ func TestGetRules(t *testing.T) {
 					Disable: []string{"CT003"},
 				},
 			},
-			expected: "CT001,CT002,CT004", // Returns explicit list when using all+disable
+			expected: "CT001,CT002,CT004,CT005", // Returns explicit list when using all+disable
 		},
 	}
 

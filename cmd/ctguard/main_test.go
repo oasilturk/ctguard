@@ -176,6 +176,31 @@ func TestGolden(t *testing.T) {
 			args:       []string{"-rules=CT004"},
 			goldenFile: "exposure.ct004.golden",
 		},
+		// Package 'arithmetic' - CT005 (variable-time arithmetic)
+		{
+			name:       "arithmetic_plain",
+			target:     "./testdata/src/arithmetic/",
+			args:       []string{},
+			goldenFile: "arithmetic.plain.golden",
+		},
+		{
+			name:       "arithmetic_json",
+			target:     "./testdata/src/arithmetic/",
+			args:       []string{"-format=json"},
+			goldenFile: "arithmetic.json.golden",
+		},
+		{
+			name:       "arithmetic_sarif",
+			target:     "./testdata/src/arithmetic/",
+			args:       []string{"-format=sarif"},
+			goldenFile: "arithmetic.sarif.golden",
+		},
+		{
+			name:       "arithmetic_ct005_only",
+			target:     "./testdata/src/arithmetic/",
+			args:       []string{"-rules=CT005"},
+			goldenFile: "arithmetic.ct005.golden",
+		},
 		// Ignore annotation tests
 		{
 			name:       "ignores_plain",

@@ -1,0 +1,72 @@
+[
+  {
+    "pos": "testdata/src/arithmetic/arithmetic.go:12:15",
+    "message": "CT005: division operates on secret 'key'",
+    "rule": "CT005"
+  },
+  {
+    "pos": "testdata/src/arithmetic/arithmetic.go:17:15",
+    "message": "CT005: division operates on secret 'divisor'",
+    "rule": "CT005"
+  },
+  {
+    "pos": "testdata/src/arithmetic/arithmetic.go:22:15",
+    "message": "CT005: remainder operates on secret 'key'",
+    "rule": "CT005"
+  },
+  {
+    "pos": "testdata/src/arithmetic/arithmetic.go:27:14",
+    "message": "CT005: remainder operates on secret 'data'",
+    "rule": "CT005"
+  },
+  {
+    "pos": "testdata/src/arithmetic/arithmetic.go:32:15",
+    "message": "CT005: shift operates on secret 'shift'",
+    "rule": "CT005"
+  },
+  {
+    "pos": "testdata/src/arithmetic/arithmetic.go:37:15",
+    "message": "CT005: shift operates on secret 'shift'",
+    "rule": "CT005"
+  },
+  {
+    "pos": "testdata/src/arithmetic/arithmetic.go:42:14",
+    "message": "CT005: shift operates on secret 'data'",
+    "rule": "CT005"
+  },
+  {
+    "pos": "testdata/src/arithmetic/arithmetic.go:77:16",
+    "message": "CT005: division operates on secret 'secret'",
+    "rule": "CT005"
+  },
+  {
+    "pos": "testdata/src/arithmetic/arithmetic.go:82:14",
+    "message": "CT005: division operates on secret 'divisor'",
+    "rule": "CT005"
+  },
+  {
+    "pos": "testdata/src/arithmetic/arithmetic.go:88:17",
+    "message": "CT005: division operates on secret 'key'",
+    "rule": "CT005"
+  },
+  {
+    "pos": "testdata/src/arithmetic/arithmetic.go:97:17",
+    "message": "CT005: math.Mod uses secret 'x'",
+    "rule": "CT005"
+  },
+  {
+    "pos": "testdata/src/arithmetic/arithmetic.go:102:23",
+    "message": "CT005: math.Remainder uses secret 'x'",
+    "rule": "CT005"
+  },
+  {
+    "pos": "testdata/src/arithmetic/arithmetic.go:107:24",
+    "message": "CT005: math/bits.RotateLeft uses secret 'n'",
+    "rule": "CT005"
+  },
+  {
+    "pos": "testdata/src/arithmetic/arithmetic.go:112:25",
+    "message": "CT005: math/bits.RotateLeft8 uses secret 'data'",
+    "rule": "CT005"
+  }
+]

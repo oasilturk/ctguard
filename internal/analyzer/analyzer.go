@@ -28,6 +28,7 @@ func run(pass *analysis.Pass) (any, error) {
 	allDiags = append(allDiags, rules.RunCT002(pass, ssaRes, secrets)...)
 	allDiags = append(allDiags, rules.RunCT003(pass, ssaRes, secrets)...)
 	allDiags = append(allDiags, rules.RunCT004(pass, ssaRes, secrets)...)
+	allDiags = append(allDiags, rules.RunCT005(pass, ssaRes, secrets)...)
 
 	// Filter and report diagnostics
 	for _, d := range allDiags {

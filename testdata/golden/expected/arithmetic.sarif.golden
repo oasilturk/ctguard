@@ -84,210 +84,294 @@
       },
       "results": [
         {
-          "ruleId": "CT001",
+          "ruleId": "CT005",
           "level": "error",
           "message": {
-            "text": "branch depends on secret 'target'"
+            "text": "division operates on secret 'key'"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/indexing/indexing.go",
+                  "uri": "testdata/src/arithmetic/arithmetic.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 84,
-                  "startColumn": 10
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT003",
-          "level": "error",
-          "message": {
-            "text": "array/slice index depends on secret 'idx'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 9,
-                  "startColumn": 14
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT003",
-          "level": "error",
-          "message": {
-            "text": "array/slice index depends on secret 'key'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 16,
-                  "startColumn": 13
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT003",
-          "level": "error",
-          "message": {
-            "text": "map lookup key depends on secret 'secret'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 23,
-                  "startColumn": 10
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT003",
-          "level": "error",
-          "message": {
-            "text": "array/slice index depends on secret 'key'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 31,
-                  "startColumn": 14
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT003",
-          "level": "error",
-          "message": {
-            "text": "array/slice index depends on secret 'i'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 50,
-                  "startColumn": 11
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT003",
-          "level": "error",
-          "message": {
-            "text": "array/slice index depends on secret 'i'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 51,
-                  "startColumn": 11
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT003",
-          "level": "error",
-          "message": {
-            "text": "array/slice index depends on secret 'input'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 61,
-                  "startColumn": 13
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT003",
-          "level": "error",
-          "message": {
-            "text": "map lookup key depends on secret 'key'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 68,
-                  "startColumn": 12
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT003",
-          "level": "error",
-          "message": {
-            "text": "array/slice index depends on secret 'i'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 76,
+                  "startLine": 12,
                   "startColumn": 15
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT005",
+          "level": "error",
+          "message": {
+            "text": "division operates on secret 'divisor'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 17,
+                  "startColumn": 15
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT005",
+          "level": "error",
+          "message": {
+            "text": "remainder operates on secret 'key'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 22,
+                  "startColumn": 15
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT005",
+          "level": "error",
+          "message": {
+            "text": "remainder operates on secret 'data'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 27,
+                  "startColumn": 14
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT005",
+          "level": "error",
+          "message": {
+            "text": "shift operates on secret 'shift'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 32,
+                  "startColumn": 15
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT005",
+          "level": "error",
+          "message": {
+            "text": "shift operates on secret 'shift'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 37,
+                  "startColumn": 15
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT005",
+          "level": "error",
+          "message": {
+            "text": "shift operates on secret 'data'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 42,
+                  "startColumn": 14
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT005",
+          "level": "error",
+          "message": {
+            "text": "division operates on secret 'secret'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 77,
+                  "startColumn": 16
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT005",
+          "level": "error",
+          "message": {
+            "text": "division operates on secret 'divisor'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 82,
+                  "startColumn": 14
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT005",
+          "level": "error",
+          "message": {
+            "text": "division operates on secret 'key'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 88,
+                  "startColumn": 17
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT005",
+          "level": "error",
+          "message": {
+            "text": "math.Mod uses secret 'x'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 97,
+                  "startColumn": 17
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT005",
+          "level": "error",
+          "message": {
+            "text": "math.Remainder uses secret 'x'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 102,
+                  "startColumn": 23
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT005",
+          "level": "error",
+          "message": {
+            "text": "math/bits.RotateLeft uses secret 'n'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 107,
+                  "startColumn": 24
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT005",
+          "level": "error",
+          "message": {
+            "text": "math/bits.RotateLeft8 uses secret 'data'"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 112,
+                  "startColumn": 25
                 }
               }
             }

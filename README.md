@@ -17,6 +17,7 @@ CTGuard finds vulnerabilities in code where secret data can be leaked through ex
 | CT002 | Non-constant-time comparisons (`bytes.Equal` on secrets) |
 | CT003 | Array/map indexing with secret indices (cache timing) |
 | CT004 | Secrets leaked to logs or error messages |
+| CT005 | Variable-time arithmetic operations (`/`, `%`, `<<`, `>>` on secrets) |
 
 ## Quick Example
 

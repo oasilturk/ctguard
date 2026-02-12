@@ -64,6 +64,20 @@
               "defaultConfiguration": {
                 "level": "error"
               }
+            },
+            {
+              "id": "CT005",
+              "name": "VariableTimeArithmetic",
+              "shortDescription": {
+                "text": "Variable-time arithmetic"
+              },
+              "fullDescription": {
+                "text": "Detects use of variable-time arithmetic operations (/, %, \u003c\u003c, \u003e\u003e) with secret data. Use crypto/subtle for constant-time arithmetic."
+              },
+              "helpUri": "https://github.com/oasilturk/ctguard#ct005",
+              "defaultConfiguration": {
+                "level": "error"
+              }
             }
           ]
         }
