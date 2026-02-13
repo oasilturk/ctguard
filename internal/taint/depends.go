@@ -12,14 +12,22 @@ type Depender struct {
 	memo         map[ssa.Value]string // stores secret name or "" if not tainted
 	inStack      map[ssa.Value]bool
 	taintedAddrs map[ssa.Value]string // tracks memory addresses that store tainted values
+	ipAnalyzer   InterproceduralInfo  // interprocedural analysis info
 }
 
-func NewDepender(fn *ssa.Function, secretParams map[string]bool) *Depender {
+// InterproceduralInfo provides information about taint across function boundaries
+type InterproceduralInfo interface {
+	HasTaintedReturn(fn *ssa.Function) bool
+	IsAnalyzed(fn *ssa.Function) bool
+}
+
+func NewDepender(fn *ssa.Function, secretParams map[string]bool, ipAnalyzer InterproceduralInfo) *Depender {
 	d := &Depender{
 		secretParams: secretParams,
 		memo:         map[ssa.Value]string{},
 		inStack:      map[ssa.Value]bool{},
 		taintedAddrs: map[ssa.Value]string{},
+		ipAnalyzer:   ipAnalyzer,
 	}
 	d.analyzeStores(fn)
 	return d
@@ -144,6 +152,12 @@ func (d *Depender) DependsOn(v ssa.Value) string {
 		}
 
 	case *ssa.Call:
+		if callee := t.Call.StaticCallee(); callee != nil &&
+			d.ipAnalyzer != nil &&
+			d.ipAnalyzer.IsAnalyzed(callee) &&
+			!d.ipAnalyzer.HasTaintedReturn(callee) {
+			break // analyzed function with clean return
+		}
 		for _, a := range t.Call.Args {
 			if s := d.DependsOn(a); s != "" {
 				secret = s

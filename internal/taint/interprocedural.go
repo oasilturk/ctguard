@@ -13,8 +13,9 @@ import (
 
 // FunctionContext holds taint information for a function
 type FunctionContext struct {
-	Function     *ssa.Function
-	SecretParams map[string]bool
+	Function      *ssa.Function
+	SecretParams  map[string]bool
+	TaintedReturn bool // whether the function returns a tainted value
 }
 
 // InterproceduralAnalyzer propagates taint information across function calls
@@ -82,47 +83,13 @@ func (ia *InterproceduralAnalyzer) Analyze() {
 				continue
 			}
 
-			dep := NewDepender(fn, ctx.SecretParams)
+			dep := NewDepender(fn, ctx.SecretParams, ia)
 
-			for _, block := range fn.Blocks {
-				for _, instr := range block.Instrs {
-					call, ok := instr.(*ssa.Call)
-					if !ok {
-						continue
-					}
-
-					callee := call.Call.StaticCallee()
-					if callee == nil {
-						continue
-					}
-
-					if !ia.isSamePackage(fn, callee) {
-						continue
-					}
-
-					calleeCtx := ia.contexts[callee]
-					if calleeCtx == nil {
-						continue
-					}
-
-					for i, arg := range call.Call.Args {
-						secretName := dep.DependsOn(arg)
-						if secretName == "" {
-							continue
-						}
-
-						if i >= len(callee.Params) {
-							continue
-						}
-
-						paramName := callee.Params[i].Name()
-
-						if !calleeCtx.SecretParams[paramName] {
-							calleeCtx.SecretParams[paramName] = true
-							changed = true
-						}
-					}
-				}
+			if ia.updateReturnTaint(ctx, dep) {
+				changed = true
+			}
+			if ia.propagateCallArgs(fn, dep) {
+				changed = true
 			}
 		}
 
@@ -132,11 +99,81 @@ func (ia *InterproceduralAnalyzer) Analyze() {
 	}
 }
 
+// updateReturnTaint recalculates whether a function returns a tainted value.
+func (ia *InterproceduralAnalyzer) updateReturnTaint(ctx *FunctionContext, dep *Depender) bool {
+	prev := ctx.TaintedReturn
+	ctx.TaintedReturn = ia.hasAnyTaintedReturn(ctx.Function, dep)
+	return ctx.TaintedReturn != prev
+}
+
+func (ia *InterproceduralAnalyzer) hasAnyTaintedReturn(fn *ssa.Function, dep *Depender) bool {
+	for _, block := range fn.Blocks {
+		for _, instr := range block.Instrs {
+			ret, ok := instr.(*ssa.Return)
+			if !ok {
+				continue
+			}
+			for _, result := range ret.Results {
+				if dep.DependsOn(result) != "" {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// propagateCallArgs propagates taint from caller arguments to callee parameters.
+func (ia *InterproceduralAnalyzer) propagateCallArgs(fn *ssa.Function, dep *Depender) bool {
+	changed := false
+	for _, block := range fn.Blocks {
+		for _, instr := range block.Instrs {
+			call, ok := instr.(*ssa.Call)
+			if !ok {
+				continue
+			}
+
+			callee := call.Call.StaticCallee()
+			if callee == nil || !ia.isSamePackage(fn, callee) {
+				continue
+			}
+
+			calleeCtx := ia.contexts[callee]
+			if calleeCtx == nil {
+				continue
+			}
+
+			for i, arg := range call.Call.Args {
+				if dep.DependsOn(arg) == "" || i >= len(callee.Params) {
+					continue
+				}
+				paramName := callee.Params[i].Name()
+				if !calleeCtx.SecretParams[paramName] {
+					calleeCtx.SecretParams[paramName] = true
+					changed = true
+				}
+			}
+		}
+	}
+	return changed
+}
+
 func (ia *InterproceduralAnalyzer) GetSecretParams(fn *ssa.Function) map[string]bool {
 	if ctx := ia.contexts[fn]; ctx != nil {
 		return ctx.SecretParams
 	}
 	return make(map[string]bool)
+}
+
+func (ia *InterproceduralAnalyzer) HasTaintedReturn(fn *ssa.Function) bool {
+	if ctx := ia.contexts[fn]; ctx != nil {
+		return ctx.TaintedReturn
+	}
+	return false
+}
+
+func (ia *InterproceduralAnalyzer) IsAnalyzed(fn *ssa.Function) bool {
+	return ia.contexts[fn] != nil
 }
 
 func (ia *InterproceduralAnalyzer) isSamePackage(fn1, fn2 *ssa.Function) bool {
