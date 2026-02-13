@@ -23,7 +23,7 @@ func RunCT002(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 		}
 
 		secretParams := ipAnalyzer.GetSecretParams(fn)
-		dep := taint.NewDepender(secretParams)
+		dep := taint.NewDepender(fn, secretParams)
 
 		for _, b := range fn.Blocks {
 			for _, ins := range b.Instrs {

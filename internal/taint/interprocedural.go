@@ -82,7 +82,7 @@ func (ia *InterproceduralAnalyzer) Analyze() {
 				continue
 			}
 
-			dep := NewDepender(ctx.SecretParams)
+			dep := NewDepender(fn, ctx.SecretParams)
 
 			for _, block := range fn.Blocks {
 				for _, instr := range block.Instrs {

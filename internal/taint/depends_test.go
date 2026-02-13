@@ -6,7 +6,7 @@ import (
 
 func TestNewDepender(t *testing.T) {
 	secrets := map[string]bool{"key": true, "token": true}
-	d := NewDepender(secrets)
+	d := NewDepender(nil, secrets) // nil function is ok for basic tests
 
 	if d.secretParams == nil {
 		t.Error("secretParams should not be nil")
@@ -34,7 +34,7 @@ func TestNewDepender(t *testing.T) {
 }
 
 func TestDepender_DependsNil(t *testing.T) {
-	d := NewDepender(map[string]bool{"key": true})
+	d := NewDepender(nil, map[string]bool{"key": true})
 
 	// nil value should return false
 	if d.Depends(nil) {
@@ -43,7 +43,7 @@ func TestDepender_DependsNil(t *testing.T) {
 }
 
 func TestNewDepender_EmptySecrets(t *testing.T) {
-	d := NewDepender(map[string]bool{})
+	d := NewDepender(nil, map[string]bool{})
 
 	if len(d.secretParams) != 0 {
 		t.Errorf("expected empty secretParams, got %v", d.secretParams)
@@ -51,7 +51,7 @@ func TestNewDepender_EmptySecrets(t *testing.T) {
 }
 
 func TestNewDepender_NilSecrets(t *testing.T) {
-	d := NewDepender(nil)
+	d := NewDepender(nil, nil)
 
 	if d.Depends(nil) {
 		t.Error("Depends should return false for nil value")

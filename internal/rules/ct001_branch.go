@@ -3,8 +3,6 @@ package rules
 import (
 	"fmt"
 	"go/token"
-	"go/types"
-
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/buildssa"
 	"golang.org/x/tools/go/ssa"
@@ -23,7 +21,7 @@ func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 		}
 
 		secretParams := ipAnalyzer.GetSecretParams(fn)
-		dep := taint.NewDepender(secretParams)
+		dep := taint.NewDepender(fn, secretParams)
 
 		for _, b := range fn.Blocks {
 			for _, ins := range b.Instrs {
@@ -90,34 +88,4 @@ func isNilValue(v ssa.Value) bool {
 		return false
 	}
 	return c.Value == nil
-}
-
-func secretParamSetForFn(fn *ssa.Function, secrets annotations.Secrets) map[string]bool {
-	set := map[string]bool{}
-	if fn == nil || fn.Object() == nil {
-		return set
-	}
-
-	if tf, ok := fn.Object().(*types.Func); ok && tf != nil {
-		if m, ok := secrets.FuncSecretParams[tf.FullName()]; ok {
-			for k := range m {
-				set[k] = true
-			}
-			return set
-		}
-		if m, ok := secrets.FuncSecretParams[tf.String()]; ok {
-			for k := range m {
-				set[k] = true
-			}
-			return set
-		}
-	}
-
-	key := fn.Object().String()
-	if m, ok := secrets.FuncSecretParams[key]; ok {
-		for k := range m {
-			set[k] = true
-		}
-	}
-	return set
 }

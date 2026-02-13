@@ -3,8 +3,6 @@ package rules
 import (
 	"go/token"
 	"testing"
-
-	"github.com/oasilturk/ctguard/internal/annotations"
 )
 
 func TestCT002Policy(t *testing.T) {
@@ -244,30 +242,6 @@ func TestCT002Policy(t *testing.T) {
 					tc.pkgPath, tc.funcName, risky, tc.wantRisky)
 			}
 		})
-	}
-}
-
-func TestSecretParamSetForFn_NilFunction(t *testing.T) {
-	secrets := annotations.Secrets{
-		FuncSecretParams: map[string]map[string]bool{
-			"pkg.Func": {"key": true},
-		},
-	}
-
-	result := secretParamSetForFn(nil, secrets)
-	if len(result) != 0 {
-		t.Errorf("expected empty set for nil function, got %v", result)
-	}
-}
-
-func TestSecretParamSetForFn_EmptySecrets(t *testing.T) {
-	secrets := annotations.Secrets{
-		FuncSecretParams: map[string]map[string]bool{},
-	}
-
-	result := secretParamSetForFn(nil, secrets)
-	if len(result) != 0 {
-		t.Errorf("expected empty set for empty secrets, got %v", result)
 	}
 }
 
