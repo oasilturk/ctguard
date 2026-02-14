@@ -97,12 +97,16 @@ exclude:
 <summary><b>Advanced Configuration</b></summary>
 
 ```yaml
-# For vendor code without modifying it
+# Without modifying the code. Wildcards are supported.
 annotations:
   secrets:
-    - package: "github.com/vendor/crypto"
-      function: "Verify"
-      params: ["key"]
+    - package: "github.com/vendor/examples"
+      function: "NonConstantTimeFunction"
+      params: ["secret"]
+  ignores:
+    - package: "github.com/vendor/examples"
+      function: "SafeFunction"
+      rules: all  # or specific rules like ["CT001", "CT002"]
 
 format: json      # plain, json, or sarif
 fail: true        # exit code on findings

@@ -20,6 +20,17 @@ annotations:
       function: "*"       # all functions in the package
       params: ["key"]
 
+  ignores:
+    # Ignore a specific rule for a specific function
+    - package: "github.com/oasilturk/ctguard/examples/bad"
+      function: "BadFunction"
+      rules: ["CT002"]
+    
+    # Ignore all rules for all functions in a specific package
+    - package: "github.com/oasilturk/ctguard/examples/bad"
+      function: "*"
+      rules: all
+
 format: plain
 fail: true
 quiet: false

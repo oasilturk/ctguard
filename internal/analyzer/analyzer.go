@@ -7,6 +7,7 @@ import (
 	"golang.org/x/tools/go/analysis/passes/buildssa"
 
 	"github.com/oasilturk/ctguard/internal/annotations"
+	"github.com/oasilturk/ctguard/internal/config"
 	"github.com/oasilturk/ctguard/internal/rules"
 	"github.com/oasilturk/ctguard/internal/taint"
 )
@@ -23,6 +24,12 @@ func run(pass *analysis.Pass) (any, error) {
 	secrets := annotations.CollectSecrets(pass)
 	ignores := annotations.CollectIgnores(pass)
 
+	// Load config for config-based ignores
+	cfg, err := config.Load()
+	if err != nil {
+		cfg = config.Default()
+	}
+
 	ipAnalyzer := taint.NewInterproceduralAnalyzer(ssaRes, secrets)
 	ipAnalyzer.Analyze()
 
@@ -36,10 +43,19 @@ func run(pass *analysis.Pass) (any, error) {
 
 	for _, d := range allDiags {
 		ruleID := extractRuleID(d.Message)
-		funcName := extractFuncName(d.Category)
+		pkgPath, funcName := extractPkgAndFuncName(d.Category)
+
+		// code-based ignores
 		if ignores.ShouldIgnore(pass.Fset, d.Pos, ruleID, funcName) {
 			continue
 		}
+
+		// config-based ignores
+		ignoredRules := cfg.GetIgnoredRules(pkgPath, funcName)
+		if annotations.ShouldIgnoreFromConfig(ruleID, funcName, ignoredRules) {
+			continue
+		}
+
 		pass.Report(d)
 	}
 
@@ -55,15 +71,15 @@ func extractRuleID(msg string) string {
 	return ""
 }
 
-// extractFuncName extracts the function name from diagnostic category.
-// Category contains full SSA function string like "package.functionName"
-func extractFuncName(category string) string {
+func extractPkgAndFuncName(category string) (pkgPath, funcName string) {
 	if category == "" {
-		return ""
+		return "", ""
 	}
-	// Get just the function name without package path
-	if lastDot := strings.LastIndex(category, "."); lastDot > 0 {
-		return category[lastDot+1:]
+	lastDot := strings.LastIndex(category, ".")
+	if lastDot > 0 {
+		funcName = category[lastDot+1:]
+		pkgPath = category[:lastDot]
+		return pkgPath, funcName
 	}
-	return category
+	return "", category
 }

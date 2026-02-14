@@ -87,73 +87,6 @@ exclude:
 	}
 }
 
-func TestIsRuleEnabled(t *testing.T) {
-	tests := []struct {
-		name     string
-		config   *Config
-		ruleID   string
-		expected bool
-	}{
-		{
-			name:     "default config enables all",
-			config:   Default(),
-			ruleID:   "CT001",
-			expected: true,
-		},
-		{
-			name: "explicitly enabled",
-			config: &Config{
-				Rules: RulesConfig{
-					Enable: []string{"CT001", "CT002"},
-				},
-			},
-			ruleID:   "CT001",
-			expected: true,
-		},
-		{
-			name: "not in enable list",
-			config: &Config{
-				Rules: RulesConfig{
-					Enable: []string{"CT001"},
-				},
-			},
-			ruleID:   "CT002",
-			expected: false,
-		},
-		{
-			name: "explicitly disabled",
-			config: &Config{
-				Rules: RulesConfig{
-					Enable:  []string{"all"},
-					Disable: []string{"CT001"},
-				},
-			},
-			ruleID:   "CT001",
-			expected: false,
-		},
-		{
-			name: "all with one disabled",
-			config: &Config{
-				Rules: RulesConfig{
-					Enable:  []string{"all"},
-					Disable: []string{"CT003"},
-				},
-			},
-			ruleID:   "CT001",
-			expected: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.config.IsRuleEnabled(tt.ruleID)
-			if result != tt.expected {
-				t.Errorf("IsRuleEnabled(%q) = %v, expected %v", tt.ruleID, result, tt.expected)
-			}
-		})
-	}
-}
-
 func TestGetRules(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -182,7 +115,7 @@ func TestGetRules(t *testing.T) {
 					Disable: []string{"CT003"},
 				},
 			},
-			expected: "CT001,CT002,CT004,CT005,CT006", // Returns explicit list when using all+disable
+			expected: "CT001,CT002,CT004,CT005,CT006",
 		},
 	}
 
@@ -301,10 +234,10 @@ annotations:
 	}
 
 	// Test matching
-	if !sa1.MatchesFunction("github.com/vendor/crypto", "VerifyMAC") {
+	if !matchesAnnotation(sa1, "github.com/vendor/crypto", "VerifyMAC") {
 		t.Error("expected match for exact package and function")
 	}
-	if sa1.MatchesFunction("github.com/other/crypto", "VerifyMAC") {
+	if matchesAnnotation(sa1, "github.com/other/crypto", "VerifyMAC") {
 		t.Error("expected no match for different package")
 	}
 }

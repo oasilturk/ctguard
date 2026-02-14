@@ -36,12 +36,82 @@ type RulesConfig struct {
 // For marking secrets in vendor code via config
 type AnnotationsConfig struct {
 	Secrets []SecretAnnotation `yaml:"secrets,omitempty"`
+	Ignores []IgnoreAnnotation `yaml:"ignores,omitempty"`
 }
 
 type SecretAnnotation struct {
 	Package  string   `yaml:"package"`  // supports wildcards like "github.com/vendor/**"
 	Function string   `yaml:"function"` // supports wildcards like "Verify*"
 	Params   []string `yaml:"params"`
+}
+
+type IgnoreAnnotation struct {
+	Package  string      `yaml:"package"`  // supports wildcards like "github.com/vendor/**"
+	Function string      `yaml:"function"` // supports wildcards like "Validate*"
+	Rules    interface{} `yaml:"rules"`    // string "all" or []string ["CT001", "CT002"]
+}
+
+type annotationMatcher interface {
+	GetPackage() string
+	GetFunction() string
+}
+
+func (sa SecretAnnotation) GetPackage() string  { return sa.Package }
+func (sa SecretAnnotation) GetFunction() string { return sa.Function }
+func (ig IgnoreAnnotation) GetPackage() string  { return ig.Package }
+func (ig IgnoreAnnotation) GetFunction() string { return ig.Function }
+
+func matchesAnnotation(m annotationMatcher, pkgPath, funcName string) bool {
+	if !matchesPattern(pkgPath, m.GetPackage()) {
+		return false
+	}
+	if !matchesPattern(funcName, m.GetFunction()) {
+		return false
+	}
+	return true
+}
+
+func (c *Config) GetIgnoredRules(pkgPath, funcName string) []string {
+	for _, ig := range c.Annotations.Ignores {
+		if matchesAnnotation(ig, pkgPath, funcName) {
+			rules, err := ig.parseRules()
+			if err != nil {
+				// Log error but don't fail - just return nil (no ignore)
+				return nil
+			}
+			return rules
+		}
+	}
+	return nil
+}
+
+func (ig *IgnoreAnnotation) parseRules() ([]string, error) {
+	if ig.Rules == nil {
+		return nil, nil
+	}
+	// Handle string "all"
+	if s, ok := ig.Rules.(string); ok {
+		if s == "all" {
+			return []string{"all"}, nil
+		}
+		return nil, fmt.Errorf("invalid rules value: %q", s)
+	}
+	// Handle slice
+	if slice, ok := ig.Rules.([]interface{}); ok {
+		result := make([]string, 0, len(slice))
+		for i, v := range slice {
+			s, ok := v.(string)
+			if !ok {
+				return nil, fmt.Errorf("invalid rules: element %d is not a string, got %T", i, v)
+			}
+			if s != "" && s != "all" && !strings.HasPrefix(s, "CT") {
+				return nil, fmt.Errorf("invalid rule ID: %q (must be 'all' or start with 'CT')", s)
+			}
+			result = append(result, s)
+		}
+		return result, nil
+	}
+	return nil, fmt.Errorf("invalid rules type: %T", ig.Rules)
 }
 
 func Default() *Config {
@@ -166,29 +236,6 @@ func loadFile(path string) (*Config, error) {
 	return cfg, nil
 }
 
-func (c *Config) IsRuleEnabled(ruleID string) bool {
-	for _, disabled := range c.Rules.Disable {
-		if disabled == ruleID {
-			return false
-		}
-	}
-
-	if len(c.Rules.Enable) == 0 {
-		return true
-	}
-
-	for _, enabled := range c.Rules.Enable {
-		if enabled == "all" || enabled == "*" {
-			return true
-		}
-		if enabled == ruleID {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (c *Config) GetRules() string {
 	if len(c.Rules.Enable) == 0 || contains(c.Rules.Enable, "all") || contains(c.Rules.Enable, "*") {
 		if len(c.Rules.Disable) > 0 {
@@ -241,19 +288,9 @@ func joinStrings(slice []string, sep string) string {
 	return result
 }
 
-func (sa *SecretAnnotation) MatchesFunction(pkgPath, funcName string) bool {
-	if !matchesPattern(pkgPath, sa.Package) {
-		return false
-	}
-	if !matchesPattern(funcName, sa.Function) {
-		return false
-	}
-	return true
-}
-
 func (c *Config) GetSecretParams(pkgPath, funcName string) []string {
 	for _, sa := range c.Annotations.Secrets {
-		if sa.MatchesFunction(pkgPath, funcName) {
+		if matchesAnnotation(sa, pkgPath, funcName) {
 			return sa.Params
 		}
 	}
