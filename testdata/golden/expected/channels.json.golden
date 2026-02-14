@@ -1,0 +1,42 @@
+[
+  {
+    "pos": "testdata/src/channels/channels.go:7:5",
+    "message": "CT006: secret 'secret' sent to channel",
+    "rule": "CT006"
+  },
+  {
+    "pos": "testdata/src/channels/channels.go:12:5",
+    "message": "CT006: secret 'password' sent to channel",
+    "rule": "CT006"
+  },
+  {
+    "pos": "testdata/src/channels/channels.go:17:5",
+    "message": "CT006: secret 'key' sent to channel",
+    "rule": "CT006"
+  },
+  {
+    "pos": "testdata/src/channels/channels.go:18:6",
+    "message": "CT006: secret 'key' received from channel",
+    "rule": "CT006"
+  },
+  {
+    "pos": "testdata/src/channels/channels.go:23:5",
+    "message": "CT006: secret 'token' sent to channel",
+    "rule": "CT006"
+  },
+  {
+    "pos": "testdata/src/channels/channels.go:24:9",
+    "message": "CT006: secret 'token' received from channel",
+    "rule": "CT006"
+  },
+  {
+    "pos": "testdata/src/channels/channels.go:41:5",
+    "message": "CT006: secret 'secret' sent to channel",
+    "rule": "CT006"
+  },
+  {
+    "pos": "testdata/src/channels/channels.go:42:6",
+    "message": "CT006: secret 'secret' received from channel",
+    "rule": "CT006"
+  }
+]

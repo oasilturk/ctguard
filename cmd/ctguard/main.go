@@ -213,6 +213,11 @@ func printHelp() {
            variable-time library functions (math.Mod, math/big) with secret
            data. Use bit masking or crypto/subtle for constant-time operations.
 
+    %sCT006%s  Channel operations with secret data
+           Detects when secret data is sent to or received from channels.
+           Channel communication can leak timing information and create attack
+           surfaces where goroutines can observe secret data.
+
 %sANNOTATIONS%s
     Mark function parameters as secret:
 
@@ -241,7 +246,7 @@ func printHelp() {
 
     Example .ctguard.yaml:
         rules:
-          enable: [CT001, CT002, CT005]  # or 'all'
+          enable: [CT001, CT002, CT005, CT006]  # or 'all'
           disable: [CT003, CT004]
           severity:
             CT001: warning
@@ -269,6 +274,7 @@ func printHelp() {
 		c.Gray, c.Reset,
 		c.Bold, c.Reset,
 		c.Bold, c.Reset,
+		c.Yellow, c.Reset,
 		c.Yellow, c.Reset,
 		c.Yellow, c.Reset,
 		c.Yellow, c.Reset,
@@ -659,6 +665,8 @@ func printPlain(findings []Finding) {
 			ruleColor = c.Red
 		} else if strings.HasPrefix(rule, "CT005") {
 			ruleColor = c.Blue
+		} else if strings.HasPrefix(rule, "CT006") {
+			ruleColor = c.Yellow
 		}
 
 		// Extract just the message without the rule prefix
@@ -727,6 +735,14 @@ func printSARIF(findings []Finding) {
 			ShortDescription: SarifMessage{Text: "Variable-time arithmetic"},
 			FullDescription:  SarifMessage{Text: "Detects use of variable-time arithmetic operations (/, %, <<, >>) with secret data. Use crypto/subtle for constant-time arithmetic."},
 			HelpURI:          "https://github.com/oasilturk/ctguard#ct005",
+			DefaultConfig:    SarifDefaultConfig{Level: "error"},
+		},
+		{
+			ID:               "CT006",
+			Name:             "ChannelOperationsWithSecretData",
+			ShortDescription: SarifMessage{Text: "Channel operations with secret data"},
+			FullDescription:  SarifMessage{Text: "Detects when secret data is sent to or received from channels. Channel communication can leak timing information and create attack surfaces where goroutines can observe secret data."},
+			HelpURI:          "https://github.com/oasilturk/ctguard#ct006",
 			DefaultConfig:    SarifDefaultConfig{Level: "error"},
 		},
 	}

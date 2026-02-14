@@ -12,6 +12,7 @@ rules:
     CT003: warning
     CT004: error
     CT005: error
+    CT006: error
 
 annotations:
   secrets:

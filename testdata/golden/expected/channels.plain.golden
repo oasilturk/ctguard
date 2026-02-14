@@ -1,0 +1,8 @@
+testdata/src/channels/channels.go:7:5 CT006: secret 'secret' sent to channel
+testdata/src/channels/channels.go:12:5 CT006: secret 'password' sent to channel
+testdata/src/channels/channels.go:17:5 CT006: secret 'key' sent to channel
+testdata/src/channels/channels.go:18:6 CT006: secret 'key' received from channel
+testdata/src/channels/channels.go:23:5 CT006: secret 'token' sent to channel
+testdata/src/channels/channels.go:24:9 CT006: secret 'token' received from channel
+testdata/src/channels/channels.go:41:5 CT006: secret 'secret' sent to channel
+testdata/src/channels/channels.go:42:6 CT006: secret 'secret' received from channel

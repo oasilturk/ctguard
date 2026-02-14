@@ -98,294 +98,168 @@
       },
       "results": [
         {
-          "ruleId": "CT005",
+          "ruleId": "CT006",
           "level": "error",
           "message": {
-            "text": "division operates on secret 'key'"
+            "text": "secret 'secret' sent to channel"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uri": "testdata/src/channels/channels.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 7,
+                  "startColumn": 5
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT006",
+          "level": "error",
+          "message": {
+            "text": "secret 'password' sent to channel"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/channels/channels.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
                   "startLine": 12,
-                  "startColumn": 15
+                  "startColumn": 5
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT005",
+          "ruleId": "CT006",
           "level": "error",
           "message": {
-            "text": "division operates on secret 'divisor'"
+            "text": "secret 'key' sent to channel"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uri": "testdata/src/channels/channels.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
                   "startLine": 17,
-                  "startColumn": 15
+                  "startColumn": 5
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT005",
+          "ruleId": "CT006",
           "level": "error",
           "message": {
-            "text": "remainder operates on secret 'key'"
+            "text": "secret 'key' received from channel"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uri": "testdata/src/channels/channels.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 22,
-                  "startColumn": 15
+                  "startLine": 18,
+                  "startColumn": 6
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT005",
+          "ruleId": "CT006",
           "level": "error",
           "message": {
-            "text": "remainder operates on secret 'data'"
+            "text": "secret 'token' sent to channel"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uri": "testdata/src/channels/channels.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 27,
-                  "startColumn": 14
+                  "startLine": 23,
+                  "startColumn": 5
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT005",
+          "ruleId": "CT006",
           "level": "error",
           "message": {
-            "text": "shift operates on secret 'shift'"
+            "text": "secret 'token' received from channel"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uri": "testdata/src/channels/channels.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 32,
-                  "startColumn": 15
+                  "startLine": 24,
+                  "startColumn": 9
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT005",
+          "ruleId": "CT006",
           "level": "error",
           "message": {
-            "text": "shift operates on secret 'shift'"
+            "text": "secret 'secret' sent to channel"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uri": "testdata/src/channels/channels.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 37,
-                  "startColumn": 15
+                  "startLine": 41,
+                  "startColumn": 5
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT005",
+          "ruleId": "CT006",
           "level": "error",
           "message": {
-            "text": "shift operates on secret 'data'"
+            "text": "secret 'secret' received from channel"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/arithmetic/arithmetic.go",
+                  "uri": "testdata/src/channels/channels.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
                   "startLine": 42,
-                  "startColumn": 14
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT005",
-          "level": "error",
-          "message": {
-            "text": "division operates on secret 'secret'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/arithmetic/arithmetic.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 77,
-                  "startColumn": 16
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT005",
-          "level": "error",
-          "message": {
-            "text": "division operates on secret 'divisor'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/arithmetic/arithmetic.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 82,
-                  "startColumn": 14
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT005",
-          "level": "error",
-          "message": {
-            "text": "division operates on secret 'key'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/arithmetic/arithmetic.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 88,
-                  "startColumn": 17
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT005",
-          "level": "error",
-          "message": {
-            "text": "math.Mod uses secret 'x'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/arithmetic/arithmetic.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 97,
-                  "startColumn": 17
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT005",
-          "level": "error",
-          "message": {
-            "text": "math.Remainder uses secret 'x'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/arithmetic/arithmetic.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 102,
-                  "startColumn": 23
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT005",
-          "level": "error",
-          "message": {
-            "text": "math/bits.RotateLeft uses secret 'n'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/arithmetic/arithmetic.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 107,
-                  "startColumn": 24
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT005",
-          "level": "error",
-          "message": {
-            "text": "math/bits.RotateLeft8 uses secret 'data'"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/arithmetic/arithmetic.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 112,
-                  "startColumn": 25
+                  "startColumn": 6
                 }
               }
             }

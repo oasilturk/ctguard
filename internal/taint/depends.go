@@ -37,7 +37,7 @@ func (d *Depender) Depends(v ssa.Value) bool {
 	return d.DependsOn(v) != ""
 }
 
-// analyzeStores tracks tainted memory locations from Store, MapUpdate, and append operations.
+// analyzeStores tracks tainted memory locations from Store, MapUpdate, append, and channel Send operations.
 func (d *Depender) analyzeStores(fn *ssa.Function) {
 	if fn == nil || fn.Blocks == nil {
 		return
@@ -69,6 +69,16 @@ func (d *Depender) analyzeStores(fn *ssa.Function) {
 				}
 
 				d.taintedAddrs[mapUpdate.Map] = secret
+				continue
+			}
+
+			// the channel becomes tainted if a secret is sent in
+			if send, ok := instr.(*ssa.Send); ok {
+				secret := d.DependsOn(send.X)
+				if secret == "" {
+					continue
+				}
+				d.taintedAddrs[send.Chan] = secret
 				continue
 			}
 
@@ -111,7 +121,8 @@ func (d *Depender) DependsOn(v ssa.Value) string {
 
 	switch t := v.(type) {
 	case *ssa.UnOp:
-		if t.Op == token.MUL { // * as in pointer dereference
+		switch t.Op {
+		case token.MUL: // * as in pointer dereference
 			addr := t.X
 			if s, ok := d.taintedAddrs[addr]; ok {
 				secret = s
@@ -133,7 +144,15 @@ func (d *Depender) DependsOn(v ssa.Value) string {
 			if secret == "" {
 				secret = d.DependsOn(addr)
 			}
-		} else {
+		case token.ARROW: // <- as in channel receive
+			// Check if the channel itself is tainted
+			if s, ok := d.taintedAddrs[t.X]; ok {
+				secret = s
+			}
+			if secret == "" {
+				secret = d.DependsOn(t.X)
+			}
+		default:
 			secret = d.DependsOn(t.X)
 		}
 
@@ -241,4 +260,11 @@ func (d *Depender) DependsOn(v ssa.Value) string {
 
 	d.memo[v] = secret
 	return secret
+}
+
+func (d *Depender) IsTaintedChannel(ch ssa.Value) string {
+	if s, ok := d.taintedAddrs[ch]; ok {
+		return s
+	}
+	return ""
 }

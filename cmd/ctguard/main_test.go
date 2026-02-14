@@ -214,6 +214,31 @@ func TestGolden(t *testing.T) {
 			args:       []string{"-format=json"},
 			goldenFile: "ignores.json.golden",
 		},
+		// Package 'channels' - CT006 (channel operations with secret data)
+		{
+			name:       "channels_plain",
+			target:     "./testdata/src/channels/",
+			args:       []string{},
+			goldenFile: "channels.plain.golden",
+		},
+		{
+			name:       "channels_json",
+			target:     "./testdata/src/channels/",
+			args:       []string{"-format=json"},
+			goldenFile: "channels.json.golden",
+		},
+		{
+			name:       "channels_sarif",
+			target:     "./testdata/src/channels/",
+			args:       []string{"-format=sarif"},
+			goldenFile: "channels.sarif.golden",
+		},
+		{
+			name:       "channels_ct006_only",
+			target:     "./testdata/src/channels/",
+			args:       []string{"-rules=CT006"},
+			goldenFile: "channels.ct006.golden",
+		},
 	}
 
 	for _, tc := range cases {

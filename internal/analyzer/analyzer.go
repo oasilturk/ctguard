@@ -32,6 +32,7 @@ func run(pass *analysis.Pass) (any, error) {
 	allDiags = append(allDiags, rules.RunCT003(pass, ssaRes, secrets, ipAnalyzer)...)
 	allDiags = append(allDiags, rules.RunCT004(pass, ssaRes, secrets, ipAnalyzer)...)
 	allDiags = append(allDiags, rules.RunCT005(pass, ssaRes, secrets, ipAnalyzer)...)
+	allDiags = append(allDiags, rules.RunCT006(pass, ssaRes, secrets, ipAnalyzer)...)
 
 	for _, d := range allDiags {
 		ruleID := extractRuleID(d.Message)

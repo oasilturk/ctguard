@@ -78,6 +78,20 @@
               "defaultConfiguration": {
                 "level": "error"
               }
+            },
+            {
+              "id": "CT006",
+              "name": "ChannelOperationsWithSecretData",
+              "shortDescription": {
+                "text": "Channel operations with secret data"
+              },
+              "fullDescription": {
+                "text": "Detects when secret data is sent to or received from channels. Channel communication can leak timing information and create attack surfaces where goroutines can observe secret data."
+              },
+              "helpUri": "https://github.com/oasilturk/ctguard#ct006",
+              "defaultConfiguration": {
+                "level": "error"
+              }
             }
           ]
         }
