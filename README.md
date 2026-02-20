@@ -5,7 +5,7 @@
 
 **Catch timing side-channel vulnerabilities in your Go code.**
 
-CTGuard finds vulnerabilities in code where secret data can be leaked through execution time, like when you compare passwords with `==` or branch on private keys.
+CTGuard finds vulnerabilities in code where secret data can be leaked through execution time, like when you compare passwords with `==` or branch on private keys. Each finding includes a confidence level to help you focus on the most certain issues.
 
 ![CTGuard Demo](demo/demo.gif)
 
@@ -32,7 +32,7 @@ func Authenticate(password string) bool {
 }
 ```
 ```
-auth.go:5:12 CT002: bytes.Equal uses secret 'password'
+auth.go:5:12 CT002: bytes.Equal uses secret 'password' (confidence: high)
 ```
 
 **Fixed:**
@@ -106,14 +106,17 @@ annotations:
   ignores:
     - package: "github.com/vendor/examples"
       function: "SafeFunction"
-      rules: all  # or specific rules like ["CT001", "CT002"]
+      rules: all    # or specific rules like ["CT001", "CT002"]
 
-format: json      # plain, json, or sarif
-fail: true        # exit code on findings
-summary: true     # show stats
+format: json        # plain, json, or sarif
+fail: true          # exit code on findings
+summary: true       # show stats
+min-confidence: low # low or high
 ```
 
 See [.ctguard.yaml.example](.ctguard.yaml.example) for all options.
+
+> **Tip:** Use `-min-confidence=high` to filter out uncertain findings, or set `min-confidence: high` in config.
 </details>
 
 ## CI Integration
