@@ -9,6 +9,7 @@ import (
 	"golang.org/x/tools/go/ssa"
 
 	"github.com/oasilturk/ctguard/internal/annotations"
+	"github.com/oasilturk/ctguard/internal/confidence"
 	"github.com/oasilturk/ctguard/internal/taint"
 )
 
@@ -61,8 +62,8 @@ func ct005Policy(pkgPath, name string) (allowed bool, risky bool) {
 }
 
 // CT005 flags variable-time arithmetic operations on secret-tainted data.
-func RunCT005(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets, ipAnalyzer *taint.InterproceduralAnalyzer) []analysis.Diagnostic {
-	var diags []analysis.Diagnostic
+func RunCT005(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets, ipAnalyzer *taint.InterproceduralAnalyzer) FindingList {
+	var findings FindingList
 
 	for _, fn := range ssaRes.SrcFuncs {
 		if fn == nil || fn.Blocks == nil {
@@ -80,9 +81,9 @@ func RunCT005(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						continue
 					}
 
-					secretName := dep.DependsOn(bo.X)
+					secretName, conf := dep.DependsOn(bo.X)
 					if secretName == "" {
-						secretName = dep.DependsOn(bo.Y)
+						secretName, conf = dep.DependsOn(bo.Y)
 					}
 					if secretName == "" {
 						continue
@@ -96,10 +97,13 @@ func RunCT005(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						pos = fn.Pos()
 					}
 
-					diags = append(diags, analysis.Diagnostic{
-						Pos:      pos,
-						Message:  fmt.Sprintf("CT005: %s operates on secret '%s'", opDesc, secretName),
-						Category: fn.String(),
+					findings = append(findings, Finding{
+						Diagnostic: analysis.Diagnostic{
+							Pos:      pos,
+							Message:  fmt.Sprintf("CT005: %s operates on secret '%s'", opDesc, secretName),
+							Category: fn.String(),
+						},
+						Confidence: conf,
 					})
 					continue
 				}
@@ -125,13 +129,16 @@ func RunCT005(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					}
 
 					var secretName string
+					var conf confidence.ConfidenceLevel
 					argPos := token.NoPos
 					for _, a := range c.Call.Args {
 						if argPos == token.NoPos {
 							argPos = a.Pos()
 						}
-						if s := dep.DependsOn(a); s != "" {
+						s, c := dep.DependsOn(a)
+						if s != "" {
 							secretName = s
+							conf = c
 							break
 						}
 					}
@@ -147,13 +154,16 @@ func RunCT005(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						pos = fn.Pos()
 					}
 
-					diags = append(diags, analysis.Diagnostic{
-						Pos: pos,
-						Message: fmt.Sprintf(
-							"CT005: %s.%s uses secret '%s'",
-							pkgPath, name, secretName,
-						),
-						Category: fn.String(),
+					findings = append(findings, Finding{
+						Diagnostic: analysis.Diagnostic{
+							Pos: pos,
+							Message: fmt.Sprintf(
+								"CT005: %s.%s uses secret '%s'",
+								pkgPath, name, secretName,
+							),
+							Category: fn.String(),
+						},
+						Confidence: conf,
 					})
 					continue
 				}
@@ -161,5 +171,5 @@ func RunCT005(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 		}
 	}
 
-	return diags
+	return findings
 }

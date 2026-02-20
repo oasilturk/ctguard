@@ -101,7 +101,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'apiKey' passed to fmt.Print"
+            "text": "secret 'apiKey' passed to fmt.Print (confidence: high)"
           },
           "locations": [
             {
@@ -122,7 +122,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'apiKey' passed to fmt.Printf"
+            "text": "secret 'apiKey' passed to fmt.Printf (confidence: high)"
           },
           "locations": [
             {
@@ -143,7 +143,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'apiKey' passed to fmt.Println"
+            "text": "secret 'apiKey' passed to fmt.Println (confidence: high)"
           },
           "locations": [
             {
@@ -164,7 +164,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'token' passed to fmt.Sprint"
+            "text": "secret 'token' passed to fmt.Sprint (confidence: high)"
           },
           "locations": [
             {
@@ -185,7 +185,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'token' passed to fmt.Sprintf"
+            "text": "secret 'token' passed to fmt.Sprintf (confidence: high)"
           },
           "locations": [
             {
@@ -206,7 +206,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'token' passed to fmt.Sprintln"
+            "text": "secret 'token' passed to fmt.Sprintln (confidence: high)"
           },
           "locations": [
             {
@@ -227,7 +227,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'password' passed to fmt.Fprint"
+            "text": "secret 'password' passed to fmt.Fprint (confidence: high)"
           },
           "locations": [
             {
@@ -248,7 +248,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'password' passed to fmt.Fprintf"
+            "text": "secret 'password' passed to fmt.Fprintf (confidence: high)"
           },
           "locations": [
             {
@@ -269,7 +269,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'password' passed to fmt.Fprintln"
+            "text": "secret 'password' passed to fmt.Fprintln (confidence: high)"
           },
           "locations": [
             {
@@ -290,7 +290,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'secret' passed to fmt.Errorf"
+            "text": "secret 'secret' passed to fmt.Errorf (confidence: high)"
           },
           "locations": [
             {
@@ -311,7 +311,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'key' passed to log.Print"
+            "text": "secret 'key' passed to log.Print (confidence: high)"
           },
           "locations": [
             {
@@ -332,7 +332,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'key' passed to log.Printf"
+            "text": "secret 'key' passed to log.Printf (confidence: high)"
           },
           "locations": [
             {
@@ -353,7 +353,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'key' passed to log.Println"
+            "text": "secret 'key' passed to log.Println (confidence: high)"
           },
           "locations": [
             {
@@ -374,7 +374,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'secret' passed to fmt.Println"
+            "text": "secret 'secret' passed to fmt.Println (confidence: high)"
           },
           "locations": [
             {
@@ -395,7 +395,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'key' passed to fmt.Println"
+            "text": "secret 'key' passed to fmt.Println (confidence: high)"
           },
           "locations": [
             {
@@ -416,7 +416,7 @@
           "ruleId": "CT004",
           "level": "error",
           "message": {
-            "text": "secret 'token' passed to fmt.Println"
+            "text": "secret 'token' passed to fmt.Println (confidence: high)"
           },
           "locations": [
             {

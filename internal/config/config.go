@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/oasilturk/ctguard/internal/confidence"
 	"gopkg.in/yaml.v3"
 )
 
@@ -18,13 +19,14 @@ var (
 )
 
 type Config struct {
-	Rules       RulesConfig       `yaml:"rules"`
-	Annotations AnnotationsConfig `yaml:"annotations,omitempty"`
-	Format      string            `yaml:"format,omitempty"`
-	Fail        *bool             `yaml:"fail,omitempty"`
-	Quiet       bool              `yaml:"quiet,omitempty"`
-	Summary     *bool             `yaml:"summary,omitempty"`
-	Exclude     []string          `yaml:"exclude,omitempty"`
+	Rules         RulesConfig       `yaml:"rules"`
+	Annotations   AnnotationsConfig `yaml:"annotations,omitempty"`
+	Format        string            `yaml:"format,omitempty"`
+	Fail          *bool             `yaml:"fail,omitempty"`
+	Quiet         bool              `yaml:"quiet,omitempty"`
+	Summary       *bool             `yaml:"summary,omitempty"`
+	Exclude       []string          `yaml:"exclude,omitempty"`
+	MinConfidence string            `yaml:"min-confidence,omitempty"`
 }
 
 type RulesConfig struct {
@@ -117,10 +119,11 @@ func (ig *IgnoreAnnotation) parseRules() ([]string, error) {
 func Default() *Config {
 	trueVal := true
 	return &Config{
-		Rules:   RulesConfig{Enable: []string{"all"}},
-		Format:  "plain",
-		Fail:    &trueVal,
-		Summary: &trueVal,
+		Rules:         RulesConfig{Enable: []string{"all"}},
+		Format:        "plain",
+		Fail:          &trueVal,
+		Summary:       &trueVal,
+		MinConfidence: "low",
 	}
 }
 
@@ -295,6 +298,13 @@ func (c *Config) GetSecretParams(pkgPath, funcName string) []string {
 		}
 	}
 	return nil
+}
+
+func (c *Config) GetMinConfidence() confidence.ConfidenceLevel {
+	if c.MinConfidence == "" {
+		return confidence.ConfidenceLow
+	}
+	return confidence.ParseConfidenceLevel(c.MinConfidence)
 }
 
 func matchesPattern(str, pattern string) bool {

@@ -1,2 +1,2 @@
-testdata/src/comparisons/comparisons.go:12:17 CT002: bytes.Equal uses secret 'key'
-testdata/src/comparisons/comparisons.go:19:16 CT002: string comparison uses secret 'password'
+testdata/src/comparisons/comparisons.go:12:17 CT002: bytes.Equal uses secret 'key' (confidence: high)
+testdata/src/comparisons/comparisons.go:19:16 CT002: string comparison uses secret 'password' (confidence: high)

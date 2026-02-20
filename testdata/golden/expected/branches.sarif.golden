@@ -101,7 +101,7 @@
           "ruleId": "CT001",
           "level": "error",
           "message": {
-            "text": "branch depends on secret 'secret'"
+            "text": "branch depends on secret 'secret' (confidence: high)"
           },
           "locations": [
             {
@@ -122,7 +122,7 @@
           "ruleId": "CT001",
           "level": "error",
           "message": {
-            "text": "branch depends on secret 'secret'"
+            "text": "branch depends on secret 'secret' (confidence: high)"
           },
           "locations": [
             {

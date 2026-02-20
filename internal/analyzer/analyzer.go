@@ -7,6 +7,7 @@ import (
 	"golang.org/x/tools/go/analysis/passes/buildssa"
 
 	"github.com/oasilturk/ctguard/internal/annotations"
+	"github.com/oasilturk/ctguard/internal/confidence"
 	"github.com/oasilturk/ctguard/internal/config"
 	"github.com/oasilturk/ctguard/internal/rules"
 	"github.com/oasilturk/ctguard/internal/taint"
@@ -33,15 +34,19 @@ func run(pass *analysis.Pass) (any, error) {
 	ipAnalyzer := taint.NewInterproceduralAnalyzer(ssaRes, secrets)
 	ipAnalyzer.Analyze()
 
-	var allDiags []analysis.Diagnostic
-	allDiags = append(allDiags, rules.RunCT001(pass, ssaRes, secrets, ipAnalyzer)...)
-	allDiags = append(allDiags, rules.RunCT002(pass, ssaRes, secrets, ipAnalyzer)...)
-	allDiags = append(allDiags, rules.RunCT003(pass, ssaRes, secrets, ipAnalyzer)...)
-	allDiags = append(allDiags, rules.RunCT004(pass, ssaRes, secrets, ipAnalyzer)...)
-	allDiags = append(allDiags, rules.RunCT005(pass, ssaRes, secrets, ipAnalyzer)...)
-	allDiags = append(allDiags, rules.RunCT006(pass, ssaRes, secrets, ipAnalyzer)...)
+	var allFindings rules.FindingList
+	allFindings = append(allFindings, rules.RunCT001(pass, ssaRes, secrets, ipAnalyzer)...)
+	allFindings = append(allFindings, rules.RunCT002(pass, ssaRes, secrets, ipAnalyzer)...)
+	allFindings = append(allFindings, rules.RunCT003(pass, ssaRes, secrets, ipAnalyzer)...)
+	allFindings = append(allFindings, rules.RunCT004(pass, ssaRes, secrets, ipAnalyzer)...)
+	allFindings = append(allFindings, rules.RunCT005(pass, ssaRes, secrets, ipAnalyzer)...)
+	allFindings = append(allFindings, rules.RunCT006(pass, ssaRes, secrets, ipAnalyzer)...)
 
-	for _, d := range allDiags {
+	minConfidence := cfg.GetMinConfidence()
+	filteredFindings := allFindings.FilterByMinConfidence(minConfidence)
+
+	for _, f := range filteredFindings {
+		d := f.Diagnostic
 		ruleID := extractRuleID(d.Message)
 		pkgPath, funcName := extractPkgAndFuncName(d.Category)
 
@@ -55,6 +60,9 @@ func run(pass *analysis.Pass) (any, error) {
 		if annotations.ShouldIgnoreFromConfig(ruleID, funcName, ignoredRules) {
 			continue
 		}
+
+		message := d.Message + " (" + confidence.ConfidenceTag + f.Confidence.String() + ")"
+		d.Message = message
 
 		pass.Report(d)
 	}

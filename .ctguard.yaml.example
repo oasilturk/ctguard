@@ -35,6 +35,7 @@ format: plain
 fail: true
 quiet: false
 summary: true
+min-confidence: low
 
 exclude:
   - "testdata/**"

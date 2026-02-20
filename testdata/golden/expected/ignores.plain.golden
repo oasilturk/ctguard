@@ -1,4 +1,4 @@
-testdata/src/ignores/ignores.go:38:14 CT001: branch depends on secret 'key'
-testdata/src/ignores/ignores.go:48:20 CT002: bytes.Equal uses secret 'key'
-testdata/src/ignores/ignores.go:69:17 CT002: bytes.Equal uses secret 'key'
-testdata/src/ignores/ignores.go:80:20 CT002: bytes.Equal uses secret 'key'
+testdata/src/ignores/ignores.go:38:14 CT001: branch depends on secret 'key' (confidence: high)
+testdata/src/ignores/ignores.go:48:20 CT002: bytes.Equal uses secret 'key' (confidence: high)
+testdata/src/ignores/ignores.go:69:17 CT002: bytes.Equal uses secret 'key' (confidence: high)
+testdata/src/ignores/ignores.go:80:20 CT002: bytes.Equal uses secret 'key' (confidence: high)

@@ -1,52 +1,52 @@
 [
   {
     "pos": "testdata/src/indexing/indexing.go:84:10",
-    "message": "CT001: branch depends on secret 'target'",
+    "message": "CT001: branch depends on secret 'target' (confidence: high)",
     "rule": "CT001"
   },
   {
     "pos": "testdata/src/indexing/indexing.go:9:14",
-    "message": "CT003: array/slice index depends on secret 'idx'",
+    "message": "CT003: array/slice index depends on secret 'idx' (confidence: high)",
     "rule": "CT003"
   },
   {
     "pos": "testdata/src/indexing/indexing.go:16:13",
-    "message": "CT003: array/slice index depends on secret 'key'",
+    "message": "CT003: array/slice index depends on secret 'key' (confidence: high)",
     "rule": "CT003"
   },
   {
     "pos": "testdata/src/indexing/indexing.go:23:10",
-    "message": "CT003: map lookup key depends on secret 'secret'",
+    "message": "CT003: map lookup key depends on secret 'secret' (confidence: high)",
     "rule": "CT003"
   },
   {
     "pos": "testdata/src/indexing/indexing.go:31:14",
-    "message": "CT003: array/slice index depends on secret 'key'",
+    "message": "CT003: array/slice index depends on secret 'key' (confidence: high)",
     "rule": "CT003"
   },
   {
     "pos": "testdata/src/indexing/indexing.go:50:11",
-    "message": "CT003: array/slice index depends on secret 'i'",
+    "message": "CT003: array/slice index depends on secret 'i' (confidence: high)",
     "rule": "CT003"
   },
   {
     "pos": "testdata/src/indexing/indexing.go:51:11",
-    "message": "CT003: array/slice index depends on secret 'i'",
+    "message": "CT003: array/slice index depends on secret 'i' (confidence: high)",
     "rule": "CT003"
   },
   {
     "pos": "testdata/src/indexing/indexing.go:61:13",
-    "message": "CT003: array/slice index depends on secret 'input'",
+    "message": "CT003: array/slice index depends on secret 'input' (confidence: high)",
     "rule": "CT003"
   },
   {
     "pos": "testdata/src/indexing/indexing.go:68:12",
-    "message": "CT003: map lookup key depends on secret 'key'",
+    "message": "CT003: map lookup key depends on secret 'key' (confidence: high)",
     "rule": "CT003"
   },
   {
     "pos": "testdata/src/indexing/indexing.go:76:15",
-    "message": "CT003: array/slice index depends on secret 'i'",
+    "message": "CT003: array/slice index depends on secret 'i' (confidence: high)",
     "rule": "CT003"
   }
 ]

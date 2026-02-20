@@ -1,5 +1,5 @@
-testdata/src/edge/edge.go:20:19 CT002: bytes.Equal uses secret 'key'
-testdata/src/edge/edge.go:21:19 CT002: bytes.Equal uses secret 'key'
-testdata/src/edge/edge.go:22:19 CT002: bytes.Equal uses secret 'key'
-testdata/src/edge/edge.go:31:14 CT002: string comparison uses secret 'password'
-testdata/src/edge/edge.go:36:20 CT002: strings.Compare uses secret 'password'
+testdata/src/edge/edge.go:20:19 CT002: bytes.Equal uses secret 'key' (confidence: high)
+testdata/src/edge/edge.go:21:19 CT002: bytes.Equal uses secret 'key' (confidence: high)
+testdata/src/edge/edge.go:22:19 CT002: bytes.Equal uses secret 'key' (confidence: high)
+testdata/src/edge/edge.go:31:14 CT002: string comparison uses secret 'password' (confidence: high)
+testdata/src/edge/edge.go:36:20 CT002: strings.Compare uses secret 'password' (confidence: high)

@@ -1,2 +1,2 @@
-testdata/src/branches/branches.go:7:12 CT001: branch depends on secret 'secret'
-testdata/src/branches/branches.go:14:13 CT001: branch depends on secret 'secret'
+testdata/src/branches/branches.go:7:12 CT001: branch depends on secret 'secret' (confidence: high)
+testdata/src/branches/branches.go:14:13 CT001: branch depends on secret 'secret' (confidence: high)

@@ -9,12 +9,13 @@ import (
 	"golang.org/x/tools/go/ssa"
 
 	"github.com/oasilturk/ctguard/internal/annotations"
+	"github.com/oasilturk/ctguard/internal/confidence"
 	"github.com/oasilturk/ctguard/internal/taint"
 )
 
 // CT004 flags secrets that end up in logs, prints, or error messages.
-func RunCT004(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets, ipAnalyzer *taint.InterproceduralAnalyzer) []analysis.Diagnostic {
-	var diags []analysis.Diagnostic
+func RunCT004(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets, ipAnalyzer *taint.InterproceduralAnalyzer) FindingList {
+	var findings FindingList
 
 	for _, fn := range ssaRes.SrcFuncs {
 		if fn == nil || fn.Blocks == nil {
@@ -48,17 +49,7 @@ func RunCT004(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 				}
 
 				// Check if any argument depends on secret
-				var secretName string
-				argPos := token.NoPos
-				for _, a := range call.Call.Args {
-					if argPos == token.NoPos {
-						argPos = a.Pos()
-					}
-					if s := ct004ArgSecretName(a, dep); s != "" {
-						secretName = s
-						break
-					}
-				}
+				secretName, conf := ct004FindSecretInArgs(call.Call.Args, dep)
 
 				if secretName == "" {
 					continue
@@ -66,66 +57,105 @@ func RunCT004(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 
 				pos := call.Pos()
 				if pos == token.NoPos {
-					pos = argPos
+					for _, a := range call.Call.Args {
+						if a != nil {
+							pos = a.Pos()
+							if pos != token.NoPos {
+								break
+							}
+						}
+					}
 				}
 				if pos == token.NoPos {
 					pos = fn.Pos()
 				}
 
-				diags = append(diags, analysis.Diagnostic{
-					Pos: pos,
-					Message: fmt.Sprintf(
-						"CT004: secret '%s' passed to %s.%s",
-						secretName, pkgPath, name,
-					),
-					Category: fn.String(),
+				findings = append(findings, Finding{
+					Diagnostic: analysis.Diagnostic{
+						Pos: pos,
+						Message: fmt.Sprintf(
+							"CT004: secret '%s' passed to %s.%s",
+							secretName, pkgPath, name,
+						),
+						Category: fn.String(),
+					},
+					Confidence: conf,
 				})
 			}
 		}
 	}
 
-	return diags
+	return findings
 }
 
-// ct004ArgSecretName returns the secret name if the argument depends on a secret, empty string otherwise
-func ct004ArgSecretName(arg ssa.Value, dep *taint.Depender) string {
-	// Direct check first
-	if s := dep.DependsOn(arg); s != "" {
-		return s
+func ct004FindSecretInArgs(args []ssa.Value, dep *taint.Depender) (string, confidence.ConfidenceLevel) {
+	for _, a := range args {
+		if a == nil {
+			continue
+		}
+		if secretName, conf := ct004CheckArg(a, dep); secretName != "" {
+			return secretName, conf
+		}
+	}
+	return "", confidence.ConfidenceLow
+}
+
+func ct004CheckArg(arg ssa.Value, dep *taint.Depender) (string, confidence.ConfidenceLevel) {
+	if s, c := dep.DependsOn(arg); s != "" {
+		return ct004UpgradeConfidence(s, c, dep)
 	}
 
 	// Handle variadic slice arguments
-	// For variadic calls like fmt.Println(x, y, z), the args are packed into a slice
 	if slice, ok := arg.(*ssa.Slice); ok {
-		// Check the underlying array
-		if s := ct004ArgSecretName(slice.X, dep); s != "" {
-			return s
+		if s, c := ct004CheckArg(slice.X, dep); s != "" {
+			return s, c
 		}
 	}
 
 	// Handle Alloc (array allocation for variadic args)
 	if alloc, ok := arg.(*ssa.Alloc); ok {
-		// Check all values stored into this allocation
-		for _, ref := range *alloc.Referrers() {
-			if store, ok := ref.(*ssa.Store); ok {
-				if s := dep.DependsOn(store.Val); s != "" {
-					return s
-				}
+		return ct004CheckAlloc(alloc, dep)
+	}
+
+	return "", confidence.ConfidenceLow
+}
+
+func ct004CheckAlloc(alloc *ssa.Alloc, dep *taint.Depender) (string, confidence.ConfidenceLevel) {
+	refs := alloc.Referrers()
+	if refs == nil {
+		return "", confidence.ConfidenceLow
+	}
+
+	for _, ref := range *refs {
+		if store, ok := ref.(*ssa.Store); ok {
+			if s, c := ct004CheckArg(store.Val, dep); s != "" {
+				return s, c
 			}
-			if indexAddr, ok := ref.(*ssa.IndexAddr); ok {
-				// Check what gets stored at this index
-				for _, ref2 := range *indexAddr.Referrers() {
-					if store, ok := ref2.(*ssa.Store); ok {
-						if s := dep.DependsOn(store.Val); s != "" {
-							return s
-						}
+		}
+		if indexAddr, ok := ref.(*ssa.IndexAddr); ok {
+			// Check what gets stored at this index
+			indexRefs := indexAddr.Referrers()
+			if indexRefs == nil {
+				continue
+			}
+			for _, ref2 := range *indexRefs {
+				if store, ok := ref2.(*ssa.Store); ok {
+					if s, c := ct004CheckArg(store.Val, dep); s != "" {
+						return s, c
 					}
 				}
 			}
 		}
 	}
 
-	return ""
+	return "", confidence.ConfidenceLow
+}
+
+func ct004UpgradeConfidence(secretName string, conf confidence.ConfidenceLevel, dep *taint.Depender) (string, confidence.ConfidenceLevel) {
+	if dep.IsSecretParam(secretName) {
+		return secretName, confidence.ConfidenceHigh
+	}
+	return secretName, conf
 }
 
 // ct004IsRiskyCall returns true if the function may expose secret data

@@ -14,6 +14,7 @@ import (
 	"golang.org/x/tools/go/analysis/unitchecker"
 
 	"github.com/oasilturk/ctguard/internal/analyzer"
+	"github.com/oasilturk/ctguard/internal/confidence"
 	"github.com/oasilturk/ctguard/internal/config"
 )
 
@@ -184,6 +185,7 @@ func printHelp() {
     -fail             Exit with code 1 if findings exist (default true)
     -quiet            Suppress diagnostic output
     -summary          Print summary after diagnostics (default true)
+    -min-confidence   Minimum confidence level to report: high or low (default "low")
     -config string    Path to config file (default: auto-search for .ctguard.yaml)
     -version          Show version information
     -help             Show this help message
@@ -317,17 +319,19 @@ func runCLI(args []string) int {
 	}
 
 	var (
-		configPath string
-		format     string
-		rules      string
-		failSet    bool
-		fail       bool
-		quietSet   bool
-		quiet      bool
-		summarySet bool
-		summary    bool
-		formatSet  bool
-		rulesSet   bool
+		configPath       string
+		format           string
+		rules            string
+		failSet          bool
+		fail             bool
+		quietSet         bool
+		quiet            bool
+		summarySet       bool
+		summary          bool
+		formatSet        bool
+		rulesSet         bool
+		minConfidenceSet bool
+		minConfidence    string
 	)
 
 	// Manual flag parsing to avoid flag package's default behavior
@@ -390,6 +394,11 @@ func runCLI(args []string) int {
 			} else {
 				summary = true
 			}
+		case "min-confidence":
+			minConfidenceSet = true
+			if v, ok := getValue(); ok {
+				minConfidence = v
+			}
 		default:
 			fmt.Fprintf(os.Stderr, "%s%serror:%s unknown flag: %s\n", c.Bold, c.Red, c.Reset, arg)
 			fmt.Fprintf(os.Stderr, "Run 'ctguard --help' for usage.\n")
@@ -425,6 +434,15 @@ func runCLI(args []string) int {
 			summary = *cfg.Summary
 			summarySet = true
 		}
+	}
+
+	if !minConfidenceSet && cfg.MinConfidence != "" {
+		minConfidence = cfg.MinConfidence
+	}
+
+	if minConfidence != "" && minConfidence != "high" && minConfidence != "low" {
+		fmt.Fprintf(os.Stderr, "%s%serror:%s -min-confidence must be 'high' or 'low'\n", c.Bold, c.Red, c.Reset)
+		return 2
 	}
 
 	// Apply final defaults if still not set
@@ -476,7 +494,11 @@ func runCLI(args []string) int {
 	allFindings, _ := parseGoVetJSON(stderr.String())
 
 	enabled := enabledRuleSet(rules)
-	findings := filterFindings(allFindings, enabled)
+	minConf := confidence.ConfidenceLow
+	if minConfidence != "" {
+		minConf = confidence.ParseConfidenceLevel(minConfidence)
+	}
+	findings := filterFindings(allFindings, enabled, minConf)
 
 	// Apply exclude patterns from config
 	findings = filterExcludedPaths(findings, cfg.Exclude)
@@ -553,18 +575,26 @@ func enabledRuleSet(s string) map[string]bool {
 	return out
 }
 
-func filterFindings(in []Finding, enabled map[string]bool) []Finding {
-	if len(enabled) == 0 {
+func filterFindings(in []Finding, enabled map[string]bool, minConfidence confidence.ConfidenceLevel) []Finding {
+	if len(enabled) == 0 && minConfidence == confidence.ConfidenceLow {
 		return in
 	}
 	out := make([]Finding, 0, len(in))
 	for _, f := range in {
-		if f.Rule == "" {
-			continue
+		if len(enabled) > 0 {
+			if f.Rule == "" {
+				continue
+			}
+			if !enabled[f.Rule] {
+				continue
+			}
 		}
-		if enabled[f.Rule] {
-			out = append(out, f)
+		if minConfidence == confidence.ConfidenceHigh {
+			if !strings.Contains(f.Message, confidence.ConfidenceTag+confidence.ConfidenceHigh.String()) {
+				continue
+			}
 		}
+		out = append(out, f)
 	}
 	return out
 }

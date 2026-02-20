@@ -10,12 +10,13 @@ import (
 	"golang.org/x/tools/go/ssa"
 
 	"github.com/oasilturk/ctguard/internal/annotations"
+	"github.com/oasilturk/ctguard/internal/confidence"
 	"github.com/oasilturk/ctguard/internal/taint"
 )
 
 // CT006 flags secrets that are sent to or received from channels.
-func RunCT006(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets, ipAnalyzer *taint.InterproceduralAnalyzer) []analysis.Diagnostic {
-	var diags []analysis.Diagnostic
+func RunCT006(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets, ipAnalyzer *taint.InterproceduralAnalyzer) FindingList {
+	var findings FindingList
 
 	for _, fn := range ssaRes.SrcFuncs {
 		if fn == nil || fn.Blocks == nil {
@@ -30,12 +31,13 @@ func RunCT006(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 
 				// Case 1: Channel send operations (ch <- value)
 				if send, ok := ins.(*ssa.Send); ok {
-					secretName := dep.DependsOn(send.X) // send.X is the value being sent
+					secretName, conf := dep.DependsOn(send.X)
 					if secretName == "" {
 						// Check if the channel itself is a secret parameter
 						if p, ok := send.Chan.(*ssa.Parameter); ok {
 							if secretParams[p.Name()] {
 								secretName = p.Name()
+								conf = confidence.ConfidenceHigh
 							}
 						}
 					}
@@ -51,13 +53,16 @@ func RunCT006(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						pos = fn.Pos()
 					}
 
-					diags = append(diags, analysis.Diagnostic{
-						Pos: pos,
-						Message: fmt.Sprintf(
-							"CT006: secret '%s' sent to channel",
-							secretName,
-						),
-						Category: fn.String(),
+					findings = append(findings, Finding{
+						Diagnostic: analysis.Diagnostic{
+							Pos: pos,
+							Message: fmt.Sprintf(
+								"CT006: secret '%s' sent to channel",
+								secretName,
+							),
+							Category: fn.String(),
+						},
+						Confidence: conf,
 					})
 					continue
 				}
@@ -65,12 +70,13 @@ func RunCT006(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 				// Case 2: Channel receive operations (<- ch)
 				// channel receive is: ssa.UnOp with Op = token.ARROW
 				if unop, ok := ins.(*ssa.UnOp); ok && unop.Op == token.ARROW {
-					secretName := dep.IsTaintedChannel(unop.X)
+					secretName, conf := dep.IsTaintedChannel(unop.X)
 
 					if secretName == "" {
 						if p, ok := unop.X.(*ssa.Parameter); ok {
 							if secretParams[p.Name()] {
 								secretName = p.Name()
+								conf = confidence.ConfidenceHigh
 							}
 						}
 					}
@@ -87,13 +93,16 @@ func RunCT006(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						pos = fn.Pos()
 					}
 
-					diags = append(diags, analysis.Diagnostic{
-						Pos: pos,
-						Message: fmt.Sprintf(
-							"CT006: secret '%s' received from channel",
-							secretName,
-						),
-						Category: fn.String(),
+					findings = append(findings, Finding{
+						Diagnostic: analysis.Diagnostic{
+							Pos: pos,
+							Message: fmt.Sprintf(
+								"CT006: secret '%s' received from channel",
+								secretName,
+							),
+							Category: fn.String(),
+						},
+						Confidence: conf,
 					})
 					continue
 				}
@@ -105,11 +114,12 @@ func RunCT006(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						case types.SendOnly:
 							// Send case: st.Chan <- st.Send
 							if st.Send != nil {
-								secretName := dep.DependsOn(st.Send)
+								secretName, conf := dep.DependsOn(st.Send)
 								if secretName == "" {
 									if p, ok := st.Chan.(*ssa.Parameter); ok {
 										if secretParams[p.Name()] {
 											secretName = p.Name()
+											conf = confidence.ConfidenceHigh
 										}
 									}
 								}
@@ -119,23 +129,27 @@ func RunCT006(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 										pos = fn.Pos()
 									}
 
-									diags = append(diags, analysis.Diagnostic{
-										Pos: pos,
-										Message: fmt.Sprintf(
-											"CT006: secret '%s' sent to channel",
-											secretName,
-										),
-										Category: fn.String(),
+									findings = append(findings, Finding{
+										Diagnostic: analysis.Diagnostic{
+											Pos: pos,
+											Message: fmt.Sprintf(
+												"CT006: secret '%s' sent to channel",
+												secretName,
+											),
+											Category: fn.String(),
+										},
+										Confidence: conf,
 									})
 								}
 							}
 						case types.RecvOnly:
 							// Receive case: <- st.Chan
-							secretName := dep.IsTaintedChannel(st.Chan)
+							secretName, conf := dep.IsTaintedChannel(st.Chan)
 							if secretName == "" {
 								if p, ok := st.Chan.(*ssa.Parameter); ok {
 									if secretParams[p.Name()] {
 										secretName = p.Name()
+										conf = confidence.ConfidenceHigh
 									}
 								}
 							}
@@ -145,13 +159,16 @@ func RunCT006(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 									pos = fn.Pos()
 								}
 
-								diags = append(diags, analysis.Diagnostic{
-									Pos: pos,
-									Message: fmt.Sprintf(
-										"CT006: secret '%s' received from channel",
-										secretName,
-									),
-									Category: fn.String(),
+								findings = append(findings, Finding{
+									Diagnostic: analysis.Diagnostic{
+										Pos: pos,
+										Message: fmt.Sprintf(
+											"CT006: secret '%s' received from channel",
+											secretName,
+										),
+										Category: fn.String(),
+									},
+									Confidence: conf,
 								})
 							}
 						}
@@ -161,5 +178,5 @@ func RunCT006(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 		}
 	}
 
-	return diags
+	return findings
 }

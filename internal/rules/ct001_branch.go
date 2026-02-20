@@ -12,8 +12,8 @@ import (
 )
 
 // CT001: branches whose condition depends on secret data.
-func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets, ipAnalyzer *taint.InterproceduralAnalyzer) []analysis.Diagnostic {
-	var diags []analysis.Diagnostic
+func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets, ipAnalyzer *taint.InterproceduralAnalyzer) FindingList {
+	var findings FindingList
 
 	for _, fn := range ssaRes.SrcFuncs {
 		if fn == nil || fn.Blocks == nil {
@@ -35,7 +35,7 @@ func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					continue
 				}
 
-				secretName := dep.DependsOn(i.Cond)
+				secretName, conf := dep.DependsOn(i.Cond)
 				if secretName == "" {
 					continue
 				}
@@ -51,37 +51,34 @@ func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					pos = fn.Pos()
 				}
 
-				diags = append(diags, analysis.Diagnostic{
-					Pos:      pos,
-					Message:  fmt.Sprintf("CT001: branch depends on secret '%s'", secretName),
-					Category: fn.String(),
+				findings = append(findings, Finding{
+					Diagnostic: analysis.Diagnostic{
+						Pos:      pos,
+						Message:  fmt.Sprintf("CT001: branch depends on secret '%s'", secretName),
+						Category: fn.String(),
+					},
+					Confidence: conf,
 				})
 			}
 		}
 	}
 
-	return diags
+	return findings
 }
 
-// isNilComparison returns true if the condition is a comparison with nil
-// (e.g., "err != nil" or "ptr == nil"). These comparisons don't leak
-// secret values, only whether the value is nil or not.
 func isNilComparison(cond ssa.Value) bool {
 	binop, ok := cond.(*ssa.BinOp)
 	if !ok {
 		return false
 	}
 
-	// Must be == or !=
 	if binop.Op != token.EQL && binop.Op != token.NEQ {
 		return false
 	}
 
-	// Check if either operand is nil
 	return isNilValue(binop.X) || isNilValue(binop.Y)
 }
 
-// isNilValue returns true if v is a nil constant
 func isNilValue(v ssa.Value) bool {
 	c, ok := v.(*ssa.Const)
 	if !ok {

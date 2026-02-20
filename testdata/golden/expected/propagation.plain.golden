@@ -1,4 +1,4 @@
-testdata/src/propagation/propagation.go:10:17 CT001: branch depends on secret 'secret'
-testdata/src/propagation/propagation.go:24:13 CT001: branch depends on secret 'key'
-testdata/src/propagation/propagation.go:29:16 CT001: branch depends on secret 'key'
-testdata/src/propagation/propagation.go:15:17 CT002: bytes.Equal uses secret 'secret'
+testdata/src/propagation/propagation.go:10:17 CT001: branch depends on secret 'secret' (confidence: high)
+testdata/src/propagation/propagation.go:24:13 CT001: branch depends on secret 'key' (confidence: high)
+testdata/src/propagation/propagation.go:29:16 CT001: branch depends on secret 'key' (confidence: high)
+testdata/src/propagation/propagation.go:15:17 CT002: bytes.Equal uses secret 'secret' (confidence: high)

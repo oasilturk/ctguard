@@ -1,16 +1,16 @@
-testdata/src/exposure/exposure.go:15:11 CT004: secret 'apiKey' passed to fmt.Print
-testdata/src/exposure/exposure.go:16:12 CT004: secret 'apiKey' passed to fmt.Printf
-testdata/src/exposure/exposure.go:17:13 CT004: secret 'apiKey' passed to fmt.Println
-testdata/src/exposure/exposure.go:24:16 CT004: secret 'token' passed to fmt.Sprint
-testdata/src/exposure/exposure.go:25:17 CT004: secret 'token' passed to fmt.Sprintf
-testdata/src/exposure/exposure.go:26:21 CT004: secret 'token' passed to fmt.Sprintln
-testdata/src/exposure/exposure.go:33:12 CT004: secret 'password' passed to fmt.Fprint
-testdata/src/exposure/exposure.go:34:13 CT004: secret 'password' passed to fmt.Fprintf
-testdata/src/exposure/exposure.go:35:14 CT004: secret 'password' passed to fmt.Fprintln
-testdata/src/exposure/exposure.go:42:19 CT004: secret 'secret' passed to fmt.Errorf
-testdata/src/exposure/exposure.go:49:11 CT004: secret 'key' passed to log.Print
-testdata/src/exposure/exposure.go:50:12 CT004: secret 'key' passed to log.Printf
-testdata/src/exposure/exposure.go:51:13 CT004: secret 'key' passed to log.Println
-testdata/src/exposure/exposure.go:59:13 CT004: secret 'secret' passed to fmt.Println
-testdata/src/exposure/exposure.go:80:13 CT004: secret 'key' passed to fmt.Println
-testdata/src/exposure/exposure.go:81:13 CT004: secret 'token' passed to fmt.Println
+testdata/src/exposure/exposure.go:15:11 CT004: secret 'apiKey' passed to fmt.Print (confidence: high)
+testdata/src/exposure/exposure.go:16:12 CT004: secret 'apiKey' passed to fmt.Printf (confidence: high)
+testdata/src/exposure/exposure.go:17:13 CT004: secret 'apiKey' passed to fmt.Println (confidence: high)
+testdata/src/exposure/exposure.go:24:16 CT004: secret 'token' passed to fmt.Sprint (confidence: high)
+testdata/src/exposure/exposure.go:25:17 CT004: secret 'token' passed to fmt.Sprintf (confidence: high)
+testdata/src/exposure/exposure.go:26:21 CT004: secret 'token' passed to fmt.Sprintln (confidence: high)
+testdata/src/exposure/exposure.go:33:12 CT004: secret 'password' passed to fmt.Fprint (confidence: high)
+testdata/src/exposure/exposure.go:34:13 CT004: secret 'password' passed to fmt.Fprintf (confidence: high)
+testdata/src/exposure/exposure.go:35:14 CT004: secret 'password' passed to fmt.Fprintln (confidence: high)
+testdata/src/exposure/exposure.go:42:19 CT004: secret 'secret' passed to fmt.Errorf (confidence: high)
+testdata/src/exposure/exposure.go:49:11 CT004: secret 'key' passed to log.Print (confidence: high)
+testdata/src/exposure/exposure.go:50:12 CT004: secret 'key' passed to log.Printf (confidence: high)
+testdata/src/exposure/exposure.go:51:13 CT004: secret 'key' passed to log.Println (confidence: high)
+testdata/src/exposure/exposure.go:59:13 CT004: secret 'secret' passed to fmt.Println (confidence: high)
+testdata/src/exposure/exposure.go:80:13 CT004: secret 'key' passed to fmt.Println (confidence: high)
+testdata/src/exposure/exposure.go:81:13 CT004: secret 'token' passed to fmt.Println (confidence: high)

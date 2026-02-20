@@ -114,7 +114,7 @@ func (ia *InterproceduralAnalyzer) hasAnyTaintedReturn(fn *ssa.Function, dep *De
 				continue
 			}
 			for _, result := range ret.Results {
-				if dep.DependsOn(result) != "" {
+				if secret, _ := dep.DependsOn(result); secret != "" {
 					return true
 				}
 			}
@@ -144,7 +144,7 @@ func (ia *InterproceduralAnalyzer) propagateCallArgs(fn *ssa.Function, dep *Depe
 			}
 
 			for i, arg := range call.Call.Args {
-				if dep.DependsOn(arg) == "" || i >= len(callee.Params) {
+				if secret, _ := dep.DependsOn(arg); secret == "" || i >= len(callee.Params) {
 					continue
 				}
 				paramName := callee.Params[i].Name()

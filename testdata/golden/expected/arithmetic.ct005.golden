@@ -1,14 +1,14 @@
-testdata/src/arithmetic/arithmetic.go:12:15 CT005: division operates on secret 'key'
-testdata/src/arithmetic/arithmetic.go:17:15 CT005: division operates on secret 'divisor'
-testdata/src/arithmetic/arithmetic.go:22:15 CT005: remainder operates on secret 'key'
-testdata/src/arithmetic/arithmetic.go:27:14 CT005: remainder operates on secret 'data'
-testdata/src/arithmetic/arithmetic.go:32:15 CT005: shift operates on secret 'shift'
-testdata/src/arithmetic/arithmetic.go:37:15 CT005: shift operates on secret 'shift'
-testdata/src/arithmetic/arithmetic.go:42:14 CT005: shift operates on secret 'data'
-testdata/src/arithmetic/arithmetic.go:77:16 CT005: division operates on secret 'secret'
-testdata/src/arithmetic/arithmetic.go:82:14 CT005: division operates on secret 'divisor'
-testdata/src/arithmetic/arithmetic.go:88:17 CT005: division operates on secret 'key'
-testdata/src/arithmetic/arithmetic.go:97:17 CT005: math.Mod uses secret 'x'
-testdata/src/arithmetic/arithmetic.go:102:23 CT005: math.Remainder uses secret 'x'
-testdata/src/arithmetic/arithmetic.go:107:24 CT005: math/bits.RotateLeft uses secret 'n'
-testdata/src/arithmetic/arithmetic.go:112:25 CT005: math/bits.RotateLeft8 uses secret 'data'
+testdata/src/arithmetic/arithmetic.go:12:15 CT005: division operates on secret 'key' (confidence: high)
+testdata/src/arithmetic/arithmetic.go:17:15 CT005: division operates on secret 'divisor' (confidence: high)
+testdata/src/arithmetic/arithmetic.go:22:15 CT005: remainder operates on secret 'key' (confidence: high)
+testdata/src/arithmetic/arithmetic.go:27:14 CT005: remainder operates on secret 'data' (confidence: high)
+testdata/src/arithmetic/arithmetic.go:32:15 CT005: shift operates on secret 'shift' (confidence: high)
+testdata/src/arithmetic/arithmetic.go:37:15 CT005: shift operates on secret 'shift' (confidence: high)
+testdata/src/arithmetic/arithmetic.go:42:14 CT005: shift operates on secret 'data' (confidence: high)
+testdata/src/arithmetic/arithmetic.go:77:16 CT005: division operates on secret 'secret' (confidence: high)
+testdata/src/arithmetic/arithmetic.go:82:14 CT005: division operates on secret 'divisor' (confidence: high)
+testdata/src/arithmetic/arithmetic.go:88:17 CT005: division operates on secret 'key' (confidence: high)
+testdata/src/arithmetic/arithmetic.go:97:17 CT005: math.Mod uses secret 'x' (confidence: high)
+testdata/src/arithmetic/arithmetic.go:102:23 CT005: math.Remainder uses secret 'x' (confidence: high)
+testdata/src/arithmetic/arithmetic.go:107:24 CT005: math/bits.RotateLeft uses secret 'n' (confidence: high)
+testdata/src/arithmetic/arithmetic.go:112:25 CT005: math/bits.RotateLeft8 uses secret 'data' (confidence: high)

@@ -1,82 +1,82 @@
 [
   {
     "pos": "testdata/src/exposure/exposure.go:15:11",
-    "message": "CT004: secret 'apiKey' passed to fmt.Print",
+    "message": "CT004: secret 'apiKey' passed to fmt.Print (confidence: high)",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:16:12",
-    "message": "CT004: secret 'apiKey' passed to fmt.Printf",
+    "message": "CT004: secret 'apiKey' passed to fmt.Printf (confidence: high)",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:17:13",
-    "message": "CT004: secret 'apiKey' passed to fmt.Println",
+    "message": "CT004: secret 'apiKey' passed to fmt.Println (confidence: high)",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:24:16",
-    "message": "CT004: secret 'token' passed to fmt.Sprint",
+    "message": "CT004: secret 'token' passed to fmt.Sprint (confidence: high)",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:25:17",
-    "message": "CT004: secret 'token' passed to fmt.Sprintf",
+    "message": "CT004: secret 'token' passed to fmt.Sprintf (confidence: high)",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:26:21",
-    "message": "CT004: secret 'token' passed to fmt.Sprintln",
+    "message": "CT004: secret 'token' passed to fmt.Sprintln (confidence: high)",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:33:12",
-    "message": "CT004: secret 'password' passed to fmt.Fprint",
+    "message": "CT004: secret 'password' passed to fmt.Fprint (confidence: high)",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:34:13",
-    "message": "CT004: secret 'password' passed to fmt.Fprintf",
+    "message": "CT004: secret 'password' passed to fmt.Fprintf (confidence: high)",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:35:14",
-    "message": "CT004: secret 'password' passed to fmt.Fprintln",
+    "message": "CT004: secret 'password' passed to fmt.Fprintln (confidence: high)",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:42:19",
-    "message": "CT004: secret 'secret' passed to fmt.Errorf",
+    "message": "CT004: secret 'secret' passed to fmt.Errorf (confidence: high)",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:49:11",
-    "message": "CT004: secret 'key' passed to log.Print",
+    "message": "CT004: secret 'key' passed to log.Print (confidence: high)",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:50:12",
-    "message": "CT004: secret 'key' passed to log.Printf",
+    "message": "CT004: secret 'key' passed to log.Printf (confidence: high)",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:51:13",
-    "message": "CT004: secret 'key' passed to log.Println",
+    "message": "CT004: secret 'key' passed to log.Println (confidence: high)",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:59:13",
-    "message": "CT004: secret 'secret' passed to fmt.Println",
+    "message": "CT004: secret 'secret' passed to fmt.Println (confidence: high)",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:80:13",
-    "message": "CT004: secret 'key' passed to fmt.Println",
+    "message": "CT004: secret 'key' passed to fmt.Println (confidence: high)",
     "rule": "CT004"
   },
   {
     "pos": "testdata/src/exposure/exposure.go:81:13",
-    "message": "CT004: secret 'token' passed to fmt.Println",
+    "message": "CT004: secret 'token' passed to fmt.Println (confidence: high)",
     "rule": "CT004"
   }
 ]

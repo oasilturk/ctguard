@@ -13,8 +13,8 @@ import (
 )
 
 // CT003 flags array/slice/map indexing where the index comes from secret data.
-func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets, ipAnalyzer *taint.InterproceduralAnalyzer) []analysis.Diagnostic {
-	var diags []analysis.Diagnostic
+func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets, ipAnalyzer *taint.InterproceduralAnalyzer) FindingList {
+	var findings FindingList
 
 	for _, fn := range ssaRes.SrcFuncs {
 		if fn == nil || fn.Blocks == nil {
@@ -28,7 +28,7 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 			for _, ins := range b.Instrs {
 				// Index (array/slice read)
 				if idx, ok := ins.(*ssa.Index); ok {
-					secretName := dep.DependsOn(idx.Index)
+					secretName, conf := dep.DependsOn(idx.Index)
 					if secretName == "" {
 						continue
 					}
@@ -41,17 +41,20 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						pos = fn.Pos()
 					}
 
-					diags = append(diags, analysis.Diagnostic{
-						Pos:      pos,
-						Message:  fmt.Sprintf("CT003: array/slice index depends on secret '%s'", secretName),
-						Category: fn.String(),
+					findings = append(findings, Finding{
+						Diagnostic: analysis.Diagnostic{
+							Pos:      pos,
+							Message:  fmt.Sprintf("CT003: array/slice index depends on secret '%s'", secretName),
+							Category: fn.String(),
+						},
+						Confidence: conf,
 					})
 					continue
 				}
 
 				// IndexAddr (array/slice write)
 				if idx, ok := ins.(*ssa.IndexAddr); ok {
-					secretName := dep.DependsOn(idx.Index)
+					secretName, conf := dep.DependsOn(idx.Index)
 					if secretName == "" {
 						continue
 					}
@@ -64,17 +67,20 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						pos = fn.Pos()
 					}
 
-					diags = append(diags, analysis.Diagnostic{
-						Pos:      pos,
-						Message:  fmt.Sprintf("CT003: array/slice index depends on secret '%s'", secretName),
-						Category: fn.String(),
+					findings = append(findings, Finding{
+						Diagnostic: analysis.Diagnostic{
+							Pos:      pos,
+							Message:  fmt.Sprintf("CT003: array/slice index depends on secret '%s'", secretName),
+							Category: fn.String(),
+						},
+						Confidence: conf,
 					})
 					continue
 				}
 
 				// Lookup (map access)
 				if lk, ok := ins.(*ssa.Lookup); ok {
-					secretName := dep.DependsOn(lk.Index)
+					secretName, conf := dep.DependsOn(lk.Index)
 					if secretName == "" {
 						continue
 					}
@@ -87,10 +93,13 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						pos = fn.Pos()
 					}
 
-					diags = append(diags, analysis.Diagnostic{
-						Pos:      pos,
-						Message:  fmt.Sprintf("CT003: map lookup key depends on secret '%s'", secretName),
-						Category: fn.String(),
+					findings = append(findings, Finding{
+						Diagnostic: analysis.Diagnostic{
+							Pos:      pos,
+							Message:  fmt.Sprintf("CT003: map lookup key depends on secret '%s'", secretName),
+							Category: fn.String(),
+						},
+						Confidence: conf,
 					})
 					continue
 				}
@@ -98,5 +107,5 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 		}
 	}
 
-	return diags
+	return findings
 }

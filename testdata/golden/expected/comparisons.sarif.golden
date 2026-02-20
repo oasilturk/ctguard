@@ -101,7 +101,7 @@
           "ruleId": "CT002",
           "level": "error",
           "message": {
-            "text": "bytes.Equal uses secret 'key'"
+            "text": "bytes.Equal uses secret 'key' (confidence: high)"
           },
           "locations": [
             {
@@ -122,7 +122,7 @@
           "ruleId": "CT002",
           "level": "error",
           "message": {
-            "text": "string comparison uses secret 'password'"
+            "text": "string comparison uses secret 'password' (confidence: high)"
           },
           "locations": [
             {
