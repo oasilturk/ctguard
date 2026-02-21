@@ -25,24 +25,26 @@ CTGuard finds vulnerabilities in code where secret data can be leaked through ex
 
 **Vulnerable Code:**
 ```go
-//ctguard:secret password
-func Authenticate(password string) bool {
-    hash := sha256.Sum256([]byte(password))  // taint propagates to hash
-    expected := loadExpectedHash()
-    return bytes.Equal(hash[:], expected)  // timing leak! exec time depends on a secret
+//ctguard:secret key
+func Check(key string) {
+    normalized := strings.ToLower(key)  // taint propagates
+    if normalized == "admin" {  // CT001: branch depends on secret!
+        grantAccess()
+    }
 }
 ```
 ```
-auth.go:5:12 CT002: bytes.Equal uses secret 'password' (confidence: high)
+auth.go:4:5 CT001: branch depends on secret 'key' (confidence: high)
 ```
 
 **Fixed:**
 ```go
-//ctguard:secret password
-func Authenticate(password string) bool {
-    hash := sha256.Sum256([]byte(password))  // taint propagates to hash
-    expected := loadExpectedHash()
-    return subtle.ConstantTimeCompare(hash[:], expected) == 1  // NO timing leak!
+//ctguard:secret key
+func Check(key string) {
+    normalized := strings.ToLower(key)
+    if subtle.ConstantTimeCompare([]byte(normalized), []byte("admin")) == 1 {
+        grantAccess()
+    }
 }
 ```
 ```
