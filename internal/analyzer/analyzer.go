@@ -1,6 +1,8 @@
 package analyzer
 
 import (
+	"go/ast"
+	"go/types"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
@@ -24,12 +26,16 @@ func run(pass *analysis.Pass) (any, error) {
 	ssaRes := pass.ResultOf[buildssa.Analyzer].(*buildssa.SSA)
 	secrets := annotations.CollectSecrets(pass)
 	ignores := annotations.CollectIgnores(pass)
+	isolated := annotations.CollectIsolated(pass)
 
-	// Load config for config-based ignores
+	// Load config for config-based ignores and isolated annotations
 	cfg, err := config.Load()
 	if err != nil {
 		cfg = config.Default()
 	}
+
+	// Merge config-based isolated annotations into the collected isolated regions
+	mergeConfigIsolated(pass, cfg, &isolated)
 
 	ipAnalyzer := taint.NewInterproceduralAnalyzer(ssaRes, secrets)
 	ipAnalyzer.Analyze()
@@ -41,6 +47,7 @@ func run(pass *analysis.Pass) (any, error) {
 	allFindings = append(allFindings, rules.RunCT004(pass, ssaRes, secrets, ipAnalyzer)...)
 	allFindings = append(allFindings, rules.RunCT005(pass, ssaRes, secrets, ipAnalyzer)...)
 	allFindings = append(allFindings, rules.RunCT006(pass, ssaRes, secrets, ipAnalyzer)...)
+	allFindings = append(allFindings, rules.RunCT007(pass, ssaRes, secrets, ipAnalyzer, isolated)...)
 
 	minConfidence := cfg.GetMinConfidence()
 	filteredFindings := allFindings.FilterByMinConfidence(minConfidence)
@@ -90,4 +97,39 @@ func extractPkgAndFuncName(category string) (pkgPath, funcName string) {
 		return pkgPath, funcName
 	}
 	return "", category
+}
+
+func mergeConfigIsolated(pass *analysis.Pass, cfg *config.Config, isolated *annotations.IsolatedRegions) {
+	if cfg == nil || len(cfg.Annotations.Isolated) == 0 {
+		return
+	}
+
+	for _, f := range pass.Files {
+		for _, decl := range f.Decls {
+			fd, ok := decl.(*ast.FuncDecl)
+			if !ok || fd.Name == nil {
+				continue
+			}
+
+			obj := pass.TypesInfo.Defs[fd.Name]
+			fnObj, ok := obj.(*types.Func)
+			if !ok || fnObj == nil {
+				continue
+			}
+
+			pkg := fnObj.Pkg()
+			if pkg == nil {
+				continue
+			}
+
+			pkgPath := pkg.Path()
+			funcName := fnObj.Name()
+
+			if cfg.GetIsolatedFunctions(pkgPath, funcName) {
+				isolated.FuncIsolated[fd.Name.Name] = true
+				isolated.FuncIsolated[fnObj.FullName()] = true
+				isolated.FuncIsolated[fnObj.String()] = true
+			}
+		}
+	}
 }

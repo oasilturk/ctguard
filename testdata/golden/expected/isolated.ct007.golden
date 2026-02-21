@@ -1,0 +1,7 @@
+testdata/src/isolated/isolated.go:14:18 CT007: secret 'key' reaches I/O sink in isolated region (confidence: high)
+testdata/src/isolated/isolated.go:20:18 CT007: secret 'secret' reaches I/O sink in isolated region (confidence: high)
+testdata/src/isolated/isolated.go:26:18 CT007: secret 'token' reaches I/O sink in isolated region (confidence: high)
+testdata/src/isolated/isolated.go:33:18 CT007: secret 'data' reaches I/O sink in isolated region (confidence: high)
+testdata/src/isolated/isolated.go:50:18 CT007: secret 'name' reaches I/O sink in isolated region (confidence: high)
+testdata/src/isolated/isolated.go:56:16 CT007: secret 'payload' reaches I/O sink in isolated region (confidence: low)
+testdata/src/isolated/isolated.go:73:16 CT007: secret 'src' reaches I/O sink in isolated region (confidence: high)

@@ -37,6 +37,7 @@ type colors struct {
 	Magenta string
 	Cyan    string
 	Gray    string
+	Orange  string
 }
 
 var noColors = colors{}
@@ -51,6 +52,7 @@ var ansiColors = colors{
 	Magenta: "\033[35m",
 	Cyan:    "\033[36m",
 	Gray:    "\033[90m",
+	Orange:  "\033[38;5;208m",
 }
 
 var c colors
@@ -220,6 +222,10 @@ func printHelp() {
            Channel communication can leak timing information and create attack
            surfaces where goroutines can observe secret data.
 
+    %sCT007%s  Secret-tainted data in I/O sinks within isolated regions
+           Detects when secret-tainted values flow into network, file, or
+           syscall I/O functions inside //ctguard:isolated regions. 
+
 %sANNOTATIONS%s
     Mark function parameters as secret:
 
@@ -240,6 +246,19 @@ func printHelp() {
         //ctguard:ignore CT001        Ignore specific rule
         //ctguard:ignore CT001 CT002  Ignore multiple rules
         //ctguard:ignore CT001 -- reason   With explanation
+
+    Mark regions as isolated, function-level or block-level:
+
+        //ctguard:isolated
+        func IsolatedRegion() {
+            // This region is isolated from secret data
+        }
+
+        //ctguard:isolated begin
+        ...
+        some code going on here
+        ...
+        //ctguard:isolated end
 
 %sCONFIGURATION%s
     CTGuard searches for a .ctguard.yaml file in:
@@ -276,6 +295,7 @@ func printHelp() {
 		c.Gray, c.Reset,
 		c.Bold, c.Reset,
 		c.Bold, c.Reset,
+		c.Yellow, c.Reset,
 		c.Yellow, c.Reset,
 		c.Yellow, c.Reset,
 		c.Yellow, c.Reset,
@@ -697,6 +717,8 @@ func printPlain(findings []Finding) {
 			ruleColor = c.Blue
 		} else if strings.HasPrefix(rule, "CT006") {
 			ruleColor = c.Yellow
+		} else if strings.HasPrefix(rule, "CT007") {
+			ruleColor = c.Orange
 		}
 
 		// Extract just the message without the rule prefix
@@ -773,6 +795,14 @@ func printSARIF(findings []Finding) {
 			ShortDescription: SarifMessage{Text: "Channel operations with secret data"},
 			FullDescription:  SarifMessage{Text: "Detects when secret data is sent to or received from channels. Channel communication can leak timing information and create attack surfaces where goroutines can observe secret data."},
 			HelpURI:          "https://github.com/oasilturk/ctguard#ct006",
+			DefaultConfig:    SarifDefaultConfig{Level: "error"},
+		},
+		{
+			ID:               "CT007",
+			Name:             "SecretDataInIOSink",
+			ShortDescription: SarifMessage{Text: "Secret data in I/O sink within isolated region"},
+			FullDescription:  SarifMessage{Text: "Detects when secret-tainted values flow into network, file, or syscall I/O functions inside //ctguard:isolated regions. Isolated regions are code sections that must not leak secrets through I/O operations."},
+			HelpURI:          "https://github.com/oasilturk/ctguard#ct007",
 			DefaultConfig:    SarifDefaultConfig{Level: "error"},
 		},
 	}

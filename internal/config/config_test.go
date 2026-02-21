@@ -292,3 +292,100 @@ func TestConfigCaching(t *testing.T) {
 		t.Error("expected new config after cache clear")
 	}
 }
+
+func TestIsolatedAnnotationConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, ".ctguard.yaml")
+
+	content := "annotations:\n  isolated:\n    - package: \"github.com/vendor/crypto\"\n      function: \"CriticalVerify\"\n    - package: \"github.com/myapp/**\"\n      function: \"Secure*\"\n"
+
+	if err := os.WriteFile(configPath, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := LoadFrom(configPath)
+	if err != nil {
+		t.Fatalf("LoadFrom failed: %v", err)
+	}
+
+	if len(cfg.Annotations.Isolated) != 2 {
+		t.Errorf("expected 2 isolated annotations, got %d", len(cfg.Annotations.Isolated))
+	}
+
+	ia1 := cfg.Annotations.Isolated[0]
+	if ia1.Package != "github.com/vendor/crypto" {
+		t.Errorf("expected package 'github.com/vendor/crypto', got %q", ia1.Package)
+	}
+	if ia1.Function != "CriticalVerify" {
+		t.Errorf("expected function 'CriticalVerify', got %q", ia1.Function)
+	}
+}
+
+func TestGetIsolatedFunctions(t *testing.T) {
+	tests := []struct {
+		name     string
+		cfg      *Config
+		pkgPath  string
+		funcName string
+		want     bool
+	}{
+		{
+			name: "exact match",
+			cfg: &Config{
+				Annotations: AnnotationsConfig{
+					Isolated: []IsolatedAnnotation{
+						{Package: "github.com/vendor/crypto", Function: "CriticalVerify"},
+					},
+				},
+			},
+			pkgPath:  "github.com/vendor/crypto",
+			funcName: "CriticalVerify",
+			want:     true,
+		},
+		{
+			name: "no match - different function",
+			cfg: &Config{
+				Annotations: AnnotationsConfig{
+					Isolated: []IsolatedAnnotation{
+						{Package: "github.com/vendor/crypto", Function: "CriticalVerify"},
+					},
+				},
+			},
+			pkgPath:  "github.com/vendor/crypto",
+			funcName: "OtherFunc",
+			want:     false,
+		},
+		{
+			name: "no match - different package",
+			cfg: &Config{
+				Annotations: AnnotationsConfig{
+					Isolated: []IsolatedAnnotation{
+						{Package: "github.com/vendor/crypto", Function: "CriticalVerify"},
+					},
+				},
+			},
+			pkgPath:  "github.com/other/pkg",
+			funcName: "CriticalVerify",
+			want:     false,
+		},
+		{
+			name: "empty isolated list",
+			cfg: &Config{
+				Annotations: AnnotationsConfig{},
+			},
+			pkgPath:  "github.com/vendor/crypto",
+			funcName: "CriticalVerify",
+			want:     false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.cfg.GetIsolatedFunctions(tc.pkgPath, tc.funcName)
+			if got != tc.want {
+				t.Errorf("GetIsolatedFunctions(%q, %q) = %v, want %v",
+					tc.pkgPath, tc.funcName, got, tc.want)
+			}
+		})
+	}
+}

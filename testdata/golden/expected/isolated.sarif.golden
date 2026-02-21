@@ -112,168 +112,147 @@
       },
       "results": [
         {
-          "ruleId": "CT006",
+          "ruleId": "CT007",
           "level": "error",
           "message": {
-            "text": "secret 'secret' sent to channel (confidence: high)"
+            "text": "secret 'key' reaches I/O sink in isolated region (confidence: high)"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/channels/channels.go",
+                  "uri": "testdata/src/isolated/isolated.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 7,
-                  "startColumn": 5
+                  "startLine": 14,
+                  "startColumn": 18
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT006",
+          "ruleId": "CT007",
           "level": "error",
           "message": {
-            "text": "secret 'password' sent to channel (confidence: high)"
+            "text": "secret 'secret' reaches I/O sink in isolated region (confidence: high)"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/channels/channels.go",
+                  "uri": "testdata/src/isolated/isolated.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 12,
-                  "startColumn": 5
+                  "startLine": 20,
+                  "startColumn": 18
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT006",
+          "ruleId": "CT007",
           "level": "error",
           "message": {
-            "text": "secret 'key' sent to channel (confidence: high)"
+            "text": "secret 'token' reaches I/O sink in isolated region (confidence: high)"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/channels/channels.go",
+                  "uri": "testdata/src/isolated/isolated.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 17,
-                  "startColumn": 5
+                  "startLine": 26,
+                  "startColumn": 18
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT006",
+          "ruleId": "CT007",
           "level": "error",
           "message": {
-            "text": "secret 'key' received from channel (confidence: low)"
+            "text": "secret 'data' reaches I/O sink in isolated region (confidence: high)"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/channels/channels.go",
+                  "uri": "testdata/src/isolated/isolated.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 18,
-                  "startColumn": 6
+                  "startLine": 33,
+                  "startColumn": 18
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT006",
+          "ruleId": "CT007",
           "level": "error",
           "message": {
-            "text": "secret 'token' sent to channel (confidence: high)"
+            "text": "secret 'name' reaches I/O sink in isolated region (confidence: high)"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/channels/channels.go",
+                  "uri": "testdata/src/isolated/isolated.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 23,
-                  "startColumn": 5
+                  "startLine": 50,
+                  "startColumn": 18
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT006",
+          "ruleId": "CT007",
           "level": "error",
           "message": {
-            "text": "secret 'token' received from channel (confidence: low)"
+            "text": "secret 'payload' reaches I/O sink in isolated region (confidence: low)"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/channels/channels.go",
+                  "uri": "testdata/src/isolated/isolated.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 24,
-                  "startColumn": 9
+                  "startLine": 56,
+                  "startColumn": 16
                 }
               }
             }
           ]
         },
         {
-          "ruleId": "CT006",
+          "ruleId": "CT007",
           "level": "error",
           "message": {
-            "text": "secret 'secret' sent to channel (confidence: high)"
+            "text": "secret 'src' reaches I/O sink in isolated region (confidence: high)"
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "testdata/src/channels/channels.go",
+                  "uri": "testdata/src/isolated/isolated.go",
                   "uriBaseId": "%SRCROOT%"
                 },
                 "region": {
-                  "startLine": 41,
-                  "startColumn": 5
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT006",
-          "level": "error",
-          "message": {
-            "text": "secret 'secret' received from channel (confidence: low)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/channels/channels.go",
-                  "uriBaseId": "%SRCROOT%"
-                },
-                "region": {
-                  "startLine": 42,
-                  "startColumn": 6
+                  "startLine": 73,
+                  "startColumn": 16
                 }
               }
             }

@@ -31,6 +31,10 @@ annotations:
       function: "*"
       rules: all
 
+  isolated:
+    - package: "github.com/vendor/crypto"
+      function: "CriticalVerify"
+
 format: plain
 fail: true
 quiet: false

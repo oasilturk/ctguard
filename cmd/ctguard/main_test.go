@@ -239,6 +239,25 @@ func TestGolden(t *testing.T) {
 			args:       []string{"-rules=CT006"},
 			goldenFile: "channels.ct006.golden",
 		},
+		// Package 'isolated' - CT007 (secret data in I/O sinks within isolated regions)
+		{
+			name:       "isolated_plain",
+			target:     "./testdata/src/isolated/",
+			args:       []string{},
+			goldenFile: "isolated.plain.golden",
+		},
+		{
+			name:       "isolated_sarif",
+			target:     "./testdata/src/isolated/",
+			args:       []string{"-format=sarif"},
+			goldenFile: "isolated.sarif.golden",
+		},
+		{
+			name:       "isolated_ct007_only",
+			target:     "./testdata/src/isolated/",
+			args:       []string{"-rules=CT007"},
+			goldenFile: "isolated.ct007.golden",
+		},
 	}
 
 	for _, tc := range cases {

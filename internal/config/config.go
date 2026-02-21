@@ -35,22 +35,27 @@ type RulesConfig struct {
 	Severity map[string]string `yaml:"severity,omitempty"`
 }
 
-// For marking secrets in vendor code via config
 type AnnotationsConfig struct {
-	Secrets []SecretAnnotation `yaml:"secrets,omitempty"`
-	Ignores []IgnoreAnnotation `yaml:"ignores,omitempty"`
+	Secrets  []SecretAnnotation   `yaml:"secrets,omitempty"`
+	Ignores  []IgnoreAnnotation   `yaml:"ignores,omitempty"`
+	Isolated []IsolatedAnnotation `yaml:"isolated,omitempty"`
 }
 
 type SecretAnnotation struct {
-	Package  string   `yaml:"package"`  // supports wildcards like "github.com/vendor/**"
-	Function string   `yaml:"function"` // supports wildcards like "Verify*"
+	Package  string   `yaml:"package"`
+	Function string   `yaml:"function"`
 	Params   []string `yaml:"params"`
 }
 
 type IgnoreAnnotation struct {
-	Package  string      `yaml:"package"`  // supports wildcards like "github.com/vendor/**"
-	Function string      `yaml:"function"` // supports wildcards like "Validate*"
-	Rules    interface{} `yaml:"rules"`    // string "all" or []string ["CT001", "CT002"]
+	Package  string      `yaml:"package"`
+	Function string      `yaml:"function"`
+	Rules    interface{} `yaml:"rules"` // string "all" or []string ["CT001", "CT002"]
+}
+
+type IsolatedAnnotation struct {
+	Package  string `yaml:"package"`
+	Function string `yaml:"function"`
 }
 
 type annotationMatcher interface {
@@ -58,10 +63,12 @@ type annotationMatcher interface {
 	GetFunction() string
 }
 
-func (sa SecretAnnotation) GetPackage() string  { return sa.Package }
-func (sa SecretAnnotation) GetFunction() string { return sa.Function }
-func (ig IgnoreAnnotation) GetPackage() string  { return ig.Package }
-func (ig IgnoreAnnotation) GetFunction() string { return ig.Function }
+func (sa SecretAnnotation) GetPackage() string    { return sa.Package }
+func (sa SecretAnnotation) GetFunction() string   { return sa.Function }
+func (ig IgnoreAnnotation) GetPackage() string    { return ig.Package }
+func (ig IgnoreAnnotation) GetFunction() string   { return ig.Function }
+func (ia IsolatedAnnotation) GetPackage() string  { return ia.Package }
+func (ia IsolatedAnnotation) GetFunction() string { return ia.Function }
 
 func matchesAnnotation(m annotationMatcher, pkgPath, funcName string) bool {
 	if !matchesPattern(pkgPath, m.GetPackage()) {
@@ -298,6 +305,15 @@ func (c *Config) GetSecretParams(pkgPath, funcName string) []string {
 		}
 	}
 	return nil
+}
+
+func (c *Config) GetIsolatedFunctions(pkgPath, funcName string) bool {
+	for _, ia := range c.Annotations.Isolated {
+		if matchesAnnotation(ia, pkgPath, funcName) {
+			return true
+		}
+	}
+	return false
 }
 
 func (c *Config) GetMinConfidence() confidence.ConfidenceLevel {

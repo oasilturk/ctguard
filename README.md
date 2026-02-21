@@ -19,6 +19,7 @@ CTGuard finds vulnerabilities in code where secret data can be leaked through ex
 | CT004 | Secrets leaked to logs or error messages |
 | CT005 | Variable-time arithmetic operations (`/`, `%`, `<<`, `>>` on secrets) |
 | CT006 | Secret related channel operations (send/receive) |
+| CT007 | Secret data flowing into I/O sinks (network, file, syscall) within "isolated" regions |
 
 ## Quick Example
 

@@ -65,3 +65,9 @@ func TestArithmetic(t *testing.T) {
 	testdata := getTestdataPath(t)
 	analysistest.Run(t, testdata, analyzer.Analyzer, "arithmetic")
 }
+
+// TestIsolated tests CT007: tainted values flowing into I/O sinks within isolated regions
+func TestIsolated(t *testing.T) {
+	testdata := getTestdataPath(t)
+	analysistest.Run(t, testdata, analyzer.Analyzer, "isolated")
+}

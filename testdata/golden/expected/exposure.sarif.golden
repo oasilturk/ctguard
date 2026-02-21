@@ -92,6 +92,20 @@
               "defaultConfiguration": {
                 "level": "error"
               }
+            },
+            {
+              "id": "CT007",
+              "name": "SecretDataInIOSink",
+              "shortDescription": {
+                "text": "Secret data in I/O sink within isolated region"
+              },
+              "fullDescription": {
+                "text": "Detects when secret-tainted values flow into network, file, or syscall I/O functions inside //ctguard:isolated regions. Isolated regions are code sections that must not leak secrets through I/O operations."
+              },
+              "helpUri": "https://github.com/oasilturk/ctguard#ct007",
+              "defaultConfiguration": {
+                "level": "error"
+              }
             }
           ]
         }
