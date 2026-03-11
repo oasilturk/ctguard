@@ -1,5 +1,5 @@
 Output demo/demo.gif
-Set FontSize 18
+Set FontSize 14
 Set Width 980
 Set Height 540
 Set TypingSpeed 60ms
@@ -16,6 +16,3 @@ Type "ctguard -format=json ./examples/bad/..."
 Enter
 Sleep 4s
 
-Type "ctguard -quiet=true ./examples/bad/..."
-Enter
-Sleep 3s
