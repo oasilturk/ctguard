@@ -1,5 +1,5 @@
 Output demo/demo.gif
-Set FontSize 14
+Set FontSize 16
 Set Width 980
 Set Height 540
 Set TypingSpeed 60ms
