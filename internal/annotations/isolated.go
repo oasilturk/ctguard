@@ -148,9 +148,8 @@ func collectBlockLevelIsolated(pass *analysis.Pass, f *ast.File, out *IsolatedRe
 	}
 
 	// report any unclosed begin directives
-	for filename, stack := range openBegins {
+	for _, stack := range openBegins {
 		for _, ob := range stack {
-			_ = filename
 			pass.Reportf(ob.pos, "ctguard:isolated begin without matching end")
 		}
 	}
