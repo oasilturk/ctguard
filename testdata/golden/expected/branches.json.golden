@@ -2,11 +2,13 @@
   {
     "pos": "testdata/src/branches/branches.go:7:12",
     "message": "CT001: branch depends on secret 'secret' (confidence: high)",
-    "rule": "CT001"
+    "rule": "CT001",
+    "confidence": "high"
   },
   {
     "pos": "testdata/src/branches/branches.go:14:13",
     "message": "CT001: branch depends on secret 'secret' (confidence: high)",
-    "rule": "CT001"
+    "rule": "CT001",
+    "confidence": "high"
   }
 ]

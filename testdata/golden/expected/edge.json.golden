@@ -2,56 +2,67 @@
   {
     "pos": "testdata/src/edge/edge.go:20:19",
     "message": "CT001: branch depends on secret 'key' (confidence: low)",
-    "rule": "CT001"
+    "rule": "CT001",
+    "confidence": "low"
   },
   {
     "pos": "testdata/src/edge/edge.go:21:19",
     "message": "CT001: branch depends on secret 'key' (confidence: low)",
-    "rule": "CT001"
+    "rule": "CT001",
+    "confidence": "low"
   },
   {
     "pos": "testdata/src/edge/edge.go:31:14",
     "message": "CT001: branch depends on secret 'password' (confidence: high)",
-    "rule": "CT001"
+    "rule": "CT001",
+    "confidence": "high"
   },
   {
     "pos": "testdata/src/edge/edge.go:36:39",
     "message": "CT001: branch depends on secret 'password' (confidence: low)",
-    "rule": "CT001"
+    "rule": "CT001",
+    "confidence": "low"
   },
   {
     "pos": "testdata/src/edge/edge.go:48:7",
     "message": "CT001: branch depends on secret 'mode' (confidence: high)",
-    "rule": "CT001"
+    "rule": "CT001",
+    "confidence": "high"
   },
   {
     "pos": "testdata/src/edge/edge.go:50:7",
     "message": "CT001: branch depends on secret 'mode' (confidence: high)",
-    "rule": "CT001"
+    "rule": "CT001",
+    "confidence": "high"
   },
   {
     "pos": "testdata/src/edge/edge.go:20:19",
     "message": "CT002: bytes.Equal uses secret 'key' (confidence: high)",
-    "rule": "CT002"
+    "rule": "CT002",
+    "confidence": "high"
   },
   {
     "pos": "testdata/src/edge/edge.go:21:19",
     "message": "CT002: bytes.Equal uses secret 'key' (confidence: high)",
-    "rule": "CT002"
+    "rule": "CT002",
+    "confidence": "high"
   },
   {
     "pos": "testdata/src/edge/edge.go:22:19",
     "message": "CT002: bytes.Equal uses secret 'key' (confidence: high)",
-    "rule": "CT002"
+    "rule": "CT002",
+    "confidence": "high"
   },
   {
     "pos": "testdata/src/edge/edge.go:31:14",
     "message": "CT002: string comparison uses secret 'password' (confidence: high)",
-    "rule": "CT002"
+    "rule": "CT002",
+    "confidence": "high"
   },
   {
     "pos": "testdata/src/edge/edge.go:36:20",
     "message": "CT002: strings.Compare uses secret 'password' (confidence: high)",
-    "rule": "CT002"
+    "rule": "CT002",
+    "confidence": "high"
   }
 ]

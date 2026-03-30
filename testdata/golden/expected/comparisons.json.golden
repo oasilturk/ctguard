@@ -2,11 +2,13 @@
   {
     "pos": "testdata/src/comparisons/comparisons.go:12:17",
     "message": "CT002: bytes.Equal uses secret 'key' (confidence: high)",
-    "rule": "CT002"
+    "rule": "CT002",
+    "confidence": "high"
   },
   {
     "pos": "testdata/src/comparisons/comparisons.go:19:16",
     "message": "CT002: string comparison uses secret 'password' (confidence: high)",
-    "rule": "CT002"
+    "rule": "CT002",
+    "confidence": "high"
   }
 ]

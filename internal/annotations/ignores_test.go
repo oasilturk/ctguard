@@ -94,4 +94,3 @@ func TestParseIgnoreDirective(t *testing.T) {
 		})
 	}
 }
-

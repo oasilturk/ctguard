@@ -95,7 +95,6 @@ func prevLineKeyFromPosition(pos token.Position) string {
 	return ""
 }
 
-
 // CollectIgnores scans all files for //ctguard:ignore directives.
 func CollectIgnores(pass *analysis.Pass) Ignores {
 	out := Ignores{
