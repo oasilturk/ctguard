@@ -4,8 +4,6 @@ import (
 	"go/types"
 
 	"golang.org/x/tools/go/analysis/passes/buildssa"
-	"golang.org/x/tools/go/callgraph"
-	"golang.org/x/tools/go/callgraph/cha"
 	"golang.org/x/tools/go/ssa"
 
 	"github.com/oasilturk/ctguard/internal/annotations"
@@ -20,9 +18,8 @@ type FunctionContext struct {
 
 // InterproceduralAnalyzer propagates taint information across function calls
 type InterproceduralAnalyzer struct {
-	contexts  map[*ssa.Function]*FunctionContext
-	callGraph *callgraph.Graph
-	pkg       *ssa.Package
+	contexts map[*ssa.Function]*FunctionContext
+	pkg      *ssa.Package
 }
 
 func NewInterproceduralAnalyzer(ssaRes *buildssa.SSA, secrets annotations.Secrets) *InterproceduralAnalyzer {
@@ -32,7 +29,6 @@ func NewInterproceduralAnalyzer(ssaRes *buildssa.SSA, secrets annotations.Secret
 
 	if ssaRes.Pkg != nil {
 		ia.pkg = ssaRes.Pkg
-		ia.callGraph = cha.CallGraph(ssaRes.Pkg.Prog)
 	}
 
 	for _, fn := range ssaRes.SrcFuncs {
