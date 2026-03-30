@@ -57,10 +57,10 @@ func RunCT002(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						if argPos == token.NoPos {
 							argPos = a.Pos()
 						}
-						s, c := dep.DependsOn(a)
+						s, cf := dep.DependsOn(a)
 						if s != "" {
 							secretName = s
-							conf = c
+							conf = cf
 							break
 						}
 					}
