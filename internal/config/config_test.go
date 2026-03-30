@@ -115,7 +115,7 @@ func TestGetRules(t *testing.T) {
 					Disable: []string{"CT003"},
 				},
 			},
-			expected: "CT001,CT002,CT004,CT005,CT006",
+			expected: "CT001,CT002,CT004,CT005,CT006,CT007",
 		},
 	}
 

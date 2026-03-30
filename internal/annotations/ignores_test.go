@@ -95,22 +95,3 @@ func TestParseIgnoreDirective(t *testing.T) {
 	}
 }
 
-func TestItoa(t *testing.T) {
-	tests := []struct {
-		input int
-		want  string
-	}{
-		{0, "0"},
-		{1, "1"},
-		{10, "10"},
-		{123, "123"},
-		{9999, "9999"},
-	}
-
-	for _, tt := range tests {
-		got := itoa(tt.input)
-		if got != tt.want {
-			t.Errorf("itoa(%d) = %q, want %q", tt.input, got, tt.want)
-		}
-	}
-}
