@@ -19,16 +19,11 @@ type FunctionContext struct {
 // InterproceduralAnalyzer propagates taint information across function calls
 type InterproceduralAnalyzer struct {
 	contexts map[*ssa.Function]*FunctionContext
-	pkg      *ssa.Package
 }
 
 func NewInterproceduralAnalyzer(ssaRes *buildssa.SSA, secrets annotations.Secrets) *InterproceduralAnalyzer {
 	ia := &InterproceduralAnalyzer{
 		contexts: make(map[*ssa.Function]*FunctionContext),
-	}
-
-	if ssaRes.Pkg != nil {
-		ia.pkg = ssaRes.Pkg
 	}
 
 	for _, fn := range ssaRes.SrcFuncs {
