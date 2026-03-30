@@ -75,9 +75,11 @@ func RunCT007(
 					continue
 				}
 
-				finalConf := sinkConf
-				if conf.AtLeast(sinkConf) {
-					finalConf = conf
+				// Weakest link: overall confidence is the minimum of
+				// taint confidence and sink confidence.
+				finalConf := conf
+				if sinkConf < conf {
+					finalConf = sinkConf
 				}
 
 				if pos == token.NoPos {

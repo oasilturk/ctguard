@@ -115,7 +115,7 @@
           "ruleId": "CT007",
           "level": "error",
           "message": {
-            "text": "secret 'key' reaches I/O sink in isolated region (confidence: high)"
+            "text": "secret 'key' reaches I/O sink in isolated region (confidence: low)"
           },
           "locations": [
             {
@@ -157,7 +157,7 @@
           "ruleId": "CT007",
           "level": "error",
           "message": {
-            "text": "secret 'token' reaches I/O sink in isolated region (confidence: high)"
+            "text": "secret 'token' reaches I/O sink in isolated region (confidence: low)"
           },
           "locations": [
             {
