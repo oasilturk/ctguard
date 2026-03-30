@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 
@@ -247,26 +248,26 @@ func loadFile(path string) (*Config, error) {
 }
 
 func (c *Config) GetRules() string {
-	if len(c.Rules.Enable) == 0 || contains(c.Rules.Enable, "all") || contains(c.Rules.Enable, "*") {
+	if len(c.Rules.Enable) == 0 || slices.Contains(c.Rules.Enable, "all") || slices.Contains(c.Rules.Enable, "*") {
 		if len(c.Rules.Disable) > 0 {
 			allRules := []string{"CT001", "CT002", "CT003", "CT004", "CT005", "CT006", "CT007"}
 			var enabled []string
 			for _, rule := range allRules {
-				if !contains(c.Rules.Disable, rule) {
+				if !slices.Contains(c.Rules.Disable, rule) {
 					enabled = append(enabled, rule)
 				}
 			}
 			if len(enabled) == 0 {
 				return "all"
 			}
-			return joinStrings(enabled, ",")
+			return strings.Join(enabled, ",")
 		}
 		return "all"
 	}
 
 	var enabled []string
 	for _, rule := range c.Rules.Enable {
-		if !contains(c.Rules.Disable, rule) {
+		if !slices.Contains(c.Rules.Disable, rule) {
 			enabled = append(enabled, rule)
 		}
 	}
@@ -275,27 +276,7 @@ func (c *Config) GetRules() string {
 		return "all"
 	}
 
-	return joinStrings(enabled, ",")
-}
-
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
-}
-
-func joinStrings(slice []string, sep string) string {
-	if len(slice) == 0 {
-		return ""
-	}
-	result := slice[0]
-	for i := 1; i < len(slice); i++ {
-		result += sep + slice[i]
-	}
-	return result
+	return strings.Join(enabled, ",")
 }
 
 func (c *Config) GetSecretParams(pkgPath, funcName string) []string {
