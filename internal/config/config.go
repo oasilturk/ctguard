@@ -332,7 +332,7 @@ func matchesPattern(str, pattern string) bool {
 		return true
 	}
 
-	if !contains([]string{pattern}, "*") {
+	if !strings.Contains(pattern, "*") {
 		return false
 	}
 
