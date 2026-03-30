@@ -49,10 +49,7 @@ func run(pass *analysis.Pass) (any, error) {
 	allFindings = append(allFindings, rules.RunCT006(pass, ssaRes, secrets, ipAnalyzer)...)
 	allFindings = append(allFindings, rules.RunCT007(pass, ssaRes, secrets, ipAnalyzer, isolated)...)
 
-	minConfidence := cfg.GetMinConfidence()
-	filteredFindings := allFindings.FilterByMinConfidence(minConfidence)
-
-	for _, f := range filteredFindings {
+	for _, f := range allFindings {
 		d := f.Diagnostic
 		ruleID := extractRuleID(d.Message)
 		pkgPath, funcName := extractPkgAndFuncName(d.Category)
