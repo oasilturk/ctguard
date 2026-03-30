@@ -88,9 +88,10 @@ func isTerminal() bool {
 }
 
 type Finding struct {
-	Pos     string `json:"pos"`
-	Message string `json:"message"`
-	Rule    string `json:"rule,omitempty"`
+	Pos        string `json:"pos"`
+	Message    string `json:"message"`
+	Rule       string `json:"rule,omitempty"`
+	Confidence string `json:"confidence,omitempty"`
 }
 
 // SARIF 2.1.0 structures
@@ -610,7 +611,7 @@ func filterFindings(in []Finding, enabled map[string]bool, minConfidence confide
 			}
 		}
 		if minConfidence == confidence.ConfidenceHigh {
-			if !strings.Contains(f.Message, confidence.ConfidenceTag+confidence.ConfidenceHigh.String()) {
+			if f.Confidence != confidence.ConfidenceHigh.String() {
 				continue
 			}
 		}
@@ -964,9 +965,10 @@ func parseGoVetJSON(s string) ([]Finding, bool) {
 						pos = p
 					}
 					out = append(out, Finding{
-						Pos:     pos,
-						Message: msg,
-						Rule:    extractRule(msg),
+						Pos:        pos,
+						Message:    msg,
+						Rule:       extractRule(msg),
+						Confidence: extractConfidence(msg),
 					})
 				}
 			}
@@ -1012,4 +1014,18 @@ func extractRule(msg string) string {
 		return prefix
 	}
 	return ""
+}
+
+func extractConfidence(msg string) string {
+	tag := confidence.ConfidenceTag
+	idx := strings.Index(msg, tag)
+	if idx < 0 {
+		return ""
+	}
+	rest := msg[idx+len(tag):]
+	// confidence value ends at ')' or end of string
+	if end := strings.IndexByte(rest, ')'); end >= 0 {
+		return rest[:end]
+	}
+	return strings.TrimSpace(rest)
 }
