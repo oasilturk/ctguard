@@ -3,6 +3,7 @@ package annotations
 import (
 	"go/ast"
 	"go/token"
+	"strconv"
 	"strings"
 
 	"golang.org/x/tools/go/analysis"
@@ -84,28 +85,16 @@ func ShouldIgnoreFromConfig(ruleID string, funcName string, ignoredRules []strin
 }
 
 func lineKeyFromPosition(pos token.Position) string {
-	return pos.Filename + ":" + itoa(pos.Line)
+	return pos.Filename + ":" + strconv.Itoa(pos.Line)
 }
 
 func prevLineKeyFromPosition(pos token.Position) string {
 	if pos.Line > 1 {
-		return pos.Filename + ":" + itoa(pos.Line-1)
+		return pos.Filename + ":" + strconv.Itoa(pos.Line-1)
 	}
 	return ""
 }
 
-// Simple int to string without importing strconv
-func itoa(n int) string {
-	if n == 0 {
-		return "0"
-	}
-	var digits []byte
-	for n > 0 {
-		digits = append([]byte{byte('0' + n%10)}, digits...)
-		n /= 10
-	}
-	return string(digits)
-}
 
 // CollectIgnores scans all files for //ctguard:ignore directives.
 func CollectIgnores(pass *analysis.Pass) Ignores {
