@@ -140,51 +140,46 @@ func isStringValue(v ssa.Value) bool {
 
 // --- CT002 policy (allow/deny) ---
 
-type ct002CallKey struct {
-	pkg  string
-	name string
-}
-
-var ct002Allow = map[ct002CallKey]struct{}{
+var ct002Allow = map[CallKey]struct{}{
 	// crypto/subtle — all functions are constant-time by design
-	{pkg: "crypto/subtle", name: "ConstantTimeCompare"}:  {},
-	{pkg: "crypto/subtle", name: "ConstantTimeSelect"}:   {},
-	{pkg: "crypto/subtle", name: "ConstantTimeByteEq"}:   {},
-	{pkg: "crypto/subtle", name: "ConstantTimeEq"}:       {},
-	{pkg: "crypto/subtle", name: "ConstantTimeLessOrEq"}: {},
-	{pkg: "crypto/subtle", name: "ConstantTimeCopy"}:     {},
-	{pkg: "crypto/subtle", name: "XORBytes"}:             {},
+	{Pkg: "crypto/subtle", Name: "ConstantTimeCompare"}:  {},
+	{Pkg: "crypto/subtle", Name: "ConstantTimeSelect"}:   {},
+	{Pkg: "crypto/subtle", Name: "ConstantTimeByteEq"}:   {},
+	{Pkg: "crypto/subtle", Name: "ConstantTimeEq"}:       {},
+	{Pkg: "crypto/subtle", Name: "ConstantTimeLessOrEq"}: {},
+	{Pkg: "crypto/subtle", Name: "ConstantTimeCopy"}:     {},
+	{Pkg: "crypto/subtle", Name: "XORBytes"}:             {},
 	// crypto/hmac — Equal uses crypto/subtle internally
-	{pkg: "crypto/hmac", name: "Equal"}: {},
+	{Pkg: "crypto/hmac", Name: "Equal"}: {},
 }
 
-var ct002Deny = map[ct002CallKey]struct{}{
+var ct002Deny = map[CallKey]struct{}{
 	// bytes — non-constant-time comparison / search
-	{pkg: "bytes", name: "Equal"}:        {},
-	{pkg: "bytes", name: "Compare"}:      {},
-	{pkg: "bytes", name: "HasPrefix"}:    {},
-	{pkg: "bytes", name: "HasSuffix"}:    {},
-	{pkg: "bytes", name: "Contains"}:     {},
-	{pkg: "bytes", name: "ContainsAny"}:  {},
-	{pkg: "bytes", name: "ContainsRune"}: {},
-	{pkg: "bytes", name: "Index"}:        {},
-	{pkg: "bytes", name: "LastIndex"}:    {},
+	{Pkg: "bytes", Name: "Equal"}:        {},
+	{Pkg: "bytes", Name: "Compare"}:      {},
+	{Pkg: "bytes", Name: "HasPrefix"}:    {},
+	{Pkg: "bytes", Name: "HasSuffix"}:    {},
+	{Pkg: "bytes", Name: "Contains"}:     {},
+	{Pkg: "bytes", Name: "ContainsAny"}:  {},
+	{Pkg: "bytes", Name: "ContainsRune"}: {},
+	{Pkg: "bytes", Name: "Index"}:        {},
+	{Pkg: "bytes", Name: "LastIndex"}:    {},
 	// strings — non-constant-time comparison / search
-	{pkg: "strings", name: "Compare"}:      {},
-	{pkg: "strings", name: "EqualFold"}:    {},
-	{pkg: "strings", name: "HasPrefix"}:    {},
-	{pkg: "strings", name: "HasSuffix"}:    {},
-	{pkg: "strings", name: "Contains"}:     {},
-	{pkg: "strings", name: "ContainsAny"}:  {},
-	{pkg: "strings", name: "ContainsRune"}: {},
-	{pkg: "strings", name: "Index"}:        {},
-	{pkg: "strings", name: "LastIndex"}:    {},
+	{Pkg: "strings", Name: "Compare"}:      {},
+	{Pkg: "strings", Name: "EqualFold"}:    {},
+	{Pkg: "strings", Name: "HasPrefix"}:    {},
+	{Pkg: "strings", Name: "HasSuffix"}:    {},
+	{Pkg: "strings", Name: "Contains"}:     {},
+	{Pkg: "strings", Name: "ContainsAny"}:  {},
+	{Pkg: "strings", Name: "ContainsRune"}: {},
+	{Pkg: "strings", Name: "Index"}:        {},
+	{Pkg: "strings", Name: "LastIndex"}:    {},
 	// reflect — deep comparison is non-constant-time
-	{pkg: "reflect", name: "DeepEqual"}: {},
+	{Pkg: "reflect", Name: "DeepEqual"}: {},
 }
 
 func ct002Policy(pkgPath, name string) (allowed bool, risky bool) {
-	k := ct002CallKey{pkg: pkgPath, name: name}
+	k := CallKey{Pkg: pkgPath, Name: name}
 	if _, ok := ct002Allow[k]; ok {
 		return true, false
 	}

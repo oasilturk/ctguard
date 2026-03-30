@@ -160,48 +160,43 @@ func ct004UpgradeConfidence(secretName string, conf confidence.ConfidenceLevel, 
 
 // ct004IsRiskyCall returns true if the function may expose secret data
 func ct004IsRiskyCall(pkgPath, name string) bool {
-	key := ct004CallKey{pkg: pkgPath, name: name}
+	key := CallKey{Pkg: pkgPath, Name: name}
 	_, risky := ct004RiskyFuncs[key]
 	return risky
 }
 
-type ct004CallKey struct {
-	pkg  string
-	name string
-}
-
 // Functions that may expose secret data through output
-var ct004RiskyFuncs = map[ct004CallKey]struct{}{
+var ct004RiskyFuncs = map[CallKey]struct{}{
 	// fmt package - printing
-	{pkg: "fmt", name: "Print"}:   {},
-	{pkg: "fmt", name: "Printf"}:  {},
-	{pkg: "fmt", name: "Println"}: {},
+	{Pkg: "fmt", Name: "Print"}:   {},
+	{Pkg: "fmt", Name: "Printf"}:  {},
+	{Pkg: "fmt", Name: "Println"}: {},
 
 	// fmt package - string formatting (returns string that may be logged)
-	{pkg: "fmt", name: "Sprint"}:   {},
-	{pkg: "fmt", name: "Sprintf"}:  {},
-	{pkg: "fmt", name: "Sprintln"}: {},
+	{Pkg: "fmt", Name: "Sprint"}:   {},
+	{Pkg: "fmt", Name: "Sprintf"}:  {},
+	{Pkg: "fmt", Name: "Sprintln"}: {},
 
 	// fmt package - file/writer output
-	{pkg: "fmt", name: "Fprint"}:   {},
-	{pkg: "fmt", name: "Fprintf"}:  {},
-	{pkg: "fmt", name: "Fprintln"}: {},
+	{Pkg: "fmt", Name: "Fprint"}:   {},
+	{Pkg: "fmt", Name: "Fprintf"}:  {},
+	{Pkg: "fmt", Name: "Fprintln"}: {},
 
 	// fmt package - error creation
-	{pkg: "fmt", name: "Errorf"}: {},
+	{Pkg: "fmt", Name: "Errorf"}: {},
 
 	// log package - standard logging
-	{pkg: "log", name: "Print"}:   {},
-	{pkg: "log", name: "Printf"}:  {},
-	{pkg: "log", name: "Println"}: {},
+	{Pkg: "log", Name: "Print"}:   {},
+	{Pkg: "log", Name: "Printf"}:  {},
+	{Pkg: "log", Name: "Println"}: {},
 
 	// log package - fatal (logs then exits)
-	{pkg: "log", name: "Fatal"}:   {},
-	{pkg: "log", name: "Fatalf"}:  {},
-	{pkg: "log", name: "Fatalln"}: {},
+	{Pkg: "log", Name: "Fatal"}:   {},
+	{Pkg: "log", Name: "Fatalf"}:  {},
+	{Pkg: "log", Name: "Fatalln"}: {},
 
 	// log package - panic (logs then panics)
-	{pkg: "log", name: "Panic"}:   {},
-	{pkg: "log", name: "Panicf"}:  {},
-	{pkg: "log", name: "Panicln"}: {},
+	{Pkg: "log", Name: "Panic"}:   {},
+	{Pkg: "log", Name: "Panicf"}:  {},
+	{Pkg: "log", Name: "Panicln"}: {},
 }

@@ -20,38 +20,33 @@ var ct005VariableTimeOps = map[token.Token]string{
 	token.SHR: "shift",     // >>
 }
 
-type ct005CallKey struct {
-	pkg  string
-	name string
-}
-
-var ct005Allow = map[ct005CallKey]struct{}{
-	{pkg: "crypto/subtle", name: "ConstantTimeSelect"}: {},
-	{pkg: "crypto/subtle", name: "ConstantTimeCopy"}:   {},
+var ct005Allow = map[CallKey]struct{}{
+	{Pkg: "crypto/subtle", Name: "ConstantTimeSelect"}: {},
+	{Pkg: "crypto/subtle", Name: "ConstantTimeCopy"}:   {},
 	// Note: Most crypto/subtle functions are for comparison, not arithmetic,
 	// but we list them here for being complete
 }
 
-var ct005Deny = map[ct005CallKey]struct{}{
-	{pkg: "math", name: "Mod"}:       {},
-	{pkg: "math", name: "Remainder"}: {},
+var ct005Deny = map[CallKey]struct{}{
+	{Pkg: "math", Name: "Mod"}:       {},
+	{Pkg: "math", Name: "Remainder"}: {},
 
-	{pkg: "math/big", name: "Div"}:    {},
-	{pkg: "math/big", name: "Mod"}:    {},
-	{pkg: "math/big", name: "DivMod"}: {},
-	{pkg: "math/big", name: "Quo"}:    {},
-	{pkg: "math/big", name: "Rem"}:    {},
-	{pkg: "math/big", name: "QuoRem"}: {},
+	{Pkg: "math/big", Name: "Div"}:    {},
+	{Pkg: "math/big", Name: "Mod"}:    {},
+	{Pkg: "math/big", Name: "DivMod"}: {},
+	{Pkg: "math/big", Name: "Quo"}:    {},
+	{Pkg: "math/big", Name: "Rem"}:    {},
+	{Pkg: "math/big", Name: "QuoRem"}: {},
 
-	{pkg: "math/bits", name: "RotateLeft"}:   {},
-	{pkg: "math/bits", name: "RotateLeft8"}:  {},
-	{pkg: "math/bits", name: "RotateLeft16"}: {},
-	{pkg: "math/bits", name: "RotateLeft32"}: {},
-	{pkg: "math/bits", name: "RotateLeft64"}: {},
+	{Pkg: "math/bits", Name: "RotateLeft"}:   {},
+	{Pkg: "math/bits", Name: "RotateLeft8"}:  {},
+	{Pkg: "math/bits", Name: "RotateLeft16"}: {},
+	{Pkg: "math/bits", Name: "RotateLeft32"}: {},
+	{Pkg: "math/bits", Name: "RotateLeft64"}: {},
 }
 
 func ct005Policy(pkgPath, name string) (allowed bool, risky bool) {
-	k := ct005CallKey{pkg: pkgPath, name: name}
+	k := CallKey{Pkg: pkgPath, Name: name}
 	if _, ok := ct005Allow[k]; ok {
 		return true, false
 	}

@@ -190,49 +190,44 @@ func ct007FindSecretInArgs(args []ssa.Value, dep *taint.Depender) (string, confi
 
 // --- CT007 sink policy ---
 
-type ct007SinkKey struct {
-	pkg  string
-	name string
-}
-
 // CT004 sinks (fmt.*, log.*) are intentionally excluded to avoid overlap.
-var ct007Sinks = map[ct007SinkKey]confidence.ConfidenceLevel{
+var ct007Sinks = map[CallKey]confidence.ConfidenceLevel{
 	// net package — network I/O
-	{pkg: "net", name: "Dial"}:    confidence.ConfidenceHigh,
-	{pkg: "net", name: "DialTCP"}: confidence.ConfidenceHigh,
-	{pkg: "net", name: "DialUDP"}: confidence.ConfidenceHigh,
-	{pkg: "net", name: "Listen"}:  confidence.ConfidenceHigh,
+	{Pkg: "net", Name: "Dial"}:    confidence.ConfidenceHigh,
+	{Pkg: "net", Name: "DialTCP"}: confidence.ConfidenceHigh,
+	{Pkg: "net", Name: "DialUDP"}: confidence.ConfidenceHigh,
+	{Pkg: "net", Name: "Listen"}:  confidence.ConfidenceHigh,
 
 	// net/http package — HTTP I/O
-	{pkg: "net/http", name: "Get"}:        confidence.ConfidenceHigh,
-	{pkg: "net/http", name: "Post"}:       confidence.ConfidenceHigh,
-	{pkg: "net/http", name: "PostForm"}:   confidence.ConfidenceHigh,
-	{pkg: "net/http", name: "NewRequest"}: confidence.ConfidenceHigh,
+	{Pkg: "net/http", Name: "Get"}:        confidence.ConfidenceHigh,
+	{Pkg: "net/http", Name: "Post"}:       confidence.ConfidenceHigh,
+	{Pkg: "net/http", Name: "PostForm"}:   confidence.ConfidenceHigh,
+	{Pkg: "net/http", Name: "NewRequest"}: confidence.ConfidenceHigh,
 
 	// os package — file I/O
-	{pkg: "os", name: "Create"}:    confidence.ConfidenceHigh,
-	{pkg: "os", name: "OpenFile"}:  confidence.ConfidenceHigh,
-	{pkg: "os", name: "WriteFile"}: confidence.ConfidenceHigh,
+	{Pkg: "os", Name: "Create"}:    confidence.ConfidenceHigh,
+	{Pkg: "os", Name: "OpenFile"}:  confidence.ConfidenceHigh,
+	{Pkg: "os", Name: "WriteFile"}: confidence.ConfidenceHigh,
 
 	// io/ioutil package — file I/O (deprecated but still used)
-	{pkg: "io/ioutil", name: "WriteFile"}: confidence.ConfidenceHigh,
+	{Pkg: "io/ioutil", Name: "WriteFile"}: confidence.ConfidenceHigh,
 
 	// syscall package — low-level I/O
-	{pkg: "syscall", name: "Write"}:  confidence.ConfidenceHigh,
-	{pkg: "syscall", name: "Sendto"}: confidence.ConfidenceHigh,
-	{pkg: "syscall", name: "Send"}:   confidence.ConfidenceHigh,
+	{Pkg: "syscall", Name: "Write"}:  confidence.ConfidenceHigh,
+	{Pkg: "syscall", Name: "Sendto"}: confidence.ConfidenceHigh,
+	{Pkg: "syscall", Name: "Send"}:   confidence.ConfidenceHigh,
 
 	// bufio package — buffered I/O
-	{pkg: "bufio", name: "NewWriter"}: confidence.ConfidenceHigh,
+	{Pkg: "bufio", Name: "NewWriter"}: confidence.ConfidenceHigh,
 
 	// io package — generic I/O helpers
-	{pkg: "io", name: "WriteString"}: confidence.ConfidenceHigh,
-	{pkg: "io", name: "Copy"}:        confidence.ConfidenceHigh,
-	{pkg: "io", name: "CopyBuffer"}:  confidence.ConfidenceHigh,
+	{Pkg: "io", Name: "WriteString"}: confidence.ConfidenceHigh,
+	{Pkg: "io", Name: "Copy"}:        confidence.ConfidenceHigh,
+	{Pkg: "io", Name: "CopyBuffer"}:  confidence.ConfidenceHigh,
 }
 
 func ct007SinkPolicy(pkgPath, name string) (confidence.ConfidenceLevel, bool) {
-	k := ct007SinkKey{pkg: pkgPath, name: name}
+	k := CallKey{Pkg: pkgPath, Name: name}
 	if conf, ok := ct007Sinks[k]; ok {
 		return conf, true
 	}

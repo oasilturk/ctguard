@@ -11,6 +11,13 @@ type Finding struct {
 	Confidence confidence.ConfidenceLevel
 }
 
+// CallKey identifies a function by package path and name.
+// Used by rule policy tables (allow/deny lists).
+type CallKey struct {
+	Pkg  string
+	Name string
+}
+
 type FindingList []Finding
 
 func (fl FindingList) FilterByMinConfidence(minConfidence confidence.ConfidenceLevel) FindingList {
