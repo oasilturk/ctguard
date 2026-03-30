@@ -68,13 +68,7 @@ func RunCT002(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						continue
 					}
 
-					pos := c.Pos()
-					if pos == token.NoPos {
-						pos = argPos
-					}
-					if pos == token.NoPos {
-						pos = fn.Pos()
-					}
+					pos := bestPos(c.Pos(), argPos, fn.Pos())
 
 					findings = append(findings, Finding{
 						Diagnostic: analysis.Diagnostic{
@@ -106,13 +100,7 @@ func RunCT002(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						continue
 					}
 
-					pos := bo.Pos()
-					if pos == token.NoPos {
-						pos = bo.X.Pos()
-					}
-					if pos == token.NoPos {
-						pos = fn.Pos()
-					}
+					pos := bestPos(bo.Pos(), bo.X.Pos(), fn.Pos())
 
 					findings = append(findings, Finding{
 						Diagnostic: analysis.Diagnostic{

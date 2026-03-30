@@ -45,13 +45,7 @@ func RunCT006(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						continue
 					}
 
-					pos := send.Pos()
-					if pos == token.NoPos {
-						pos = send.X.Pos()
-					}
-					if pos == token.NoPos {
-						pos = fn.Pos()
-					}
+					pos := bestPos(send.Pos(), send.X.Pos(), fn.Pos())
 
 					findings = append(findings, Finding{
 						Diagnostic: analysis.Diagnostic{
@@ -85,13 +79,7 @@ func RunCT006(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						continue
 					}
 
-					pos := unop.Pos()
-					if pos == token.NoPos {
-						pos = unop.X.Pos()
-					}
-					if pos == token.NoPos {
-						pos = fn.Pos()
-					}
+					pos := bestPos(unop.Pos(), unop.X.Pos(), fn.Pos())
 
 					findings = append(findings, Finding{
 						Diagnostic: analysis.Diagnostic{
@@ -124,10 +112,7 @@ func RunCT006(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 									}
 								}
 								if secretName != "" {
-									pos := st.Pos
-									if pos == token.NoPos {
-										pos = fn.Pos()
-									}
+									pos := bestPos(st.Pos, fn.Pos())
 
 									findings = append(findings, Finding{
 										Diagnostic: analysis.Diagnostic{
@@ -154,10 +139,7 @@ func RunCT006(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 								}
 							}
 							if secretName != "" {
-								pos := st.Pos
-								if pos == token.NoPos {
-									pos = fn.Pos()
-								}
+								pos := bestPos(st.Pos, fn.Pos())
 
 								findings = append(findings, Finding{
 									Diagnostic: analysis.Diagnostic{

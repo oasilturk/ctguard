@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"go/token"
+
 	"golang.org/x/tools/go/analysis"
 
 	"github.com/oasilturk/ctguard/internal/confidence"
@@ -16,6 +18,16 @@ type Finding struct {
 type CallKey struct {
 	Pkg  string
 	Name string
+}
+
+// bestPos returns the first valid position from the candidates.
+func bestPos(candidates ...token.Pos) token.Pos {
+	for _, p := range candidates {
+		if p != token.NoPos {
+			return p
+		}
+	}
+	return token.NoPos
 }
 
 type FindingList []Finding

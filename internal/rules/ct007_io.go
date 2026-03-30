@@ -62,10 +62,7 @@ func RunCT007(
 					continue
 				}
 
-				pos := call.Pos()
-				if pos == token.NoPos {
-					pos = fn.Pos()
-				}
+				pos := bestPos(call.Pos(), fn.Pos())
 				if !isolated.IsIsolated(pass.Fset, pos, funcIdentity) {
 					continue
 				}
@@ -147,10 +144,7 @@ func ct007CheckDynamicCall(
 		return findings
 	}
 
-	pos := call.Pos()
-	if pos == token.NoPos {
-		pos = fn.Pos()
-	}
+	pos := bestPos(call.Pos(), fn.Pos())
 
 	if !isolated.IsIsolated(pass.Fset, pos, funcIdentity) {
 		return findings

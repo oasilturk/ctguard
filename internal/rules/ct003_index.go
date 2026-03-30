@@ -2,7 +2,6 @@ package rules
 
 import (
 	"fmt"
-	"go/token"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/buildssa"
@@ -33,13 +32,7 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						continue
 					}
 
-					pos := idx.Pos()
-					if pos == token.NoPos {
-						pos = idx.Index.Pos()
-					}
-					if pos == token.NoPos {
-						pos = fn.Pos()
-					}
+					pos := bestPos(idx.Pos(), idx.Index.Pos(), fn.Pos())
 
 					findings = append(findings, Finding{
 						Diagnostic: analysis.Diagnostic{
@@ -59,13 +52,7 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						continue
 					}
 
-					pos := idx.Pos()
-					if pos == token.NoPos {
-						pos = idx.Index.Pos()
-					}
-					if pos == token.NoPos {
-						pos = fn.Pos()
-					}
+					pos := bestPos(idx.Pos(), idx.Index.Pos(), fn.Pos())
 
 					findings = append(findings, Finding{
 						Diagnostic: analysis.Diagnostic{
@@ -85,13 +72,7 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						continue
 					}
 
-					pos := lk.Pos()
-					if pos == token.NoPos {
-						pos = lk.Index.Pos()
-					}
-					if pos == token.NoPos {
-						pos = fn.Pos()
-					}
+					pos := bestPos(lk.Pos(), lk.Index.Pos(), fn.Pos())
 
 					findings = append(findings, Finding{
 						Diagnostic: analysis.Diagnostic{
