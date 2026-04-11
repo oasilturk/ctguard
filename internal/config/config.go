@@ -72,13 +72,7 @@ func (ia IsolatedAnnotation) GetPackage() string  { return ia.Package }
 func (ia IsolatedAnnotation) GetFunction() string { return ia.Function }
 
 func matchesAnnotation(m annotationMatcher, pkgPath, funcName string) bool {
-	if !matchesPattern(pkgPath, m.GetPackage()) {
-		return false
-	}
-	if !matchesPattern(funcName, m.GetFunction()) {
-		return false
-	}
-	return true
+	return matchesPattern(pkgPath, m.GetPackage()) && matchesPattern(funcName, m.GetFunction())
 }
 
 func (c *Config) GetIgnoredRules(pkgPath, funcName string) []string {

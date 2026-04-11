@@ -512,7 +512,7 @@ func runCLI(args []string) int {
 	exitCode := exitCodeFromErr(runErr)
 
 	// go vet -json writes JSON diagnostics to stderr, not stdout
-	allFindings, _ := parseGoVetJSON(stderr.String())
+	allFindings := parseGoVetJSON(stderr.String())
 
 	enabled := enabledRuleSet(rules)
 	minConf := confidence.ConfidenceLow
@@ -704,21 +704,19 @@ func printPlain(findings []Finding) {
 			rule = "???"
 		}
 
-		// Color the rule based on type
 		ruleColor := c.Yellow
-		if strings.HasPrefix(rule, "CT001") {
+		switch rule {
+		case "CT001":
 			ruleColor = c.Magenta
-		} else if strings.HasPrefix(rule, "CT002") {
+		case "CT002":
 			ruleColor = c.Cyan
-		} else if strings.HasPrefix(rule, "CT003") {
+		case "CT003":
 			ruleColor = c.Green
-		} else if strings.HasPrefix(rule, "CT004") {
+		case "CT004":
 			ruleColor = c.Red
-		} else if strings.HasPrefix(rule, "CT005") {
+		case "CT005":
 			ruleColor = c.Blue
-		} else if strings.HasPrefix(rule, "CT006") {
-			ruleColor = c.Yellow
-		} else if strings.HasPrefix(rule, "CT007") {
+		case "CT007":
 			ruleColor = c.Orange
 		}
 
@@ -918,7 +916,7 @@ func printSummary(findings []Finding, toStderr bool) {
 	}
 }
 
-func parseGoVetJSON(s string) ([]Finding, bool) {
+func parseGoVetJSON(s string) []Finding {
 	var out []Finding
 
 	// go vet -json outputs multiple JSON objects when analyzing multiple packages:
@@ -930,7 +928,7 @@ func parseGoVetJSON(s string) ([]Finding, bool) {
 
 	jsonObjects := extractJSONObjects(s)
 	if len(jsonObjects) == 0 {
-		return out, true
+		return out
 	}
 
 	for _, jsonStr := range jsonObjects {
@@ -975,7 +973,7 @@ func parseGoVetJSON(s string) ([]Finding, bool) {
 		}
 	}
 
-	return out, true
+	return out
 }
 
 // extractJSONObjects finds all top-level JSON objects in the input string.

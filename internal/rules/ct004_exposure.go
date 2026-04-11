@@ -2,7 +2,6 @@ package rules
 
 import (
 	"fmt"
-	"go/token"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/buildssa"
@@ -32,16 +31,10 @@ func RunCT004(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					continue
 				}
 
-				callee := call.Call.StaticCallee()
-				if callee == nil {
+				pkgPath, name, ok := calleeInfo(call)
+				if !ok {
 					continue
 				}
-
-				pkgPath := ""
-				if callee.Pkg != nil && callee.Pkg.Pkg != nil {
-					pkgPath = callee.Pkg.Pkg.Path()
-				}
-				name := callee.Name()
 
 				// Check if this is a risky output function
 				if !ct004IsRiskyCall(pkgPath, name) {
@@ -55,20 +48,7 @@ func RunCT004(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					continue
 				}
 
-				pos := call.Pos()
-				if pos == token.NoPos {
-					for _, a := range call.Call.Args {
-						if a != nil {
-							pos = a.Pos()
-							if pos != token.NoPos {
-								break
-							}
-						}
-					}
-				}
-				if pos == token.NoPos {
-					pos = fn.Pos()
-				}
+				pos := bestPos(call.Pos(), fn.Pos())
 
 				findings = append(findings, Finding{
 					Diagnostic: analysis.Diagnostic{

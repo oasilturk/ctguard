@@ -2,7 +2,6 @@ package rules
 
 import (
 	"fmt"
-	"go/token"
 	"go/types"
 
 	"golang.org/x/tools/go/analysis"
@@ -42,20 +41,14 @@ func RunCT007(
 					continue
 				}
 
-				callee := call.Call.StaticCallee()
-				if callee == nil {
+				pkgPath, name, ok := calleeInfo(call)
+				if !ok {
 					// dynamic dispatch (interface method call), check for generic Write
 					findings = append(findings, ct007CheckDynamicCall(
 						pass, fn, call, dep, isolated, funcIdentity,
 					)...)
 					continue
 				}
-
-				pkgPath := ""
-				if callee.Pkg != nil && callee.Pkg.Pkg != nil {
-					pkgPath = callee.Pkg.Pkg.Path()
-				}
-				name := callee.Name()
 
 				sinkConf, isSink := ct007SinkPolicy(pkgPath, name)
 				if !isSink {
@@ -77,15 +70,6 @@ func RunCT007(
 				finalConf := conf
 				if sinkConf < conf {
 					finalConf = sinkConf
-				}
-
-				if pos == token.NoPos {
-					for _, a := range call.Call.Args {
-						if a != nil && a.Pos() != token.NoPos {
-							pos = a.Pos()
-							break
-						}
-					}
 				}
 
 				findings = append(findings, Finding{

@@ -64,20 +64,9 @@ func (ig *Ignores) ShouldIgnore(fset *token.FileSet, pos token.Pos, ruleID strin
 	return false
 }
 
-func ShouldIgnoreFromConfig(ruleID string, funcName string, ignoredRules []string) bool {
-	if ignoredRules == nil {
-		return false
-	}
-	if len(ignoredRules) == 0 {
-		return false
-	}
+func ShouldIgnoreFromConfig(ruleID string, ignoredRules []string) bool {
 	for _, r := range ignoredRules {
-		if r == "all" {
-			return true
-		}
-	}
-	for _, r := range ignoredRules {
-		if r == ruleID {
+		if r == "all" || r == ruleID {
 			return true
 		}
 	}

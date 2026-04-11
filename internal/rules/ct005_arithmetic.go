@@ -98,16 +98,10 @@ func RunCT005(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 				}
 
 				if c, ok := ins.(*ssa.Call); ok {
-					callee := c.Call.StaticCallee()
-					if callee == nil {
+					pkgPath, name, ok := calleeInfo(c)
+					if !ok {
 						continue
 					}
-
-					pkgPath := ""
-					if callee.Pkg != nil && callee.Pkg.Pkg != nil {
-						pkgPath = callee.Pkg.Pkg.Path()
-					}
-					name := callee.Name()
 
 					allowed, risky := ct005Policy(pkgPath, name)
 					if allowed {

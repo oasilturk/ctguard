@@ -61,7 +61,7 @@ func run(pass *analysis.Pass) (any, error) {
 
 		// config-based ignores
 		ignoredRules := cfg.GetIgnoredRules(pkgPath, funcName)
-		if annotations.ShouldIgnoreFromConfig(ruleID, funcName, ignoredRules) {
+		if annotations.ShouldIgnoreFromConfig(ruleID, ignoredRules) {
 			continue
 		}
 

@@ -31,16 +31,10 @@ func RunCT002(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 
 				// Case 1: calls like bytes.Equal(...) etc.
 				if c, ok := ins.(*ssa.Call); ok {
-					callee := c.Call.StaticCallee()
-					if callee == nil {
+					pkgPath, name, ok := calleeInfo(c)
+					if !ok {
 						continue
 					}
-
-					pkgPath := ""
-					if callee.Pkg != nil && callee.Pkg.Pkg != nil {
-						pkgPath = callee.Pkg.Pkg.Path()
-					}
-					name := callee.Name()
 
 					allowed, risky := ct002Policy(pkgPath, name)
 					if allowed {
