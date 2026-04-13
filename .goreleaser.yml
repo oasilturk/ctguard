@@ -27,6 +27,17 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
+brews:
+  - repository:
+      owner: oasilturk
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/oasilturk/ctguard"
+    description: "Detect timing side-channel vulnerabilities in Go code"
+    license: "MIT"
+    install: |
+      bin.install "ctguard"
+
 changelog:
   sort: asc
   filters:
