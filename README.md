@@ -1,6 +1,8 @@
 # CTGuard
 
 [![Go](https://github.com/oasilturk/ctguard/actions/workflows/ci.yml/badge.svg)](https://github.com/oasilturk/ctguard/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/oasilturk/ctguard)](https://goreportcard.com/report/github.com/oasilturk/ctguard)
+[![Go Reference](https://pkg.go.dev/badge/github.com/oasilturk/ctguard.svg)](https://pkg.go.dev/github.com/oasilturk/ctguard)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Catch timing side-channel vulnerabilities in your Go code.**
