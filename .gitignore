@@ -3,7 +3,7 @@
 /dist/
 *.exe
 *.out
-ctguard
+/ctguard
 
 # Go build cache / test artifacts
 *.test
