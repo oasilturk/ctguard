@@ -9,7 +9,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       security-events: write
     steps:
       - uses: actions/checkout@v4
@@ -31,11 +31,27 @@ jobs:
       - name: Run tests with coverage
         run: go test -coverprofile=coverage.out -coverpkg=./internal/...,./cmd/... ./...
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+      - name: Update coverage badge
+        if: github.ref == 'refs/heads/main'
+        run: |
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          COLOR=red
+          if (( $(echo "$COVERAGE >= 70" | bc -l) )); then COLOR=brightgreen
+          elif (( $(echo "$COVERAGE >= 60" | bc -l) )); then COLOR=green
+          elif (( $(echo "$COVERAGE >= 50" | bc -l) )); then COLOR=yellow
+          fi
+          curl -s "https://img.shields.io/badge/coverage-${COVERAGE}%25-${COLOR}" > /dev/null
+          mkdir -p .badges
+          echo "{\"schemaVersion\":1,\"label\":\"coverage\",\"message\":\"${COVERAGE}%\",\"color\":\"${COLOR}\"}" > .badges/coverage.json
+
+      - name: Deploy coverage badge
+        if: github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          files: coverage.out
-          token: ${{ secrets.CODECOV_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .badges
+          destination_dir: .badges
+          keep_files: true
 
       - name: Build CTGuard
         run: go build -o ctguard ./cmd/ctguard
