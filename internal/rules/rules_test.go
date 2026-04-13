@@ -3,6 +3,10 @@ package rules
 import (
 	"go/token"
 	"testing"
+
+	"golang.org/x/tools/go/analysis"
+
+	"github.com/oasilturk/ctguard/internal/confidence"
 )
 
 func TestCT002Policy(t *testing.T) {
@@ -483,5 +487,93 @@ func TestCT005Policy(t *testing.T) {
 	}
 }
 
-// Note: Full function-level testing with real SSA.Function objects
-// is done via analysistest in the analyzer package.
+func TestFilterByMinConfidence(t *testing.T) {
+	findings := FindingList{
+		{Confidence: confidence.ConfidenceHigh, Diagnostic: analysis.Diagnostic{Message: "high finding"}},
+		{Confidence: confidence.ConfidenceLow, Diagnostic: analysis.Diagnostic{Message: "low finding"}},
+		{Confidence: confidence.ConfidenceHigh, Diagnostic: analysis.Diagnostic{Message: "another high"}},
+	}
+
+	t.Run("low_keeps_all", func(t *testing.T) {
+		got := findings.FilterByMinConfidence(confidence.ConfidenceLow)
+		if len(got) != 3 {
+			t.Errorf("expected 3, got %d", len(got))
+		}
+	})
+
+	t.Run("high_filters_low", func(t *testing.T) {
+		got := findings.FilterByMinConfidence(confidence.ConfidenceHigh)
+		if len(got) != 2 {
+			t.Errorf("expected 2, got %d", len(got))
+		}
+		for _, f := range got {
+			if f.Confidence != confidence.ConfidenceHigh {
+				t.Errorf("expected only high confidence, got %v", f.Confidence)
+			}
+		}
+	})
+
+	t.Run("empty_list", func(t *testing.T) {
+		got := FindingList(nil).FilterByMinConfidence(confidence.ConfidenceHigh)
+		if len(got) != 0 {
+			t.Errorf("expected 0, got %d", len(got))
+		}
+	})
+}
+
+func TestBestPos(t *testing.T) {
+	t.Run("first valid", func(t *testing.T) {
+		got := bestPos(token.Pos(10), token.Pos(20))
+		if got != token.Pos(10) {
+			t.Errorf("expected 10, got %d", got)
+		}
+	})
+
+	t.Run("skip no pos", func(t *testing.T) {
+		got := bestPos(token.NoPos, token.Pos(20))
+		if got != token.Pos(20) {
+			t.Errorf("expected 20, got %d", got)
+		}
+	})
+
+	t.Run("all no pos", func(t *testing.T) {
+		got := bestPos(token.NoPos, token.NoPos)
+		if got != token.NoPos {
+			t.Errorf("expected NoPos, got %d", got)
+		}
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		got := bestPos()
+		if got != token.NoPos {
+			t.Errorf("expected NoPos, got %d", got)
+		}
+	})
+}
+
+func TestCT007SinkPolicy(t *testing.T) {
+	tests := []struct {
+		name     string
+		pkgPath  string
+		funcName string
+		want     bool
+	}{
+		{"net.Dial is sink", "net", "Dial", true},
+		{"net.DialTCP is sink", "net", "DialTCP", true},
+		{"net/http.Post is sink", "net/http", "Post", true},
+		{"os.WriteFile is sink", "os", "WriteFile", true},
+		{"syscall.Write is sink", "syscall", "Write", true},
+		{"io.Copy is sink", "io", "Copy", true},
+		{"bufio.NewWriter is sink", "bufio", "NewWriter", true},
+		{"fmt.Println is not sink", "fmt", "Println", false},
+		{"empty is not sink", "", "", false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, got := ct007SinkPolicy(tc.pkgPath, tc.funcName)
+			if got != tc.want {
+				t.Errorf("ct007SinkPolicy(%q, %q) = %v, want %v", tc.pkgPath, tc.funcName, got, tc.want)
+			}
+		})
+	}
+}

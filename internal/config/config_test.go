@@ -321,6 +321,210 @@ func TestIsolatedAnnotationConfig(t *testing.T) {
 	}
 }
 
+func TestMatchesPattern(t *testing.T) {
+	tests := []struct {
+		str     string
+		pattern string
+		want    bool
+	}{
+		// exact match
+		{"github.com/foo/bar", "github.com/foo/bar", true},
+		{"github.com/foo/bar", "github.com/other", false},
+		// empty pattern
+		{"anything", "", false},
+		// simple wildcard
+		{"VerifyMAC", "Verify*", true},
+		{"VerifyMAC", "*MAC", true},
+		{"Other", "Verify*", false},
+		// double-star glob
+		{"github.com/myapp/internal/crypto", "github.com/myapp/**", true},
+		{"github.com/other/pkg", "github.com/myapp/**", false},
+		// double-star in middle
+		{"github.com/foo/bar/baz", "github.com/**/baz", true},
+		{"github.com/foo/bar/qux", "github.com/**/baz", false},
+		// no wildcard, no match
+		{"foo", "bar", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.str+"_"+tt.pattern, func(t *testing.T) {
+			if got := matchesPattern(tt.str, tt.pattern); got != tt.want {
+				t.Errorf("matchesPattern(%q, %q) = %v, want %v", tt.str, tt.pattern, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetMinConfidence(t *testing.T) {
+	tests := []struct {
+		name string
+		conf string
+		want string
+	}{
+		{"empty defaults to low", "", "low"},
+		{"high", "high", "high"},
+		{"low", "low", "low"},
+		{"unknown defaults to low", "bogus", "low"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &Config{MinConfidence: tt.conf}
+			if got := cfg.GetMinConfidence().String(); got != tt.want {
+				t.Errorf("GetMinConfidence() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetIgnoredRules(t *testing.T) {
+	cfg := &Config{
+		Annotations: AnnotationsConfig{
+			Ignores: []IgnoreAnnotation{
+				{Package: "github.com/foo", Function: "Bar", Rules: "all"},
+				{Package: "github.com/baz", Function: "Qux", Rules: []interface{}{"CT001", "CT002"}},
+			},
+		},
+	}
+
+	t.Run("all rules", func(t *testing.T) {
+		got := cfg.GetIgnoredRules("github.com/foo", "Bar")
+		if len(got) != 1 || got[0] != "all" {
+			t.Errorf("expected [all], got %v", got)
+		}
+	})
+
+	t.Run("specific rules", func(t *testing.T) {
+		got := cfg.GetIgnoredRules("github.com/baz", "Qux")
+		if len(got) != 2 {
+			t.Errorf("expected 2 rules, got %v", got)
+		}
+	})
+
+	t.Run("no match", func(t *testing.T) {
+		got := cfg.GetIgnoredRules("github.com/other", "Func")
+		if got != nil {
+			t.Errorf("expected nil, got %v", got)
+		}
+	})
+}
+
+func TestParseRules(t *testing.T) {
+	t.Run("nil rules", func(t *testing.T) {
+		ig := &IgnoreAnnotation{Rules: nil}
+		got, err := ig.parseRules()
+		if err != nil || got != nil {
+			t.Errorf("expected nil/nil, got %v/%v", got, err)
+		}
+	})
+
+	t.Run("string all", func(t *testing.T) {
+		ig := &IgnoreAnnotation{Rules: "all"}
+		got, err := ig.parseRules()
+		if err != nil || len(got) != 1 || got[0] != "all" {
+			t.Errorf("expected [all], got %v (err: %v)", got, err)
+		}
+	})
+
+	t.Run("invalid string", func(t *testing.T) {
+		ig := &IgnoreAnnotation{Rules: "bogus"}
+		_, err := ig.parseRules()
+		if err == nil {
+			t.Error("expected error for invalid string")
+		}
+	})
+
+	t.Run("slice of rules", func(t *testing.T) {
+		ig := &IgnoreAnnotation{Rules: []interface{}{"CT001", "CT003"}}
+		got, err := ig.parseRules()
+		if err != nil || len(got) != 2 {
+			t.Errorf("expected 2 rules, got %v (err: %v)", got, err)
+		}
+	})
+
+	t.Run("slice with non-string", func(t *testing.T) {
+		ig := &IgnoreAnnotation{Rules: []interface{}{"CT001", 42}}
+		_, err := ig.parseRules()
+		if err == nil {
+			t.Error("expected error for non-string element")
+		}
+	})
+
+	t.Run("slice with invalid rule ID", func(t *testing.T) {
+		ig := &IgnoreAnnotation{Rules: []interface{}{"INVALID"}}
+		_, err := ig.parseRules()
+		if err == nil {
+			t.Error("expected error for invalid rule ID")
+		}
+	})
+
+	t.Run("invalid type", func(t *testing.T) {
+		ig := &IgnoreAnnotation{Rules: 42}
+		_, err := ig.parseRules()
+		if err == nil {
+			t.Error("expected error for invalid type")
+		}
+	})
+}
+
+func TestGetSecretParams(t *testing.T) {
+	cfg := &Config{
+		Annotations: AnnotationsConfig{
+			Secrets: []SecretAnnotation{
+				{Package: "github.com/foo", Function: "Verify", Params: []string{"key", "mac"}},
+			},
+		},
+	}
+
+	t.Run("match", func(t *testing.T) {
+		got := cfg.GetSecretParams("github.com/foo", "Verify")
+		if len(got) != 2 {
+			t.Errorf("expected 2 params, got %v", got)
+		}
+	})
+
+	t.Run("no match", func(t *testing.T) {
+		got := cfg.GetSecretParams("github.com/other", "Func")
+		if got != nil {
+			t.Errorf("expected nil, got %v", got)
+		}
+	})
+}
+
+func TestGetRulesDisableAll(t *testing.T) {
+	cfg := &Config{
+		Rules: RulesConfig{
+			Enable:  []string{"all"},
+			Disable: []string{"CT001", "CT002", "CT003", "CT004", "CT005", "CT006", "CT007"},
+		},
+	}
+	if got := cfg.GetRules(); got != "all" {
+		t.Errorf("expected 'all' fallback when all disabled, got %q", got)
+	}
+}
+
+func TestGetRulesEnableWithDisable(t *testing.T) {
+	cfg := &Config{
+		Rules: RulesConfig{
+			Enable:  []string{"CT001", "CT002", "CT003"},
+			Disable: []string{"CT002"},
+		},
+	}
+	if got := cfg.GetRules(); got != "CT001,CT003" {
+		t.Errorf("expected 'CT001,CT003', got %q", got)
+	}
+}
+
+func TestGetRulesAllDisabled(t *testing.T) {
+	cfg := &Config{
+		Rules: RulesConfig{
+			Enable:  []string{"CT001"},
+			Disable: []string{"CT001"},
+		},
+	}
+	if got := cfg.GetRules(); got != "all" {
+		t.Errorf("expected 'all' fallback, got %q", got)
+	}
+}
+
 func TestGetIsolatedFunctions(t *testing.T) {
 	tests := []struct {
 		name     string
