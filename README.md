@@ -127,19 +127,39 @@ See [.ctguard.yaml.example](.ctguard.yaml.example) for all options.
 
 ## CI Integration
 
-**GitHub Actions:**
+**GitHub Actions (recommended):**
 ```yaml
-- run: go install github.com/oasilturk/ctguard/cmd/ctguard@latest
-- run: ctguard ./...
+- uses: oasilturk/ctguard@main
+```
+
+**With options:**
+```yaml
+- uses: oasilturk/ctguard@main
+  with:
+    format: json
+    args: "-fail=false ./..."
 ```
 
 **With GitHub Code Scanning:**
 ```yaml
-- run: ctguard -format=sarif ./... > ctguard.sarif
+- uses: oasilturk/ctguard@main
+  with:
+    format: sarif
+    args: "-fail=false ./..."
+    sarif-file: ctguard.sarif
 - uses: github/codeql-action/upload-sarif@v4
   with:
     sarif_file: ctguard.sarif
 ```
+
+<details>
+<summary><b>Manual installation</b></summary>
+
+```yaml
+- run: go install github.com/oasilturk/ctguard/cmd/ctguard@latest
+- run: ctguard ./...
+```
+</details>
 
 ## Suppressing Findings
 

@@ -1,0 +1,56 @@
+name: "CTGuard"
+description: "Detect timing side-channel vulnerabilities in Go code"
+author: "oasilturk"
+
+branding:
+  icon: "shield"
+  color: "blue"
+
+inputs:
+  version:
+    description: "CTGuard version to install"
+    required: false
+    default: "latest"
+  args:
+    description: "Arguments to pass to ctguard"
+    required: false
+    default: "./..."
+  format:
+    description: "Output format (plain, json, sarif)"
+    required: false
+    default: "plain"
+  go-version:
+    description: "Go version to use (set to 'skip' if Go is already set up)"
+    required: false
+    default: "stable"
+  sarif-file:
+    description: "Write SARIF output to this file (only used when format is sarif)"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Go
+      if: inputs.go-version != 'skip'
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ inputs.go-version }}
+
+    - name: Install CTGuard
+      shell: bash
+      run: |
+        if [ "${{ inputs.version }}" = "latest" ]; then
+          go install github.com/oasilturk/ctguard/cmd/ctguard@latest
+        else
+          go install github.com/oasilturk/ctguard/cmd/ctguard@${{ inputs.version }}
+        fi
+
+    - name: Run CTGuard
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.sarif-file }}" ]; then
+          ctguard -format=${{ inputs.format }} ${{ inputs.args }} > "${{ inputs.sarif-file }}"
+        else
+          ctguard -format=${{ inputs.format }} ${{ inputs.args }}
+        fi
