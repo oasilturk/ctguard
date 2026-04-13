@@ -28,8 +28,13 @@ jobs:
           version: v2.8.0
           args: --timeout=3m
 
-      - name: Run tests
-        run: go test ./...
+      - name: Run tests with coverage
+        run: go test -coverprofile=coverage.out -coverpkg=./internal/...,./cmd/... ./...
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.out
 
       - name: Build CTGuard
         run: go build -o ctguard ./cmd/ctguard
