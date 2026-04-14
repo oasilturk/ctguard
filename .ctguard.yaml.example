@@ -6,13 +6,6 @@ rules:
     - all
   disable:
   #  - CT003
-  severity:
-    CT001: error
-    CT002: error
-    CT003: warning
-    CT004: error
-    CT005: error
-    CT006: error
 
 annotations:
   secrets:

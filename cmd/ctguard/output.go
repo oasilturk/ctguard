@@ -110,9 +110,6 @@ func printHelp() {
         rules:
           enable: [CT001, CT002, CT005, CT006]  # or 'all'
           disable: [CT003, CT004]
-          severity:
-            CT001: warning
-            CT002: error
         format: json
         fail: false
         exclude:
@@ -185,6 +182,8 @@ func printPlain(findings []Finding) {
 			ruleColor = c.Red
 		case "CT005":
 			ruleColor = c.Blue
+		case "CT006":
+			ruleColor = c.Yellow
 		case "CT007":
 			ruleColor = c.Orange
 		}
