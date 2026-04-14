@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" width="200" alt="CTGuard Logo">
+</p>
+
 # CTGuard
 
 [![Go](https://github.com/oasilturk/ctguard/actions/workflows/ci.yml/badge.svg)](https://github.com/oasilturk/ctguard/actions/workflows/ci.yml)
@@ -10,7 +14,7 @@
 
 CTGuard finds vulnerabilities in code where secret data can be leaked through execution time, like when you compare passwords with `==` or branch on private keys. Each finding includes a confidence level to help you focus on the most certain issues.
 
-![CTGuard Demo](demo/demo.gif)
+![CTGuard Demo](assets/demo.gif)
 
 ## What It Catches
 
