@@ -37,24 +37,7 @@ func NewInterproceduralAnalyzer(ssaRes *buildssa.SSA, secrets annotations.Secret
 		}
 
 		if fn.Object() != nil {
-			if tf, ok := fn.Object().(*types.Func); ok && tf != nil {
-				if m, ok := secrets.FuncSecretParams[tf.FullName()]; ok {
-					for k := range m {
-						ctx.SecretParams[k] = true
-					}
-				} else if m, ok := secrets.FuncSecretParams[tf.String()]; ok {
-					for k := range m {
-						ctx.SecretParams[k] = true
-					}
-				}
-			} else {
-				key := fn.Object().String()
-				if m, ok := secrets.FuncSecretParams[key]; ok {
-					for k := range m {
-						ctx.SecretParams[k] = true
-					}
-				}
-			}
+			lookupSecretParams(fn, secrets, ctx.SecretParams)
 		}
 
 		ia.contexts[fn] = ctx
@@ -165,6 +148,25 @@ func (ia *InterproceduralAnalyzer) HasTaintedReturn(fn *ssa.Function) bool {
 
 func (ia *InterproceduralAnalyzer) IsAnalyzed(fn *ssa.Function) bool {
 	return ia.contexts[fn] != nil
+}
+
+// lookupSecretParams finds secret param annotations for the given function
+// by trying progressively less specific keys.
+func lookupSecretParams(fn *ssa.Function, secrets annotations.Secrets, dst map[string]bool) {
+	var keys []string
+	if tf, ok := fn.Object().(*types.Func); ok && tf != nil {
+		keys = []string{tf.FullName(), tf.String()}
+	} else {
+		keys = []string{fn.Object().String()}
+	}
+	for _, key := range keys {
+		if m, ok := secrets.FuncSecretParams[key]; ok {
+			for k := range m {
+				dst[k] = true
+			}
+			return
+		}
+	}
 }
 
 func (ia *InterproceduralAnalyzer) isSamePackage(fn1, fn2 *ssa.Function) bool {

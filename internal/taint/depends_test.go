@@ -33,12 +33,12 @@ func TestNewDepender(t *testing.T) {
 	}
 }
 
-func TestDepender_DependsNil(t *testing.T) {
+func TestDepender_DependsOnNil(t *testing.T) {
 	d := NewDepender(nil, map[string]bool{"key": true}, nil)
 
-	// nil value should return false
-	if d.Depends(nil) {
-		t.Error("Depends(nil) should return false")
+	// nil value should return empty secret
+	if secret, _ := d.DependsOn(nil); secret != "" {
+		t.Errorf("DependsOn(nil) should return empty secret, got %q", secret)
 	}
 }
 
@@ -53,8 +53,8 @@ func TestNewDepender_EmptySecrets(t *testing.T) {
 func TestNewDepender_NilSecrets(t *testing.T) {
 	d := NewDepender(nil, nil, nil)
 
-	if d.Depends(nil) {
-		t.Error("Depends should return false for nil value")
+	if secret, _ := d.DependsOn(nil); secret != "" {
+		t.Errorf("DependsOn(nil) should return empty secret, got %q", secret)
 	}
 }
 

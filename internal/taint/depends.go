@@ -36,11 +36,6 @@ func NewDepender(fn *ssa.Function, secretParams map[string]bool, ipAnalyzer Inte
 	return d
 }
 
-func (d *Depender) Depends(v ssa.Value) bool {
-	secret, _ := d.DependsOn(v)
-	return secret != ""
-}
-
 func (d *Depender) IsSecretParam(name string) bool {
 	return d.secretParams[name]
 }
