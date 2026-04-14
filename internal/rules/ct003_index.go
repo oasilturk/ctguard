@@ -65,6 +65,56 @@ func RunCT003(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					continue
 				}
 
+				// Slice (secret-dependent bounds)
+				if sl, ok := ins.(*ssa.Slice); ok {
+					// Check Low bound
+					if sl.Low != nil {
+						if secretName, conf := dep.DependsOn(sl.Low); secretName != "" {
+							pos := bestPos(sl.Pos(), sl.Low.Pos(), fn.Pos())
+							findings = append(findings, Finding{
+								Diagnostic: analysis.Diagnostic{
+									Pos:      pos,
+									Message:  fmt.Sprintf("CT003: slice lower bound depends on secret '%s'", secretName),
+									Category: fn.String(),
+								},
+								Confidence: conf,
+							})
+							continue
+						}
+					}
+					// Check High bound
+					if sl.High != nil {
+						if secretName, conf := dep.DependsOn(sl.High); secretName != "" {
+							pos := bestPos(sl.Pos(), sl.High.Pos(), fn.Pos())
+							findings = append(findings, Finding{
+								Diagnostic: analysis.Diagnostic{
+									Pos:      pos,
+									Message:  fmt.Sprintf("CT003: slice upper bound depends on secret '%s'", secretName),
+									Category: fn.String(),
+								},
+								Confidence: conf,
+							})
+							continue
+						}
+					}
+					// Check Max bound
+					if sl.Max != nil {
+						if secretName, conf := dep.DependsOn(sl.Max); secretName != "" {
+							pos := bestPos(sl.Pos(), sl.Max.Pos(), fn.Pos())
+							findings = append(findings, Finding{
+								Diagnostic: analysis.Diagnostic{
+									Pos:      pos,
+									Message:  fmt.Sprintf("CT003: slice capacity bound depends on secret '%s'", secretName),
+									Category: fn.String(),
+								},
+								Confidence: conf,
+							})
+							continue
+						}
+					}
+					continue
+				}
+
 				// Lookup (map access)
 				if lk, ok := ins.(*ssa.Lookup); ok {
 					secretName, conf := dep.DependsOn(lk.Index)

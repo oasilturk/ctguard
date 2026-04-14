@@ -58,5 +58,17 @@
     "message": "CT003: array/slice index depends on secret 'i' (confidence: high)",
     "rule": "CT003",
     "confidence": "high"
+  },
+  {
+    "pos": "testdata/src/indexing/indexing.go:95:13",
+    "message": "CT003: slice lower bound depends on secret 'offset' (confidence: high)",
+    "rule": "CT003",
+    "confidence": "high"
+  },
+  {
+    "pos": "testdata/src/indexing/indexing.go:102:13",
+    "message": "CT003: slice upper bound depends on secret 'length' (confidence: high)",
+    "rule": "CT003",
+    "confidence": "high"
   }
 ]

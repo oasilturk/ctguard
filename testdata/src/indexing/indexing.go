@@ -87,3 +87,22 @@ func rangeWithSecretIndex(target int, data []int) int {
 	}
 	return 0
 }
+
+// Slice with secret lower bound - should trigger CT003
+//
+//ctguard:secret offset
+func sliceWithSecretLow(offset int, data []byte) []byte {
+	return data[offset:] // want "CT003"
+}
+
+// Slice with secret upper bound - should trigger CT003
+//
+//ctguard:secret length
+func sliceWithSecretHigh(length int, data []byte) []byte {
+	return data[:length] // want "CT003"
+}
+
+// Slice with non-secret bounds - should NOT trigger CT003
+func safeSlicing(start, end int, data []byte) []byte {
+	return data[start:end] // OK - bounds are not secret
+}

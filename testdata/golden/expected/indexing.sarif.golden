@@ -320,6 +320,48 @@
               }
             }
           ]
+        },
+        {
+          "ruleId": "CT003",
+          "level": "error",
+          "message": {
+            "text": "slice lower bound depends on secret 'offset' (confidence: high)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/indexing/indexing.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 95,
+                  "startColumn": 13
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CT003",
+          "level": "error",
+          "message": {
+            "text": "slice upper bound depends on secret 'length' (confidence: high)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "testdata/src/indexing/indexing.go",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 102,
+                  "startColumn": 13
+                }
+              }
+            }
+          ]
         }
       ]
     }

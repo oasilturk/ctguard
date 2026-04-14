@@ -8,3 +8,5 @@ testdata/src/indexing/indexing.go:51:11 CT003: array/slice index depends on secr
 testdata/src/indexing/indexing.go:61:13 CT003: array/slice index depends on secret 'input' (confidence: high)
 testdata/src/indexing/indexing.go:68:12 CT003: map lookup key depends on secret 'key' (confidence: high)
 testdata/src/indexing/indexing.go:76:15 CT003: array/slice index depends on secret 'i' (confidence: high)
+testdata/src/indexing/indexing.go:95:13 CT003: slice lower bound depends on secret 'offset' (confidence: high)
+testdata/src/indexing/indexing.go:102:13 CT003: slice upper bound depends on secret 'length' (confidence: high)
