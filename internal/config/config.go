@@ -108,7 +108,10 @@ func (ig *IgnoreAnnotation) parseRules() ([]string, error) {
 			if !ok {
 				return nil, fmt.Errorf("invalid rules: element %d is not a string, got %T", i, v)
 			}
-			if s != "" && s != "all" && !strings.HasPrefix(s, "CT") {
+			if s == "" {
+				continue
+			}
+			if s != "all" && !strings.HasPrefix(s, "CT") {
 				return nil, fmt.Errorf("invalid rule ID: %q (must be 'all' or start with 'CT')", s)
 			}
 			result = append(result, s)

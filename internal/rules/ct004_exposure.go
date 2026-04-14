@@ -179,4 +179,10 @@ var ct004RiskyFuncs = map[CallKey]struct{}{
 	{Pkg: "log", Name: "Panic"}:   {},
 	{Pkg: "log", Name: "Panicf"}:  {},
 	{Pkg: "log", Name: "Panicln"}: {},
+
+	// log/slog package - structured logging
+	{Pkg: "log/slog", Name: "Info"}:  {},
+	{Pkg: "log/slog", Name: "Debug"}: {},
+	{Pkg: "log/slog", Name: "Warn"}:  {},
+	{Pkg: "log/slog", Name: "Error"}: {},
 }

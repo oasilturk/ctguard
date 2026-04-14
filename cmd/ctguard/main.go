@@ -366,7 +366,9 @@ func runCLI(args []string) int {
 		}
 
 		// Handle -flag=value and -flag value formats
-		key, value, hasValue := strings.Cut(strings.TrimLeft(arg, "-"), "=")
+		trimmed := strings.TrimPrefix(arg, "-")
+		trimmed = strings.TrimPrefix(trimmed, "-")
+		key, value, hasValue := strings.Cut(trimmed, "=")
 
 		getValue := func() (string, bool) {
 			if hasValue {
@@ -462,7 +464,7 @@ func runCLI(args []string) int {
 	}
 
 	if minConfidence != "" && minConfidence != "high" && minConfidence != "low" {
-		fmt.Fprintf(os.Stderr, "%s%serror:%s -min-confidence must be 'high' or 'low'\n", c.Bold, c.Red, c.Reset)
+		fmt.Fprintf(os.Stderr, "%s%serror:%s -min-confidence must be 'high' or 'low', got %q\n", c.Bold, c.Red, c.Reset, minConfidence)
 		return 2
 	}
 
@@ -822,29 +824,56 @@ func printSARIF(findings []Finding) {
 		}
 
 		// Parse position (file:line:col)
+		// Use LastIndex to handle Windows paths like C:\file.go:10:5
 		if f.Pos != "" {
-			parts := strings.Split(f.Pos, ":")
+			filePath := f.Pos
+			var lineStr, colStr string
+
+			if idx := strings.LastIndex(f.Pos, ":"); idx > 0 {
+				candidate := f.Pos[idx+1:]
+				if len(candidate) > 0 && candidate[0] >= '0' && candidate[0] <= '9' {
+					rest := f.Pos[:idx]
+					colStr = candidate
+					if idx2 := strings.LastIndex(rest, ":"); idx2 > 0 {
+						candidate2 := rest[idx2+1:]
+						if len(candidate2) > 0 && candidate2[0] >= '0' && candidate2[0] <= '9' {
+							filePath = rest[:idx2]
+							lineStr = candidate2
+							colStr = candidate
+						} else {
+							filePath = rest
+							lineStr = colStr
+							colStr = ""
+						}
+					} else {
+						filePath = rest
+						lineStr = colStr
+						colStr = ""
+					}
+				}
+			}
+
 			loc := SarifLocation{
 				PhysicalLocation: SarifPhysicalLocation{
 					ArtifactLocation: SarifArtifactLocation{
-						URI:       parts[0],
+						URI:       filePath,
 						URIBaseID: "%SRCROOT%",
 					},
 				},
 			}
 
-			if len(parts) >= 2 {
-				line := 0
-				_, _ = fmt.Sscanf(parts[1], "%d", &line)
-				if line > 0 {
-					loc.PhysicalLocation.Region = &SarifRegion{StartLine: line}
-					if len(parts) >= 3 {
-						col := 0
-						_, _ = fmt.Sscanf(parts[2], "%d", &col)
-						if col > 0 {
-							loc.PhysicalLocation.Region.StartColumn = col
-						}
-					}
+			line := 0
+			if lineStr != "" {
+				_, _ = fmt.Sscanf(lineStr, "%d", &line)
+			}
+			if line > 0 {
+				loc.PhysicalLocation.Region = &SarifRegion{StartLine: line}
+				col := 0
+				if colStr != "" {
+					_, _ = fmt.Sscanf(colStr, "%d", &col)
+				}
+				if col > 0 {
+					loc.PhysicalLocation.Region.StartColumn = col
 				}
 			}
 
