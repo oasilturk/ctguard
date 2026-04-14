@@ -1,8 +1,4 @@
-<p align="center">
-  <img src="assets/logo.png" width="200" alt="CTGuard Logo">
-</p>
-
-# CTGuard
+# <img src="assets/logo.png" width="40" alt="CTGuard Logo" style="vertical-align: middle; border-radius: 50%;"> CTGuard
 
 [![Go](https://github.com/oasilturk/ctguard/actions/workflows/ci.yml/badge.svg)](https://github.com/oasilturk/ctguard/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/oasilturk/ctguard)](https://goreportcard.com/report/github.com/oasilturk/ctguard)
