@@ -202,6 +202,15 @@ var ct007Sinks = map[CallKey]confidence.ConfidenceLevel{
 	{Pkg: "io", Name: "WriteString"}: confidence.ConfidenceHigh,
 	{Pkg: "io", Name: "Copy"}:        confidence.ConfidenceHigh,
 	{Pkg: "io", Name: "CopyBuffer"}:  confidence.ConfidenceHigh,
+
+	// encoding/json package — serialization that may reach I/O
+	{Pkg: "encoding/json", Name: "Marshal"}:       confidence.ConfidenceLow,
+	{Pkg: "encoding/json", Name: "MarshalIndent"}: confidence.ConfidenceLow,
+
+	// database/sql package — database I/O
+	{Pkg: "database/sql", Name: "Query"}:    confidence.ConfidenceHigh,
+	{Pkg: "database/sql", Name: "QueryRow"}: confidence.ConfidenceHigh,
+	{Pkg: "database/sql", Name: "Exec"}:     confidence.ConfidenceHigh,
 }
 
 func ct007SinkPolicy(pkgPath, name string) (confidence.ConfidenceLevel, bool) {
