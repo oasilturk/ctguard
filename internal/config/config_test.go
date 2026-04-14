@@ -41,9 +41,6 @@ rules:
     - CT002
   disable:
     - CT003
-  severity:
-    CT001: warning
-    CT002: error
 exclude:
   - "testdata/**"
   - "vendor/**"
@@ -76,10 +73,6 @@ exclude:
 
 	if len(cfg.Rules.Disable) != 1 || cfg.Rules.Disable[0] != "CT003" {
 		t.Errorf("expected CT003 to be disabled, got %v", cfg.Rules.Disable)
-	}
-
-	if cfg.Rules.Severity["CT001"] != "warning" {
-		t.Errorf("expected CT001 severity 'warning', got %q", cfg.Rules.Severity["CT001"])
 	}
 
 	if len(cfg.Exclude) != 2 {
@@ -349,27 +342,6 @@ func TestMatchesPattern(t *testing.T) {
 		t.Run(tt.str+"_"+tt.pattern, func(t *testing.T) {
 			if got := matchesPattern(tt.str, tt.pattern); got != tt.want {
 				t.Errorf("matchesPattern(%q, %q) = %v, want %v", tt.str, tt.pattern, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestGetMinConfidence(t *testing.T) {
-	tests := []struct {
-		name string
-		conf string
-		want string
-	}{
-		{"empty defaults to low", "", "low"},
-		{"high", "high", "high"},
-		{"low", "low", "low"},
-		{"unknown defaults to low", "bogus", "low"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cfg := &Config{MinConfidence: tt.conf}
-			if got := cfg.GetMinConfidence().String(); got != tt.want {
-				t.Errorf("GetMinConfidence() = %q, want %q", got, tt.want)
 			}
 		})
 	}

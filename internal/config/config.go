@@ -9,7 +9,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/oasilturk/ctguard/internal/confidence"
 	"gopkg.in/yaml.v3"
 )
 
@@ -31,9 +30,8 @@ type Config struct {
 }
 
 type RulesConfig struct {
-	Enable   []string          `yaml:"enable,omitempty"`
-	Disable  []string          `yaml:"disable,omitempty"`
-	Severity map[string]string `yaml:"severity,omitempty"`
+	Enable  []string `yaml:"enable,omitempty"`
+	Disable []string `yaml:"disable,omitempty"`
 }
 
 type AnnotationsConfig struct {
@@ -292,13 +290,6 @@ func (c *Config) GetIsolatedFunctions(pkgPath, funcName string) bool {
 		}
 	}
 	return false
-}
-
-func (c *Config) GetMinConfidence() confidence.ConfidenceLevel {
-	if c.MinConfidence == "" {
-		return confidence.ConfidenceLow
-	}
-	return confidence.ParseConfidenceLevel(c.MinConfidence)
 }
 
 func matchesPattern(str, pattern string) bool {
