@@ -1,4 +1,4 @@
-name: "CTGuard"
+name: "ctguard-action"
 description: "Detect timing side-channel vulnerabilities in Go code"
 author: "oasilturk"
 
