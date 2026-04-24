@@ -1,46 +1,92 @@
 <h1><img src="assets/logo.png" width="36" align="absmiddle" alt="CTGuard Logo">&nbsp;CTGuard</h1>
 
-[![Go](https://github.com/oasilturk/ctguard/actions/workflows/ci.yml/badge.svg)](https://github.com/oasilturk/ctguard/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/oasilturk/ctguard)](https://goreportcard.com/report/github.com/oasilturk/ctguard)
-[![Coverage](https://img.shields.io/endpoint?url=https://oasilturk.github.io/ctguard/.badges/coverage.json)](https://github.com/oasilturk/ctguard/actions/workflows/ci.yml)
-[![Go Reference](https://pkg.go.dev/badge/github.com/oasilturk/ctguard.svg)](https://pkg.go.dev/github.com/oasilturk/ctguard)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<div align="center">
+  <p><strong>Static analyzer that catches timing side-channel vulnerabilities in Go.</strong></p>
 
-**Catch timing side-channel vulnerabilities in your Go code.**
+  [![CI](https://github.com/oasilturk/ctguard/actions/workflows/ci.yml/badge.svg)](https://github.com/oasilturk/ctguard/actions/workflows/ci.yml)
+  [![Go Report Card](https://goreportcard.com/badge/github.com/oasilturk/ctguard)](https://goreportcard.com/report/github.com/oasilturk/ctguard)
+  [![Coverage](https://img.shields.io/endpoint?url=https://oasilturk.github.io/ctguard/.badges/coverage.json)](https://github.com/oasilturk/ctguard/actions/workflows/ci.yml)
+  [![Go Reference](https://pkg.go.dev/badge/github.com/oasilturk/ctguard.svg)](https://pkg.go.dev/github.com/oasilturk/ctguard)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+</div>
 
-CTGuard finds vulnerabilities in code where secret data can be leaked through execution time, like when you compare passwords with `==` or branch on private keys. Each finding includes a confidence level to help you focus on the most certain issues.
+<br>
 
-![CTGuard Demo](assets/demo.gif)
+CTGuard uses SSA-based taint tracking to find code paths where secret data leaks through execution timing. It catches comparisons with `==`, branches on private keys, secret-dependent indexing, and more.
 
-## What It Catches
+<p align="center">
+  <img src="assets/demo.gif" width="700" alt="CTGuard Demo">
+</p>
 
-| Rule | What it detects |
-|------|-----------------|
-| CT001 | Branches and loops that depend on secret data (`if secretKey == ...`) |
-| CT002 | Non-constant-time comparisons (`bytes.Equal` on secrets) |
-| CT003 | Array/map indexing with secret indices (cache timing) |
-| CT004 | Secrets leaked to logs or error messages |
-| CT005 | Variable-time arithmetic operations (`/`, `%`, `<<`, `>>` on secrets) |
-| CT006 | Secret related channel operations (send/receive) |
-| CT007 | Secret data flowing into I/O sinks (network, file, syscall) within "isolated" regions |
+## Getting Started
 
-## Quick Example
+### Install
 
-**Vulnerable Code:**
+**macOS / Linux**
+
+```bash
+brew install oasilturk/tap/ctguard
+```
+
+or
+
+```bash
+go install github.com/oasilturk/ctguard/cmd/ctguard@latest
+```
+
+**Windows**
+
+```bash
+go install github.com/oasilturk/ctguard/cmd/ctguard@latest
+```
+
+Pre-built binaries for all platforms are available on the [Releases](https://github.com/oasilturk/ctguard/releases) page.
+
+### Run
+
+Mark secret parameters, then scan:
+
+```go
+//ctguard:secret key
+func Verify(key []byte, message []byte) bool {
+    return bytes.Equal(key, expected) // CTGuard flags this
+}
+```
+
+```bash
+ctguard ./...
+```
+
+## Rules
+
+| Rule | Description | Example |
+|------|-------------|---------|
+| **CT001** | Secret-dependent branching | `if secret == "admin"` |
+| **CT002** | Non-constant-time comparison | `bytes.Equal(secret, input)` |
+| **CT003** | Secret-dependent indexing | `table[secret[i]]` (cache timing) |
+| **CT004** | Secret exposure in logs/errors | `log.Printf("%s", secret)` |
+| **CT005** | Variable-time arithmetic | `secret / n`, `secret % n` |
+| **CT006** | Secret on channels | `ch <- secret` |
+| **CT007** | Secret in I/O sinks | `conn.Write(secret)` in isolated regions |
+
+## Example
+
 ```go
 //ctguard:secret key
 func Check(key string) {
-    normalized := strings.ToLower(key)  // taint propagates
-    if normalized == "admin" {  // CT001: branch depends on secret!
+    normalized := strings.ToLower(key)
+    if normalized == "admin" {           // CT001: branch depends on secret
         grantAccess()
     }
 }
 ```
+
 ```
 auth.go:4:5 CT001: branch depends on secret 'key' (confidence: high)
 ```
 
-**Fixed:**
+Fix with constant-time operations:
+
 ```go
 //ctguard:secret key
 func Check(key string) {
@@ -50,49 +96,49 @@ func Check(key string) {
     }
 }
 ```
-```
-✓ No issues found
-```
 
-## Install
-
-```bash
-go install github.com/oasilturk/ctguard/cmd/ctguard@latest
+```
+No issues found
 ```
 
-## Usage
-
-Mark your secret parameters:
-
-```go
-//ctguard:secret key
-func Verify(key []byte, message []byte) bool {
-    return bytes.Equal(key, expected) // CTGuard will flag this
-}
-```
-
-Run it:
-
-```bash
-ctguard ./...
-```
-
-**Output formats:**
+## Output Formats
 
 ```bash
 ctguard ./...                    # Plain text (default)
 ctguard -format=json ./...       # JSON
-ctguard -format=sarif ./...      # SARIF (for GitHub Code Scanning)
+ctguard -format=sarif ./...      # SARIF (GitHub Code Scanning)
+```
+
+## CI Integration
+
+### GitHub Actions
+
+```yaml
+- uses: oasilturk/ctguard@main
+```
+
+### With Code Scanning
+
+```yaml
+- uses: oasilturk/ctguard@main
+  with:
+    format: sarif
+    args: "-fail=false ./..."
+    sarif-file: ctguard.sarif
+
+- uses: github/codeql-action/upload-sarif@v4
+  with:
+    sarif_file: ctguard.sarif
 ```
 
 ## Configuration
 
-Create `.ctguard.yaml` in your project:
+Create `.ctguard.yaml` in your project root:
 
 ```yaml
 rules:
   enable: [all]
-  disable: [CT003]  # optionally disable rules
+  disable: [CT003]
 
 exclude:
   - "vendor/**"
@@ -100,85 +146,55 @@ exclude:
 ```
 
 <details>
-<summary><b>Advanced Configuration</b></summary>
+<summary>All options</summary>
 
 ```yaml
-# Without modifying the code. Wildcards are supported.
 annotations:
   secrets:
-    - package: "github.com/vendor/examples"
-      function: "NonConstantTimeFunction"
+    - package: "github.com/vendor/pkg"
+      function: "Compare"
       params: ["secret"]
   ignores:
-    - package: "github.com/vendor/examples"
-      function: "SafeFunction"
-      rules: all    # or specific rules like ["CT001", "CT002"]
+    - package: "github.com/vendor/pkg"
+      function: "SafeFunc"
+      rules: all
 
-format: json        # plain, json, or sarif
-fail: true          # exit code on findings
-summary: true       # show stats
-min-confidence: low # low or high
+format: json
+fail: true
+summary: true
+min-confidence: low
 ```
 
-See [.ctguard.yaml.example](.ctguard.yaml.example) for all options.
+See [.ctguard.yaml.example](.ctguard.yaml.example) for a full reference.
 
-> **Tip:** Use `-min-confidence=high` to filter out uncertain findings, or set `min-confidence: high` in config.
-</details>
-
-## CI Integration
-
-**GitHub Actions (recommended):**
-```yaml
-- uses: oasilturk/ctguard@main
-```
-
-**With options:**
-```yaml
-- uses: oasilturk/ctguard@main
-  with:
-    format: json
-    args: "-fail=false ./..."
-```
-
-**With GitHub Code Scanning:**
-```yaml
-- uses: oasilturk/ctguard@main
-  with:
-    format: sarif
-    args: "-fail=false ./..."
-    sarif-file: ctguard.sarif
-- uses: github/codeql-action/upload-sarif@v4
-  with:
-    sarif_file: ctguard.sarif
-```
-
-<details>
-<summary><b>Manual installation</b></summary>
-
-```yaml
-- run: go install github.com/oasilturk/ctguard/cmd/ctguard@latest
-- run: ctguard ./...
-```
 </details>
 
 ## Suppressing Findings
 
-When you have a legitimate reason to ignore a finding:
-
 ```go
-//ctguard:secret token
-func ParseToken(token string) bool {
-    //ctguard:ignore CT002 -- comparing constant prefix for parsing
-    return strings.HasPrefix(token, "Bearer ")
-}
+//ctguard:ignore CT002 -- constant prefix check, not a timing risk
+return strings.HasPrefix(token, "Bearer ")
 ```
 
-## Learn More
+```go
+//ctguard:ignore              // all rules
+//ctguard:ignore CT001        // specific rule
+//ctguard:ignore CT001 CT002  // multiple rules
+```
 
-- [Contributing Guide](CONTRIBUTING.md)
-- [Security Policy](SECURITY.md)
-- [Example Config](.ctguard.yaml.example)
+## How It Works
+
+CTGuard integrates with `go vet` as a custom analyzer. It builds an SSA representation of your code, then:
+
+1. Collects `//ctguard:secret` annotations to identify sensitive parameters
+2. Performs interprocedural taint tracking (fixed-point iteration across function boundaries)
+3. Runs 7 specialized rule checkers against the taint graph
+4. Reports findings with confidence levels (high/low) based on taint precision
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
 
 ## License
 
-MIT © [oasilturk](https://github.com/oasilturk)
+MIT &copy; [oasilturk](https://github.com/oasilturk)

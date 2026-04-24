@@ -1,18 +1,14 @@
-Output demo/demo.gif
-Set FontSize 16
+Output assets/demo.gif
+Set FontSize 15
 Set Width 980
 Set Height 540
-Set TypingSpeed 60ms
-
-Type "ctguard ./examples/good/..."
-Enter
-Sleep 3s
+Set TypingSpeed 50ms
+Set Theme "Dracula"
 
 Type "ctguard ./examples/bad/..."
 Enter
 Sleep 4s
 
-Type "ctguard -format=json ./examples/bad/..."
+Type "ctguard ./examples/good/..."
 Enter
-Sleep 4s
-
+Sleep 3s
