@@ -22,6 +22,13 @@ var Analyzer = &analysis.Analyzer{
 	Run:      run,
 }
 
+func init() {
+	// Unused by the analyzer; the CLI sets it to the config content hash so go
+	// vet's result cache is invalidated when the config changes (Go 1.26 caches
+	// vettool results, which would otherwise go stale on config edits).
+	Analyzer.Flags.String("confighash", "", "config content hash (set by the ctguard CLI for cache busting)")
+}
+
 func run(pass *analysis.Pass) (any, error) {
 	ssaRes := pass.ResultOf[buildssa.Analyzer].(*buildssa.SSA)
 	secrets := annotations.CollectSecrets(pass)

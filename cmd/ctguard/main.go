@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -230,12 +232,19 @@ func runCLI(args []string) int {
 	}
 	exe, _ = filepath.Abs(exe)
 
+	resolvedConfig := config.ResolveConfigPath(configPath)
+
 	// We do NOT pass -ctguard.rules to go vet. Rule filtering happens in this runner.
 	goArgs := []string{"vet", "-json", "-vettool=" + exe}
+	// Fold the config content into go vet's cache key so edits aren't masked by a
+	// stale cached result (Go 1.26 caches vettool runs).
+	if h := fileContentHash(resolvedConfig); h != "" {
+		goArgs = append(goArgs, "-ctguard.confighash="+h)
+	}
 	goArgs = append(goArgs, patterns...)
 
 	cmd := exec.Command("go", goArgs...)
-	cmd.Env = append(os.Environ(), vettoolEnv+"=1")
+	cmd.Env = subprocessEnv(resolvedConfig)
 
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -301,6 +310,36 @@ func runCLI(args []string) int {
 		return 1
 	}
 	return 0
+}
+
+// subprocessEnv returns the vettool environment with CTGUARD_CONFIG pinned to the
+// parent's resolved config (replacing any inherited value).
+func subprocessEnv(resolvedConfig string) []string {
+	parent := os.Environ()
+	env := make([]string, 0, len(parent)+2)
+	for _, e := range parent {
+		if strings.HasPrefix(e, config.EnvConfigPath+"=") {
+			continue
+		}
+		env = append(env, e)
+	}
+	env = append(env, vettoolEnv+"=1")
+	if resolvedConfig != "" {
+		env = append(env, config.EnvConfigPath+"="+resolvedConfig)
+	}
+	return env
+}
+
+func fileContentHash(path string) string {
+	if path == "" {
+		return ""
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
 }
 
 func exitCodeFromErr(err error) int {

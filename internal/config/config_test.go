@@ -80,6 +80,56 @@ exclude:
 	}
 }
 
+// TestLoadFromHonorsConfigEnv guards that LoadFrom("") honors CTGUARD_CONFIG (Bug B).
+func TestLoadFromHonorsConfigEnv(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "custom.yaml")
+	if err := os.WriteFile(configPath, []byte("format: json\nquiet: true\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv(EnvConfigPath, configPath)
+	cfg, err := LoadFrom("")
+	if err != nil {
+		t.Fatalf("LoadFrom(\"\") failed: %v", err)
+	}
+	if cfg.Format != "json" || !cfg.Quiet {
+		t.Errorf("expected config loaded from %s, got %+v", EnvConfigPath, cfg)
+	}
+}
+
+// TestResolveConfigPath: explicit beats env, env beats auto-discovery, result is absolute.
+func TestResolveConfigPath(t *testing.T) {
+	tmpDir := t.TempDir()
+	envPath := filepath.Join(tmpDir, "env.yaml")
+	if err := os.WriteFile(envPath, []byte("# env\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("explicit_wins_over_env", func(t *testing.T) {
+		explicit := filepath.Join(tmpDir, "explicit.yaml")
+		t.Setenv(EnvConfigPath, envPath)
+		if got := ResolveConfigPath(explicit); got != explicit {
+			t.Errorf("expected explicit path %q, got %q", explicit, got)
+		}
+	})
+
+	t.Run("env_used_when_no_explicit", func(t *testing.T) {
+		t.Setenv(EnvConfigPath, envPath)
+		if got := ResolveConfigPath(""); got != envPath {
+			t.Errorf("expected env path %q, got %q", envPath, got)
+		}
+	})
+
+	t.Run("relative_explicit_made_absolute", func(t *testing.T) {
+		t.Setenv(EnvConfigPath, "")
+		got := ResolveConfigPath("rel/config.yaml")
+		if !filepath.IsAbs(got) {
+			t.Errorf("expected absolute path, got %q", got)
+		}
+	})
+}
+
 func TestGetRules(t *testing.T) {
 	tests := []struct {
 		name     string

@@ -158,7 +158,17 @@ func ClearCache() {
 	cacheErr = nil
 }
 
+// EnvConfigPath propagates the resolved config path to the vettool subprocess,
+// which runs in a build sandbox and cannot auto-discover the project config.
+const EnvConfigPath = "CTGUARD_CONFIG"
+
 func LoadFrom(path string) (*Config, error) {
+	if path == "" {
+		if envPath := os.Getenv(EnvConfigPath); envPath != "" {
+			path = envPath
+		}
+	}
+
 	if path != "" {
 		return loadFile(path)
 	}
@@ -172,6 +182,26 @@ func LoadFrom(path string) (*Config, error) {
 	}
 
 	return loadFile(configPath)
+}
+
+// ResolveConfigPath returns the absolute config path LoadFrom(explicit) would load,
+// or "" if none is found. Kept in sync with LoadFrom so parent and subprocess agree.
+func ResolveConfigPath(explicit string) string {
+	if explicit == "" {
+		if envPath := os.Getenv(EnvConfigPath); envPath != "" {
+			explicit = envPath
+		} else {
+			found, err := findConfigFile()
+			if err != nil {
+				return ""
+			}
+			explicit = found
+		}
+	}
+	if abs, err := filepath.Abs(explicit); err == nil {
+		return abs
+	}
+	return explicit
 }
 
 func findConfigFile() (string, error) {
