@@ -7,6 +7,14 @@ import (
 	"github.com/oasilturk/ctguard/internal/confidence"
 )
 
+// parseGoVetFindings parses go vet -json output (stdout on Go 1.26+, stderr before).
+func parseGoVetFindings(stdout, stderr string) []Finding {
+	if findings := parseGoVetJSON(stdout); len(findings) > 0 {
+		return findings
+	}
+	return parseGoVetJSON(stderr)
+}
+
 func parseGoVetJSON(s string) []Finding {
 	var out []Finding
 

@@ -244,8 +244,7 @@ func runCLI(args []string) int {
 	runErr := cmd.Run()
 	exitCode := exitCodeFromErr(runErr)
 
-	// go vet -json writes JSON diagnostics to stderr, not stdout
-	allFindings := parseGoVetJSON(stderr.String())
+	allFindings := parseGoVetFindings(stdout.String(), stderr.String())
 
 	enabled := enabledRuleSet(rules)
 	minConf := confidence.ConfidenceLow

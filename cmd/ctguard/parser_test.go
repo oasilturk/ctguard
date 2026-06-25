@@ -131,3 +131,57 @@ func TestParseGoVetJSON(t *testing.T) {
 		}
 	})
 }
+
+// TestParseGoVetFindings is the unit-level regression guard for Bug A: go vet
+// -json writes its diagnostics to stdout under Go 1.26+ and to stderr under Go
+// 1.25 and earlier. parseGoVetFindings must surface findings from whichever
+// stream carries them. (The CLI previously parsed stderr only, dropping every
+// finding under Go 1.26.)
+func TestParseGoVetFindings(t *testing.T) {
+	const onStdout = `{"pkg": {"ctguard": [{"posn": "a.go:1:1", "message": "CT001: x (confidence: high)"}]}}`
+	const onStderr = `{"pkg": {"ctguard": [{"posn": "b.go:2:2", "message": "CT002: y (confidence: low)"}]}}`
+
+	t.Run("json_on_stdout_go1.26", func(t *testing.T) {
+		got := parseGoVetFindings(onStdout, "")
+		if len(got) != 1 {
+			t.Fatalf("expected 1 finding from stdout, got %d", len(got))
+		}
+		if got[0].Rule != "CT001" {
+			t.Errorf("expected CT001, got %q", got[0].Rule)
+		}
+	})
+
+	t.Run("json_on_stderr_go1.25_fallback", func(t *testing.T) {
+		got := parseGoVetFindings("", onStderr)
+		if len(got) != 1 {
+			t.Fatalf("expected 1 finding from stderr fallback, got %d", len(got))
+		}
+		if got[0].Rule != "CT002" {
+			t.Errorf("expected CT002, got %q", got[0].Rule)
+		}
+	})
+
+	t.Run("stdout_wins_when_both_present", func(t *testing.T) {
+		got := parseGoVetFindings(onStdout, onStderr)
+		if len(got) != 1 {
+			t.Fatalf("expected 1 finding (stdout only), got %d", len(got))
+		}
+		if got[0].Rule != "CT001" {
+			t.Errorf("expected stdout's CT001 to win, got %q", got[0].Rule)
+		}
+	})
+
+	t.Run("both_empty", func(t *testing.T) {
+		if got := parseGoVetFindings("", ""); len(got) != 0 {
+			t.Errorf("expected 0 findings, got %d", len(got))
+		}
+	})
+
+	t.Run("non_json_stderr_noise_ignored", func(t *testing.T) {
+		// Real build error text on stderr, no JSON anywhere -> no findings.
+		got := parseGoVetFindings("", "# some/pkg\nbuild failed: undefined: Foo\n")
+		if len(got) != 0 {
+			t.Errorf("expected 0 findings for non-JSON stderr, got %d", len(got))
+		}
+	})
+}
