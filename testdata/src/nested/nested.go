@@ -23,9 +23,12 @@ func nestedBranches(key int, x int) int {
 func deepNesting(token string, a, b, c int) int {
 	if a > 0 {
 		if b > 0 {
-			if len(token) > 0 { // want "CT001"
-				if c > 0 {
-					return 1
+			// len() is metadata, no finding; branch on content below
+			if len(token) > 0 {
+				if token[0] == 'x' { // want "CT001"
+					if c > 0 {
+						return 1
+					}
 				}
 			}
 		}

@@ -6,9 +6,14 @@ import "bytes"
 
 //ctguard:secret secret
 func taintPropagation(secret []byte, data []byte) int {
-	// Direct use of secret
-	if len(secret) == 0 { // want "CT001"
+	// len() is metadata, not flagged
+	if len(secret) == 0 {
 		return 0
+	}
+
+	// branch on secret bytes
+	if secret[0] == 0 { // want "CT001"
+		return 2
 	}
 
 	// Direct comparison with secret

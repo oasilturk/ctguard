@@ -1,6 +1,6 @@
 [
   {
-    "pos": "testdata/src/ignores/ignores.go:38:14",
+    "pos": "testdata/src/ignores/ignores.go:38:12",
     "message": "CT001: branch depends on secret 'key' (confidence: high)",
     "rule": "CT001",
     "confidence": "high"

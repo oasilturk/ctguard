@@ -71,3 +71,19 @@ func TestIsolated(t *testing.T) {
 	testdata := getTestdataPath(t)
 	analysistest.Run(t, testdata, analyzer.Analyzer, "isolated")
 }
+
+// TestContainerRootTaint tests that secrets written into struct/slice fields
+// propagate to the containing value, enabling return-value taint and receiver
+// propagation across ctor/method calls (Shamir-style chain).
+func TestContainerRootTaint(t *testing.T) {
+	testdata := getTestdataPath(t)
+	analysistest.Run(t, testdata, analyzer.Analyzer, "containertaint")
+}
+
+// TestLengthContent tests that len/cap of secret slices return length-taint
+// only, while content access still triggers CT001/CT002. Makeslice with a
+// secret size propagates length-taint to len() of the result.
+func TestLengthContent(t *testing.T) {
+	testdata := getTestdataPath(t)
+	analysistest.Run(t, testdata, analyzer.Analyzer, "lengthcontent")
+}

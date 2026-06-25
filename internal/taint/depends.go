@@ -8,13 +8,20 @@ import (
 )
 
 // Depender tracks which SSA values depend on secret parameters.
+//
+// Content and length taint are tracked separately: len/cap of a secret slice
+// propagates only length taint, so an innocent len(secret) read is not reported
+// while slice[i] content reads still are.
 type Depender struct {
-	secretParams map[string]bool
-	memo         map[ssa.Value]string // stores secret name or "" if not tainted
-	inStack      map[ssa.Value]bool
-	taintedAddrs map[ssa.Value]string                     // tracks memory addresses that store tainted values
-	ipAnalyzer   InterproceduralInfo                      // interprocedural analysis info
-	confMemo     map[ssa.Value]confidence.ConfidenceLevel // stores confidence level for each tainted value
+	secretParams    map[string]bool
+	memo            map[ssa.Value]string // stores secret name or "" if not tainted
+	inStack         map[ssa.Value]bool
+	taintedAddrs    map[ssa.Value]string                     // content taint on memory addresses
+	addrLengthTaint map[ssa.Value]string                     // length taint on memory addresses
+	ipAnalyzer      InterproceduralInfo                      // interprocedural analysis info
+	confMemo        map[ssa.Value]confidence.ConfidenceLevel // stores confidence level for each tainted value
+	lenMemo         map[ssa.Value]string                     // length-taint secret name, mirrors memo
+	lenConfMemo     map[ssa.Value]confidence.ConfidenceLevel // length-taint confidence, mirrors confMemo
 }
 
 // InterproceduralInfo provides information about taint across function boundaries
@@ -25,12 +32,15 @@ type InterproceduralInfo interface {
 
 func NewDepender(fn *ssa.Function, secretParams map[string]bool, ipAnalyzer InterproceduralInfo) *Depender {
 	d := &Depender{
-		secretParams: secretParams,
-		memo:         map[ssa.Value]string{},
-		inStack:      map[ssa.Value]bool{},
-		taintedAddrs: map[ssa.Value]string{},
-		ipAnalyzer:   ipAnalyzer,
-		confMemo:     map[ssa.Value]confidence.ConfidenceLevel{},
+		secretParams:    secretParams,
+		memo:            map[ssa.Value]string{},
+		inStack:         map[ssa.Value]bool{},
+		taintedAddrs:    map[ssa.Value]string{},
+		addrLengthTaint: map[ssa.Value]string{},
+		ipAnalyzer:      ipAnalyzer,
+		confMemo:        map[ssa.Value]confidence.ConfidenceLevel{},
+		lenMemo:         map[ssa.Value]string{},
+		lenConfMemo:     map[ssa.Value]confidence.ConfidenceLevel{},
 	}
 	d.analyzeStores(fn)
 	return d
@@ -47,6 +57,119 @@ func maxConfidence(a, b confidence.ConfidenceLevel) confidence.ConfidenceLevel {
 	return b
 }
 
+// markAddrChainTainted walks a Store's address back to the root container
+// (Alloc/Param/Global), tainting every node on the way. This lets a secret
+// written into p.field taint p itself, so ctor-style returns and receiver
+// propagation see it. The over-tainting is intentional (LOW confidence).
+func (d *Depender) markAddrChainTainted(addr ssa.Value, secret string, visited map[ssa.Value]bool) {
+	if addr == nil || visited[addr] {
+		return
+	}
+	visited[addr] = true
+	d.taintedAddrs[addr] = secret
+
+	switch a := addr.(type) {
+	case *ssa.IndexAddr:
+		d.markAddrChainTainted(a.X, secret, visited)
+	case *ssa.FieldAddr:
+		d.markAddrChainTainted(a.X, secret, visited)
+	case *ssa.UnOp:
+		if a.Op == token.MUL {
+			d.markAddrChainTainted(a.X, secret, visited)
+		}
+	}
+}
+
+// LengthDependsOn reports the secret iff the length/cap of v depends on it.
+// Length taint comes from a secret-sized make()/chan or stored length taint; a
+// secret slice's own length is treated as public metadata. Memoized (lenMemo)
+// to keep the Phi/Convert traversal linear instead of O(2^k) per path.
+//
+// Known gap: a secret-length loop bound is not flagged, as it looks like a
+// benign len() branch.
+func (d *Depender) LengthDependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
+	if v == nil {
+		return "", confidence.ConfidenceLow
+	}
+	if s, ok := d.lenMemo[v]; ok {
+		return s, d.lenConfMemo[v]
+	}
+	if d.inStack[v] {
+		return "", confidence.ConfidenceLow
+	}
+	d.inStack[v] = true
+	defer func() { d.inStack[v] = false }()
+
+	secret, conf := d.computeLengthDependsOn(v)
+	d.lenMemo[v] = secret
+	d.lenConfMemo[v] = conf
+	return secret, conf
+}
+
+// computeLengthDependsOn is the structural recursion behind LengthDependsOn;
+// call only via LengthDependsOn, which adds the memo and cycle guard.
+func (d *Depender) computeLengthDependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
+	switch t := v.(type) {
+	case *ssa.MakeSlice:
+		if s, c := d.DependsOn(t.Len); s != "" {
+			return s, c
+		}
+		if t.Cap != nil {
+			if s, c := d.DependsOn(t.Cap); s != "" {
+				return s, c
+			}
+		}
+		return "", confidence.ConfidenceLow
+
+	case *ssa.MakeChan:
+		if t.Size != nil {
+			return d.DependsOn(t.Size)
+		}
+		return "", confidence.ConfidenceLow
+
+	case *ssa.UnOp:
+		if t.Op == token.MUL {
+			if s, ok := d.addrLengthTaint[t.X]; ok {
+				return s, confidence.ConfidenceLow
+			}
+			return d.LengthDependsOn(t.X)
+		}
+		return "", confidence.ConfidenceLow
+
+	case *ssa.Phi:
+		for _, e := range t.Edges {
+			if s, c := d.LengthDependsOn(e); s != "" {
+				return s, c
+			}
+		}
+		return "", confidence.ConfidenceLow
+
+	case *ssa.ChangeType:
+		return d.LengthDependsOn(t.X)
+
+	case *ssa.Convert:
+		return d.LengthDependsOn(t.X)
+
+	case *ssa.Extract:
+		return d.LengthDependsOn(t.Tuple)
+
+	case *ssa.Alloc:
+		if s, ok := d.addrLengthTaint[t]; ok {
+			return s, confidence.ConfidenceLow
+		}
+		return "", confidence.ConfidenceLow
+
+	case *ssa.FieldAddr:
+		if s, ok := d.addrLengthTaint[t]; ok {
+			return s, confidence.ConfidenceLow
+		}
+		return "", confidence.ConfidenceLow
+
+	default:
+		return "", confidence.ConfidenceLow
+	}
+}
+
 // analyzeStores tracks tainted memory locations from Store, MapUpdate, append, and channel Send operations.
 func (d *Depender) analyzeStores(fn *ssa.Function) {
 	if fn == nil || fn.Blocks == nil {
@@ -56,18 +179,11 @@ func (d *Depender) analyzeStores(fn *ssa.Function) {
 	for _, block := range fn.Blocks {
 		for _, instr := range block.Instrs {
 			if store, ok := instr.(*ssa.Store); ok {
-				secret, _ := d.DependsOn(store.Val)
-				if secret == "" {
-					continue
+				if secret, _ := d.DependsOn(store.Val); secret != "" {
+					d.markAddrChainTainted(store.Addr, secret, map[ssa.Value]bool{})
 				}
-
-				d.taintedAddrs[store.Addr] = secret
-
-				switch addr := store.Addr.(type) {
-				case *ssa.IndexAddr:
-					d.taintedAddrs[addr.X] = secret
-				case *ssa.FieldAddr:
-					d.taintedAddrs[addr.X] = secret
+				if lenSecret, _ := d.LengthDependsOn(store.Val); lenSecret != "" {
+					d.addrLengthTaint[store.Addr] = lenSecret
 				}
 				continue
 			}
@@ -169,13 +285,23 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 			// Analyzed same-package callee with no tainted return: definitely not tainted.
 			secret = ""
 			conf = confidence.ConfidenceLow
-		} else if _, isBuiltin := t.Call.Value.(*ssa.Builtin); isBuiltin {
-			// Builtins (len, cap, append, copy, …) are language primitives — transparent.
-			// Confidence propagates directly from the argument.
-			for _, a := range t.Call.Args {
-				if s, c := d.DependsOn(a); s != "" {
-					secret = s
-					conf = maxConfidence(conf, c)
+		} else if builtin, isBuiltin := t.Call.Value.(*ssa.Builtin); isBuiltin {
+			switch builtin.Name() {
+			case "len", "cap":
+				// len/cap expose metadata, not content; only length taint flows.
+				for _, a := range t.Call.Args {
+					if s, c := d.LengthDependsOn(a); s != "" {
+						secret = s
+						conf = maxConfidence(conf, c)
+					}
+				}
+			default:
+				// append, copy, … are transparent; content taint flows from args.
+				for _, a := range t.Call.Args {
+					if s, c := d.DependsOn(a); s != "" {
+						secret = s
+						conf = maxConfidence(conf, c)
+					}
 				}
 			}
 		} else {

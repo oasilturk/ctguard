@@ -35,7 +35,7 @@ func lineLevelIgnoreAbove(key []byte, expected []byte) bool {
 //ctguard:ignore CT002
 //ctguard:secret key
 func partialIgnore(key []byte, expected []byte) bool {
-	if len(key) > 0 { // CT001 should still trigger (not ignored)
+	if key[0] != 0 { // CT001 should still trigger (not ignored)
 		return bytes.Equal(key, expected) // CT002 ignored
 	}
 	return false
@@ -53,7 +53,7 @@ func noIgnore(key []byte, expected []byte) bool {
 //ctguard:ignore
 //ctguard:secret key
 func ignoreAll(key []byte, data []byte) {
-	if len(key) > 0 { // CT001 ignored
+	if key[0] != 0 { // CT001 ignored
 		fmt.Println(key) // CT004 ignored
 	}
 }
@@ -63,7 +63,7 @@ func ignoreAll(key []byte, data []byte) {
 //ctguard:ignore CT001 CT004
 //ctguard:secret key
 func ignoreMultiple(key []byte, data []byte) {
-	if len(key) > 0 { // CT001 ignored
+	if key[0] != 0 { // CT001 ignored
 		fmt.Println(key) // CT004 ignored
 	}
 	_ = bytes.Equal(key, data) // CT002 NOT ignored - should report
@@ -74,7 +74,7 @@ func ignoreMultiple(key []byte, data []byte) {
 //ctguard:ignore CT001
 //ctguard:secret key
 func mixedIgnore(key []byte, expected []byte) bool {
-	if len(key) > 0 { // CT001 ignored (function-level)
+	if key[0] != 0 { // CT001 ignored (function-level)
 		return bytes.Equal(key, expected) //ctguard:ignore CT002
 	}
 	return bytes.Equal(key, expected) // CT002 NOT ignored - should report
