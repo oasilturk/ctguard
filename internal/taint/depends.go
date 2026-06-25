@@ -2,6 +2,8 @@ package taint
 
 import (
 	"go/token"
+	"strconv"
+	"strings"
 
 	"github.com/oasilturk/ctguard/internal/confidence"
 	"golang.org/x/tools/go/ssa"
@@ -13,15 +15,17 @@ import (
 // propagates only length taint, so an innocent len(secret) read is not reported
 // while slice[i] content reads still are.
 type Depender struct {
-	secretParams    map[string]bool
-	memo            map[ssa.Value]string // stores secret name or "" if not tainted
-	inStack         map[ssa.Value]bool
-	taintedAddrs    map[ssa.Value]string                     // content taint on memory addresses
-	addrLengthTaint map[ssa.Value]string                     // length taint on memory addresses
-	ipAnalyzer      InterproceduralInfo                      // interprocedural analysis info
-	confMemo        map[ssa.Value]confidence.ConfidenceLevel // stores confidence level for each tainted value
-	lenMemo         map[ssa.Value]string                     // length-taint secret name, mirrors memo
-	lenConfMemo     map[ssa.Value]confidence.ConfidenceLevel // length-taint confidence, mirrors confMemo
+	secretParams       map[string]bool
+	memo               map[ssa.Value]string // stores secret name or "" if not tainted
+	inStack            map[ssa.Value]bool
+	taintedAddrs       map[ssa.Value]string                     // container-level content taint (elements, maps, chans)
+	addrLengthTaint    map[ssa.Value]string                     // length taint on memory addresses
+	fieldTaint         map[ssa.Value]map[string]string          // field-qualified taint: root -> field path -> secret
+	containerHasSecret map[ssa.Value]string                     // whole-value: root holds a secret somewhere
+	ipAnalyzer         InterproceduralInfo                      // interprocedural analysis info
+	confMemo           map[ssa.Value]confidence.ConfidenceLevel // stores confidence level for each tainted value
+	lenMemo            map[ssa.Value]string                     // length-taint secret name, mirrors memo
+	lenConfMemo        map[ssa.Value]confidence.ConfidenceLevel // length-taint confidence, mirrors confMemo
 }
 
 // InterproceduralInfo provides information about taint across function boundaries
@@ -32,15 +36,17 @@ type InterproceduralInfo interface {
 
 func NewDepender(fn *ssa.Function, secretParams map[string]bool, ipAnalyzer InterproceduralInfo) *Depender {
 	d := &Depender{
-		secretParams:    secretParams,
-		memo:            map[ssa.Value]string{},
-		inStack:         map[ssa.Value]bool{},
-		taintedAddrs:    map[ssa.Value]string{},
-		addrLengthTaint: map[ssa.Value]string{},
-		ipAnalyzer:      ipAnalyzer,
-		confMemo:        map[ssa.Value]confidence.ConfidenceLevel{},
-		lenMemo:         map[ssa.Value]string{},
-		lenConfMemo:     map[ssa.Value]confidence.ConfidenceLevel{},
+		secretParams:       secretParams,
+		memo:               map[ssa.Value]string{},
+		inStack:            map[ssa.Value]bool{},
+		taintedAddrs:       map[ssa.Value]string{},
+		addrLengthTaint:    map[ssa.Value]string{},
+		fieldTaint:         map[ssa.Value]map[string]string{},
+		containerHasSecret: map[ssa.Value]string{},
+		ipAnalyzer:         ipAnalyzer,
+		confMemo:           map[ssa.Value]confidence.ConfidenceLevel{},
+		lenMemo:            map[ssa.Value]string{},
+		lenConfMemo:        map[ssa.Value]confidence.ConfidenceLevel{},
 	}
 	d.analyzeStores(fn)
 	return d
@@ -57,26 +63,114 @@ func maxConfidence(a, b confidence.ConfidenceLevel) confidence.ConfidenceLevel {
 	return b
 }
 
-// markAddrChainTainted walks a Store's address back to the root container
-// (Alloc/Param/Global), tainting every node on the way. This lets a secret
-// written into p.field taint p itself, so ctor-style returns and receiver
-// propagation see it. The over-tainting is intentional (LOW confidence).
-func (d *Depender) markAddrChainTainted(addr ssa.Value, secret string, visited map[ssa.Value]bool) {
-	if addr == nil || visited[addr] {
-		return
-	}
-	visited[addr] = true
-	d.taintedAddrs[addr] = secret
-
-	switch a := addr.(type) {
-	case *ssa.IndexAddr:
-		d.markAddrChainTainted(a.X, secret, visited)
-	case *ssa.FieldAddr:
-		d.markAddrChainTainted(a.X, secret, visited)
-	case *ssa.UnOp:
-		if a.Op == token.MUL {
-			d.markAddrChainTainted(a.X, secret, visited)
+// resolveFieldPath walks an address back to its root value, collecting struct
+// field indices into a comma path ("0", "0,1"). The root is whatever the chain
+// bottoms out at (Alloc/Parameter/Global/Call/Phi/...); any kind is a valid taint
+// key because the same SSA value recurs at the write and read sites. An element
+// step (IndexAddr/Index) keeps walking but drops the sub-path below it, so a
+// slice-in-struct write like p.coefficients[0] still resolves to root p.
+func resolveFieldPath(v ssa.Value) (root ssa.Value, path string, sawIndex bool) {
+	var idx []string // root-adjacent first
+	for {
+		switch a := v.(type) {
+		case *ssa.FieldAddr:
+			idx = append([]string{strconv.Itoa(a.Field)}, idx...)
+			v = a.X
+		case *ssa.Field:
+			idx = append([]string{strconv.Itoa(a.Field)}, idx...)
+			v = a.X
+		case *ssa.UnOp:
+			if a.Op == token.MUL { // transparent deref
+				v = a.X
+				continue
+			}
+			return v, strings.Join(idx, ","), sawIndex
+		case *ssa.IndexAddr:
+			sawIndex = true
+			idx = nil // drop sub-path, keep walking
+			v = a.X
+		case *ssa.Index:
+			sawIndex = true
+			idx = nil
+			v = a.X
+		default:
+			return v, strings.Join(idx, ","), sawIndex
 		}
+	}
+}
+
+// indexBaseOf returns the container base (.X of the enclosing IndexAddr) that the
+// element-blind reads consult, or addr itself if there is no IndexAddr.
+func indexBaseOf(addr ssa.Value) ssa.Value {
+	for {
+		switch a := addr.(type) {
+		case *ssa.IndexAddr:
+			return a.X
+		case *ssa.FieldAddr:
+			addr = a.X
+		case *ssa.UnOp:
+			if a.Op == token.MUL {
+				addr = a.X
+				continue
+			}
+			return addr
+		default:
+			return addr
+		}
+	}
+}
+
+func (d *Depender) setFieldTaint(root ssa.Value, path, secret string) {
+	m := d.fieldTaint[root]
+	if m == nil {
+		m = map[string]string{}
+		d.fieldTaint[root] = m
+	}
+	m[path] = secret
+}
+
+// fieldTainted answers query B (is THIS field secret?). Secret-param roots and
+// whole-object stores taint every field; otherwise only an exact or overlapping
+// path matches, so siblings do not.
+func (d *Depender) fieldTainted(root ssa.Value, path string) (string, bool) {
+	if p, ok := root.(*ssa.Parameter); ok && d.secretParams[p.Name()] {
+		return p.Name(), true
+	}
+	if s, ok := d.taintedAddrs[root]; ok { // whole-object store
+		return s, true
+	}
+	for k, s := range d.fieldTaint[root] {
+		if k == path || strings.HasPrefix(path, k+",") || strings.HasPrefix(k, path+",") {
+			return s, true
+		}
+	}
+	// The root may itself be a wholly-tainted value (e.g. a tainted Call/Phi
+	// result, p := taintedCtor()); then every field is tainted. Exclude *ssa.Alloc:
+	// DependsOn(Alloc) reflects local sibling-field writes via containerHasSecret,
+	// which here would be a false positive.
+	if _, isAlloc := root.(*ssa.Alloc); !isAlloc {
+		if s, _ := d.DependsOn(root); s != "" {
+			return s, true
+		}
+	}
+	return "", false
+}
+
+// recordStoreTaint records content taint for a Store: field-qualified for struct
+// fields, container-level for element/map/chan/whole-object writes.
+func (d *Depender) recordStoreTaint(addr ssa.Value, secret string) {
+	root, path, sawIndex := resolveFieldPath(addr)
+	d.containerHasSecret[root] = secret // query A: container holds a secret
+	switch {
+	case sawIndex:
+		d.taintedAddrs[indexBaseOf(addr)] = secret // element-blind base
+		if path != "" {
+			d.setFieldTaint(root, path, secret) // secret in a slice/array-typed field
+		}
+	case path != "":
+		d.setFieldTaint(root, path, secret) // struct-field write
+	default:
+		d.taintedAddrs[addr] = secret // whole-object store
 	}
 }
 
@@ -180,7 +274,7 @@ func (d *Depender) analyzeStores(fn *ssa.Function) {
 		for _, instr := range block.Instrs {
 			if store, ok := instr.(*ssa.Store); ok {
 				if secret, _ := d.DependsOn(store.Val); secret != "" {
-					d.markAddrChainTainted(store.Addr, secret, map[ssa.Value]bool{})
+					d.recordStoreTaint(store.Addr, secret)
 				}
 				if lenSecret, _ := d.LengthDependsOn(store.Val); lenSecret != "" {
 					d.addrLengthTaint[store.Addr] = lenSecret
@@ -318,28 +412,35 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 
 	case *ssa.UnOp:
 		switch t.Op {
-		case token.MUL: // * as in pointer dereference
-			addr := t.X
-			if s, ok := d.taintedAddrs[addr]; ok {
-				secret = s
-				conf = confidence.ConfidenceLow // dereferenced pointer is LOW
-			}
-			if secret == "" {
-				switch addrVal := addr.(type) {
-				case *ssa.IndexAddr:
-					if s, ok := d.taintedAddrs[addrVal.X]; ok {
-						secret = s
-						conf = confidence.ConfidenceLow
-					}
-				case *ssa.FieldAddr:
-					if s, ok := d.taintedAddrs[addrVal.X]; ok {
+		case token.MUL: // pointer dereference
+			switch ax := t.X.(type) {
+			case *ssa.FieldAddr: // *(&r.f): field-qualified (query B)
+				root, path, _ := resolveFieldPath(ax)
+				if s, ok := d.fieldTainted(root, path); ok {
+					secret = s
+					conf = confidence.ConfidenceLow
+				}
+			case *ssa.IndexAddr: // element read: element-blind base, then container oracle
+				if s, ok := d.taintedAddrs[ax.X]; ok {
+					secret = s
+					conf = confidence.ConfidenceLow
+				} else if root, _, _ := resolveFieldPath(ax); root != nil {
+					if s, ok := d.containerHasSecret[root]; ok {
 						secret = s
 						conf = confidence.ConfidenceLow
 					}
 				}
+			default: // whole-value deref *p
+				if s, ok := d.taintedAddrs[t.X]; ok {
+					secret = s
+					conf = confidence.ConfidenceLow
+				} else if s, ok := d.containerHasSecret[t.X]; ok {
+					secret = s
+					conf = confidence.ConfidenceLow
+				}
 			}
 			if secret == "" {
-				secret, conf = d.DependsOn(addr)
+				secret, conf = d.DependsOn(t.X) // structural fallback
 			}
 		case token.ARROW: // <- as in channel receive
 			// Check if the channel itself is tainted
@@ -367,17 +468,20 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 		secret, conf = d.DependsOn(t.Tuple)
 
 	case *ssa.Field:
-		if s, ok := d.taintedAddrs[t.X]; ok {
+		// query B: this field's taint only (fieldTainted also covers a wholly
+		// tainted non-Alloc root), never a sibling's.
+		root, path, _ := resolveFieldPath(t)
+		if s, ok := d.fieldTainted(root, path); ok {
 			secret = s
-			conf = confidence.ConfidenceLow // field access without field tracking
 		}
-		if secret == "" {
-			secret, conf = d.DependsOn(t.X)
-		}
+		conf = confidence.ConfidenceLow
 
 	case *ssa.FieldAddr:
-		// no field-level tracking, therefore LOW confidence
-		secret, _ = d.DependsOn(t.X)
+		// query B: this field's taint only, never a sibling's.
+		root, path, _ := resolveFieldPath(t)
+		if s, ok := d.fieldTainted(root, path); ok {
+			secret = s
+		}
 		conf = confidence.ConfidenceLow
 
 	case *ssa.Index:
@@ -455,7 +559,11 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 		}
 
 	case *ssa.Alloc:
-		if s, ok := d.taintedAddrs[t]; ok {
+		// query A: tainted if the container holds a secret anywhere
+		if s, ok := d.containerHasSecret[t]; ok {
+			secret = s
+			conf = confidence.ConfidenceLow
+		} else if s, ok := d.taintedAddrs[t]; ok {
 			secret = s
 			conf = confidence.ConfidenceLow // tainted allocation is LOW
 		}
