@@ -35,6 +35,32 @@ func TestEnabledRuleSet(t *testing.T) {
 	}
 }
 
+func TestFirstUnknownRule(t *testing.T) {
+	tests := []struct {
+		name   string
+		tokens []string
+		want   string
+	}{
+		{"valid_single", []string{"CT001"}, ""},
+		{"valid_multi", []string{"CT001", "CT007"}, ""},
+		{"valid_lowercase", []string{"ct003"}, ""},
+		{"all_wildcard", []string{"all"}, ""},
+		{"star_wildcard", []string{"*"}, ""},
+		{"empty_tokens", []string{"", "  "}, ""},
+		{"typo_ct2", []string{"CT2"}, "CT2"},
+		{"out_of_range", []string{"CT999"}, "CT999"},
+		{"valid_then_bad", []string{"CT001", "CT042"}, "CT042"},
+		{"non_ct", []string{"FOO"}, "FOO"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := firstUnknownRule(tt.tokens); got != tt.want {
+				t.Errorf("firstUnknownRule(%v) = %q, want %q", tt.tokens, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestFilterFindings(t *testing.T) {
 	findings := []Finding{
 		{Rule: "CT001", Message: "CT001: branch (confidence: high)", Confidence: "high"},
@@ -120,6 +146,14 @@ func TestShouldExclude(t *testing.T) {
 		{"exact_prefix", "vendor/lib.go:1:1", []string{"vendor"}, true},
 		{"empty_pattern_in_list", "foo.go:1:1", []string{"", "  "}, false},
 		{"quoted_pattern", "vendor/lib/foo.go:10:5", []string{`"vendor/**"`}, true},
+		// Doublestar patterns shipped in the default .ctguard.yaml that previously
+		// matched nothing (literal HasSuffix instead of a glob).
+		{"doublestar_test_nested", "pkg/sub/foo_test.go:5:1", []string{"**/*_test.go"}, true},
+		{"doublestar_test_root", "foo_test.go:5:1", []string{"**/*_test.go"}, true},
+		{"doublestar_mock", "internal/mock_db.go:1:1", []string{"**/mock_*.go"}, true},
+		{"doublestar_generated", "api/v1/generated/types.go:1:1", []string{"**/generated/**"}, true},
+		{"doublestar_no_match", "internal/real.go:1:1", []string{"**/*_test.go"}, false},
+		{"testdata_glob", "testdata/src/x.go:1:1", []string{"testdata/**"}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

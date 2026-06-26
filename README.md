@@ -74,15 +74,15 @@ ctguard ./...
 ```go
 //ctguard:secret key
 func Check(key string) {
-    normalized := strings.ToLower(key)
-    if normalized == "admin" {           // CT001: branch depends on secret
+    if key == "admin" {      // secret-dependent comparison
         grantAccess()
     }
 }
 ```
 
 ```
-auth.go:4:5 CT001: branch depends on secret 'key' (confidence: high)
+auth.go:3:8 CT001: branch depends on secret 'key' (confidence: high)
+auth.go:3:8 CT002: string comparison uses secret 'key' (confidence: high)
 ```
 
 Fix with constant-time operations:
@@ -90,8 +90,7 @@ Fix with constant-time operations:
 ```go
 //ctguard:secret key
 func Check(key string) {
-    normalized := strings.ToLower(key)
-    if subtle.ConstantTimeCompare([]byte(normalized), []byte("admin")) == 1 {
+    if subtle.ConstantTimeCompare([]byte(key), []byte("admin")) == 1 {
         grantAccess()
     }
 }

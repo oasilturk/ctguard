@@ -64,6 +64,74 @@ func runForFindings(t *testing.T, exe, projectRoot string, extraEnv []string, ar
 	return findings
 }
 
+// writeModuleFile writes content to path (relative to root), creating parent dirs.
+func writeModuleFile(t *testing.T, root, rel, content string) {
+	t.Helper()
+	full := filepath.Join(root, rel)
+	if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+		t.Fatalf("mkdir for %s: %v", rel, err)
+	}
+	if err := os.WriteFile(full, []byte(content), 0o644); err != nil {
+		t.Fatalf("write %s: %v", rel, err)
+	}
+}
+
+// Regression: a broken package must not drop a healthy sibling's findings or pass clean.
+func TestRegressionFailOpen_BuildError(t *testing.T) {
+	exe := buildTestBinary(t)
+	defer func() { _ = os.Remove(exe) }()
+
+	mod := t.TempDir()
+	writeModuleFile(t, mod, "go.mod", "module ctgfailopen\n\ngo 1.25\n")
+	writeModuleFile(t, mod, "broken/broken.go", "package broken\n\nfunc Oops( {\n")
+	writeModuleFile(t, mod, "fires/fires.go",
+		"package fires\n\n//ctguard:secret password\n"+
+			"func Login(password, stored string) bool {\n"+
+			"\tif password == stored {\n\t\treturn true\n\t}\n\treturn false\n}\n")
+
+	emptyCfg := writeTempConfig(t, "# empty\n")
+
+	cmd := exec.Command(exe, "-format=json", "-summary=false", "-config="+emptyCfg, "./...")
+	cmd.Dir = mod
+	cmd.Env = mergeEnv(os.Environ(), "NO_COLOR=1")
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+
+	if !strings.Contains(stdout.String(), "CT001") {
+		t.Fatalf("fail-open: the healthy package's finding was dropped because a sibling failed to compile\nstdout:\n%s\nstderr:\n%s", stdout.String(), stderr.String())
+	}
+	if exitCodeFromErr(err) == 0 {
+		t.Errorf("expected non-zero exit for an incomplete scan, got 0\nstderr:\n%s", stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "failed to load") {
+		t.Errorf("expected a build-failure notice on stderr, got:\n%s", stderr.String())
+	}
+}
+
+// Regression: an unknown rule ID must exit 2, not silently pass clean.
+func TestRegressionUnknownRuleExits2(t *testing.T) {
+	exe := buildTestBinary(t)
+	defer func() { _ = os.Remove(exe) }()
+	root := getProjectRoot(t)
+	emptyCfg := writeTempConfig(t, "# empty\n")
+
+	cmd := exec.Command(exe, "-rules=CT2", "-config="+emptyCfg, "./testdata/src/branches/")
+	cmd.Dir = root
+	cmd.Env = mergeEnv(os.Environ(), "NO_COLOR=1")
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+
+	if got := exitCodeFromErr(err); got != 2 {
+		t.Errorf("expected exit 2 for unknown rule, got %d (stderr: %s)", got, stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "unknown rule") {
+		t.Errorf("expected 'unknown rule' error, got: %s", stderr.String())
+	}
+}
+
 // TestRegressionBugA_FindingsSurfaced guards Bug A: the CLI must surface findings
 // (the wrapper used to parse only stderr, dropping everything under Go 1.26).
 func TestRegressionBugA_FindingsSurfaced(t *testing.T) {

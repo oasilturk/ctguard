@@ -87,3 +87,9 @@ func TestLengthContent(t *testing.T) {
 	testdata := getTestdataPath(t)
 	analysistest.Run(t, testdata, analyzer.Analyzer, "lengthcontent")
 }
+
+// Regression: branching on a constant-time comparison must not trigger CT001.
+func TestConstantTimeSanitizer(t *testing.T) {
+	testdata := getTestdataPath(t)
+	analysistest.Run(t, testdata, analyzer.Analyzer, "constanttime")
+}

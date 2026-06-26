@@ -8,6 +8,26 @@ import (
 	"github.com/oasilturk/ctguard/internal/confidence"
 )
 
+// validRuleIDs is the set of rule IDs ctguard implements.
+var validRuleIDs = map[string]bool{
+	"CT001": true, "CT002": true, "CT003": true, "CT004": true,
+	"CT005": true, "CT006": true, "CT007": true,
+}
+
+// firstUnknownRule returns the first unknown rule ID, or "" if all valid (empty/"all"/"*" ok).
+func firstUnknownRule(tokens []string) string {
+	for _, tok := range tokens {
+		r := strings.ToUpper(strings.TrimSpace(tok))
+		if r == "" || r == "ALL" || r == "*" {
+			continue
+		}
+		if !validRuleIDs[r] {
+			return strings.TrimSpace(tok)
+		}
+	}
+	return ""
+}
+
 func enabledRuleSet(s string) map[string]bool {
 	out := map[string]bool{}
 	s = strings.TrimSpace(s)
@@ -91,30 +111,18 @@ func shouldExclude(pos string, patterns []string) bool {
 		// Remove quotes if present
 		pattern = strings.Trim(pattern, `"'`)
 
-		// Handle different pattern types
-		if strings.HasSuffix(pattern, "/**") {
-			// "vendor/**" matches "vendor/anything"
-			prefix := strings.TrimSuffix(pattern, "/**")
-			if strings.HasPrefix(filePath, prefix+"/") || filePath == prefix {
-				return true
-			}
-		} else if strings.HasPrefix(pattern, "**/") {
-			// "**/test.go" matches "any/path/test.go"
-			suffix := strings.TrimPrefix(pattern, "**/")
-			if strings.HasSuffix(filePath, suffix) || strings.Contains(filePath, "/"+suffix) {
-				return true
-			}
-		} else if strings.Contains(pattern, "*") {
-			// Use filepath.Match for glob patterns
+		// glob with "**" ("vendor/**", "**/*_test.go")
+		if matchGlob(pattern, filePath) {
+			return true
+		}
+		// slash-free glob matches a basename at any depth ("*_test.go")
+		if !strings.Contains(pattern, "/") && strings.Contains(pattern, "*") {
 			if matched, _ := filepath.Match(pattern, filepath.Base(filePath)); matched {
 				return true
 			}
-			// Also try matching the full path
-			if matched, _ := filepath.Match(pattern, filePath); matched {
-				return true
-			}
-		} else {
-			// Exact match or prefix match
+		}
+		// plain literal / dir prefix ("vendor")
+		if !strings.ContainsAny(pattern, "*?") {
 			if filePath == pattern || strings.HasPrefix(filePath, pattern+"/") {
 				return true
 			}
@@ -122,4 +130,36 @@ func shouldExclude(pos string, patterns []string) bool {
 	}
 
 	return false
+}
+
+// matchGlob matches path against a glob with "**" (zero or more segments); other
+// segments use filepath.Match.
+func matchGlob(pattern, path string) bool {
+	return matchSegments(strings.Split(pattern, "/"), strings.Split(path, "/"))
+}
+
+func matchSegments(pat, name []string) bool {
+	for len(pat) > 0 {
+		if pat[0] == "**" {
+			rest := pat[1:]
+			if len(rest) == 0 {
+				return true // trailing "**" consumes the remaining segments
+			}
+			for i := 0; i <= len(name); i++ {
+				if matchSegments(rest, name[i:]) {
+					return true
+				}
+			}
+			return false
+		}
+		if len(name) == 0 {
+			return false
+		}
+		if ok, _ := filepath.Match(pat[0], name[0]); !ok {
+			return false
+		}
+		pat = pat[1:]
+		name = name[1:]
+	}
+	return len(name) == 0
 }

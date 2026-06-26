@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -182,6 +183,116 @@ func TestParseGoVetFindings(t *testing.T) {
 		got := parseGoVetFindings("", "# some/pkg\nbuild failed: undefined: Foo\n")
 		if len(got) != 0 {
 			t.Errorf("expected 0 findings for non-JSON stderr, got %d", len(got))
+		}
+	})
+}
+
+// Regression: a brace in a sibling's compiler error must not drop healthy findings.
+func TestParseGoVetFindings_BuildErrorInterleaved(t *testing.T) {
+	const stream = "# m/broken\n" +
+		"ctguard: broken/broken.go:3:12: expected ')', found '{'\n" +
+		"# m/fires\n" +
+		"{\n" +
+		"\t\"m/fires\": {\n" +
+		"\t\t\"ctguard\": [\n" +
+		"\t\t\t{\n" +
+		"\t\t\t\t\"posn\": \"fires.go:5:14\",\n" +
+		"\t\t\t\t\"message\": \"CT001: branch depends on secret 'password' (confidence: high)\"\n" +
+		"\t\t\t}\n" +
+		"\t\t]\n" +
+		"\t}\n" +
+		"}\n"
+
+	t.Run("healthy_finding_survives_broken_sibling", func(t *testing.T) {
+		got := parseGoVetFindings("", stream)
+		if len(got) != 1 {
+			t.Fatalf("fail-open: expected the healthy package's finding to survive, got %d findings", len(got))
+		}
+		if got[0].Rule != "CT001" {
+			t.Errorf("expected CT001, got %q", got[0].Rule)
+		}
+	})
+
+	t.Run("build_error_surfaced", func(t *testing.T) {
+		errs := goVetPlainErrors("", stream)
+		joined := strings.Join(errs, "\n")
+		if !strings.Contains(joined, "expected ')', found '{'") {
+			t.Errorf("expected the compiler error to be surfaced, got: %q", joined)
+		}
+		for _, e := range errs {
+			if strings.HasPrefix(strings.TrimSpace(e), "#") {
+				t.Errorf("package header leaked into errors: %q", e)
+			}
+			if strings.Contains(e, "\"message\"") {
+				t.Errorf("JSON content leaked into errors: %q", e)
+			}
+		}
+	})
+}
+
+// Regression: a brace in the path (inside the "posn" string) must not drop the finding.
+func TestParseGoVetFindings_BraceInPath(t *testing.T) {
+	const stream = "# m/fires\n" +
+		"{\n" +
+		"\t\"m/fires\": {\n" +
+		"\t\t\"ctguard\": [\n" +
+		"\t\t\t{\n" +
+		"\t\t\t\t\"posn\": \"/tmp/pa}rent/{x}/fires/f.go:3:33\",\n" +
+		"\t\t\t\t\"message\": \"CT001: branch depends on secret 'pw' (confidence: high)\"\n" +
+		"\t\t\t}\n" +
+		"\t\t]\n" +
+		"\t}\n" +
+		"}\n"
+
+	got := parseGoVetFindings("", stream)
+	if len(got) != 1 {
+		t.Fatalf("fail-open: a brace in the path dropped the finding; got %d findings", len(got))
+	}
+	if got[0].Rule != "CT001" {
+		t.Errorf("expected CT001, got %q", got[0].Rule)
+	}
+	if got[0].Pos != "/tmp/pa}rent/{x}/fires/f.go:3:33" {
+		t.Errorf("position mangled: %q", got[0].Pos)
+	}
+	if goVetParseFailed("", stream) {
+		t.Errorf("goVetParseFailed should be false for well-formed JSON with braces in a string")
+	}
+}
+
+func TestJSONObjectLen(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want int
+	}{
+		{"simple", `{"a":1}`, 7},
+		{"nested", `{"a":{"b":2}}`, 13},
+		{"brace_in_string", `{"p":"a}b"}`, 11},
+		{"open_brace_in_string", `{"p":"a{b"}`, 11},
+		{"escaped_quote_then_brace", `{"p":"a\"}b"}xx`, 13},
+		{"unbalanced", `{"a":1`, 0},
+		{"trailing_after_object", `{"a":1} trailing`, 7},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := jsonObjectLen(tt.in); got != tt.want {
+				t.Errorf("jsonObjectLen(%q) = %d, want %d", tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+// Regression: a corrupt JSON object must report a parse failure (fail closed).
+func TestGoVetParseFailed_FailClosed(t *testing.T) {
+	t.Run("valid", func(t *testing.T) {
+		if goVetParseFailed("", `{"pkg":{"ctguard":[]}}`) {
+			t.Error("valid JSON should not report a parse failure")
+		}
+	})
+	t.Run("corrupt_object", func(t *testing.T) {
+		// Balanced braces but not valid JSON (bare word where a value is expected).
+		if !goVetParseFailed("", "{not valid json}") {
+			t.Error("a balanced-but-invalid JSON block must report a parse failure (fail closed)")
 		}
 	})
 }

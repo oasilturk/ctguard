@@ -372,7 +372,11 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 	// function calls
 	case *ssa.Call:
 		callee := t.Call.StaticCallee()
-		if callee != nil &&
+		if callee != nil && isConstantTimeSanitizer(callee) {
+			// Constant-time comparison result is a decision, not secret content: sanitize.
+			secret = ""
+			conf = confidence.ConfidenceLow
+		} else if callee != nil &&
 			d.ipAnalyzer != nil &&
 			d.ipAnalyzer.IsAnalyzed(callee) &&
 			!d.ipAnalyzer.HasTaintedReturn(callee) {
@@ -585,6 +589,28 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 	d.memo[v] = secret
 	d.confMemo[v] = conf
 	return secret, conf
+}
+
+// constantTimeComparators are functions whose result is a comparison decision, not
+// secret content. Excludes ConstantTimeSelect/Copy/XORBytes (results can be secret).
+var constantTimeComparators = map[string]map[string]bool{
+	"crypto/subtle": {
+		"ConstantTimeCompare":  true,
+		"ConstantTimeByteEq":   true,
+		"ConstantTimeEq":       true,
+		"ConstantTimeLessOrEq": true,
+	},
+	"crypto/hmac": {
+		"Equal": true,
+	},
+}
+
+func isConstantTimeSanitizer(fn *ssa.Function) bool {
+	obj := fn.Object()
+	if obj == nil || obj.Pkg() == nil {
+		return false
+	}
+	return constantTimeComparators[obj.Pkg().Path()][obj.Name()]
 }
 
 // IsTaintedChannel returns the secret name if the channel is tainted, empty string otherwise.

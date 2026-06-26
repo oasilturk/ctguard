@@ -221,6 +221,14 @@ func runCLI(args []string) int {
 		return 2
 	}
 
+	// Reject unknown rule IDs; silently matching nothing would disable detection.
+	for _, src := range [][]string{strings.Split(rules, ","), cfg.Rules.Enable, cfg.Rules.Disable} {
+		if bad := firstUnknownRule(src); bad != "" {
+			fmt.Fprintf(os.Stderr, "%s%serror:%s unknown rule %q (valid rules: CT001-CT007, or 'all')\n", c.Bold, c.Red, c.Reset, bad)
+			return 2
+		}
+	}
+
 	if len(patterns) == 0 {
 		patterns = []string{"./..."}
 	}
@@ -242,6 +250,12 @@ func runCLI(args []string) int {
 		goArgs = append(goArgs, "-ctguard.confighash="+h)
 	}
 	goArgs = append(goArgs, patterns...)
+
+	// Without the go toolchain the scan would look empty/clean instead of erroring.
+	if _, err := exec.LookPath("go"); err != nil {
+		fmt.Fprintf(os.Stderr, "%s%serror:%s the 'go' toolchain was not found on PATH; ctguard runs as a 'go vet' analyzer and needs Go installed\n", c.Bold, c.Red, c.Reset)
+		return 2
+	}
 
 	cmd := exec.Command("go", goArgs...)
 	cmd.Env = subprocessEnv(resolvedConfig)
@@ -265,13 +279,19 @@ func runCLI(args []string) int {
 	// Apply exclude patterns from config
 	findings = filterExcludedPaths(findings, cfg.Exclude)
 
-	// "Real error" means: go vet failed AND produced no findings at all (likely build/toolchain error).
-	toolErr := exitCode != 0 && len(allFindings) == 0
+	// A load/build failure or unparseable output means we didn't see all the code:
+	// fail closed (never report "clean", exit non-zero) regardless of -fail.
+	buildErrors := goVetPlainErrors(stdout.String(), stderr.String())
+	parseFailed := goVetParseFailed(stdout.String(), stderr.String())
+	incomplete := (exitCode != 0 && len(buildErrors) > 0) || parseFailed
 
 	// Print diagnostics (ONLY our filtered findings; never forward go vet's JSON noise)
 	if !quiet {
 		switch format {
 		case "json":
+			if findings == nil {
+				findings = []Finding{}
+			}
 			enc := json.NewEncoder(os.Stdout)
 			enc.SetIndent("", "  ")
 			_ = enc.Encode(findings)
@@ -282,28 +302,26 @@ func runCLI(args []string) int {
 		}
 	}
 
-	// Forward stderr only on real tool/build errors (but not JSON output).
-	if toolErr {
-		for _, line := range strings.Split(stderr.String(), "\n") {
-			line = strings.TrimSpace(line)
-			if line == "" || strings.HasPrefix(line, "{") || strings.HasPrefix(line, "}") ||
-				strings.HasPrefix(line, "\t") || strings.HasPrefix(line, "[") || strings.HasPrefix(line, "]") {
-				continue
-			}
-			fmt.Fprintf(os.Stderr, "%s%serror:%s %s\n", c.Bold, c.Red, c.Reset, line)
+	// On stderr so json/sarif on stdout stay valid.
+	if incomplete {
+		fmt.Fprintf(os.Stderr, "%s%serror:%s scan incomplete: some packages failed to load or their analysis output could not be parsed; results may be partial\n", c.Bold, c.Red, c.Reset)
+		for _, line := range buildErrors {
+			fmt.Fprintf(os.Stderr, "  %s\n", line)
 		}
 	}
 
-	// Summary (keep JSON/SARIF clean -> summary to stderr if format=json or sarif)
-	if summary {
+	// Summary to stderr for json/sarif; skip "No issues found" when incomplete.
+	incompleteNoFindings := incomplete && len(findings) == 0
+	if summary && !incompleteNoFindings {
 		printSummary(findings, format == "json" || format == "sarif")
 	}
 
-	// Exit code policy:
-	// - If real tool/build error -> propagate.
-	// - Otherwise, base result on (filtered) findings + -fail flag.
-	if toolErr {
-		return exitCode
+	// Incomplete scan -> non-zero; otherwise findings + -fail decide.
+	if incomplete {
+		if exitCode != 0 {
+			return exitCode
+		}
+		return 1
 	}
 
 	if len(findings) > 0 && fail {
