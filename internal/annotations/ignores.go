@@ -150,10 +150,11 @@ func CollectIgnores(pass *analysis.Pass) Ignores {
 	return out
 }
 
-// parseIgnoreDirective parses a comment for //ctguard:ignore directive.
-// Returns nil if not an ignore directive.
-// Returns empty map if ignoring all rules.
-// Returns map with rule IDs if ignoring specific rules.
+// parseIgnoreDirective parses a comment for a //ctguard:ignore directive.
+// Returns nil if it is not an ignore directive OR if it is malformed (names no
+// recognized rule) so the caller fails closed and ignores nothing.
+// Returns an empty map for an explicit ignore-all ("//ctguard:ignore" or "...:ignore all").
+// Returns a map with rule IDs for specific rules.
 func parseIgnoreDirective(text string) map[string]bool {
 	text = strings.TrimSpace(text)
 
@@ -175,8 +176,8 @@ func parseIgnoreDirective(text string) map[string]bool {
 		text = strings.TrimSpace(text[:idx])
 	}
 
-	// If nothing left, ignore all rules
-	if text == "" {
+	// Bare directive (or "all") ignores every rule.
+	if text == "" || strings.EqualFold(text, "all") {
 		return make(map[string]bool)
 	}
 
@@ -191,8 +192,10 @@ func parseIgnoreDirective(text string) map[string]bool {
 		}
 	}
 
+	// Fail closed: a non-empty directive that names no recognized rule (a typo like
+	// lowercase "ct002", or prose) must ignore nothing, not silently ignore all.
 	if len(rules) == 0 {
-		return make(map[string]bool) // Ignore all
+		return nil
 	}
 
 	return rules

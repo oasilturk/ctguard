@@ -110,6 +110,26 @@ func TestRegressionFailOpen_BuildError(t *testing.T) {
 	}
 }
 
+// Regression: a malformed //ctguard:ignore (typo/prose) must not silence findings.
+func TestRegressionMalformedIgnoreFailsClosed(t *testing.T) {
+	exe := buildTestBinary(t)
+	defer func() { _ = os.Remove(exe) }()
+
+	mod := t.TempDir()
+	writeModuleFile(t, mod, "go.mod", "module ctgignore\n\ngo 1.25\n")
+	writeModuleFile(t, mod, "x/x.go",
+		"package x\n\n//ctguard:secret pw\n"+
+			"func Login(pw, stored string) bool {\n"+
+			"\tif pw == stored { //ctguard:ignore needed for legacy\n"+
+			"\t\treturn true\n\t}\n\treturn false\n}\n")
+	emptyCfg := writeTempConfig(t, "# empty\n")
+
+	findings := runForFindings(t, exe, mod, nil, "-config="+emptyCfg, "./x/")
+	if len(findings) == 0 {
+		t.Fatal("fail-open: a malformed //ctguard:ignore silenced all findings")
+	}
+}
+
 // Regression: an unknown rule ID must exit 2, not silently pass clean.
 func TestRegressionUnknownRuleExits2(t *testing.T) {
 	exe := buildTestBinary(t)

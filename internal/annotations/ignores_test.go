@@ -57,6 +57,27 @@ func TestParseIgnoreDirective(t *testing.T) {
 			input:   "//ctguard:ignore -- known safe",
 			wantAll: true,
 		},
+		{
+			name:    "explicit all keyword",
+			input:   "//ctguard:ignore all",
+			wantAll: true,
+		},
+		// Fail closed: malformed directives must ignore NOTHING, not all rules.
+		{
+			name:    "prose remainder fails closed",
+			input:   "//ctguard:ignore needed for legacy",
+			wantNil: true,
+		},
+		{
+			name:    "lowercase rule id fails closed",
+			input:   "//ctguard:ignore ct002 -- reason",
+			wantNil: true,
+		},
+		{
+			name:    "non-CT token fails closed",
+			input:   "//ctguard:ignore foo",
+			wantNil: true,
+		},
 	}
 
 	for _, tt := range tests {
