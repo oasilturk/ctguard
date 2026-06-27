@@ -195,6 +195,7 @@ CTGuard integrates with `go vet` as a custom analyzer. It builds an SSA represen
 ## Limitations
 
 - **Taint does not cross package boundaries.** A secret passed to a function in another package is not tracked into that package's body. Mark the entry points there with `//ctguard:secret`, or declare them in `.ctguard.yaml` under `annotations.secrets`.
+- **Taint is not tracked into closures, goroutines, or deferred functions.** A secret captured by a `go func(){...}()`, a closure, or a `defer` is not followed into that body.
 - **CT007 only fires inside `//ctguard:isolated` regions**, which are opt-in.
 - **Confidence is `high` or `low`**, derived from taint precision, not a numeric score.
 
