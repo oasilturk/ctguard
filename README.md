@@ -42,6 +42,8 @@ go install github.com/oasilturk/ctguard/cmd/ctguard@latest
 
 Pre-built binaries for all platforms are available on the [Releases](https://github.com/oasilturk/ctguard/releases) page.
 
+> ctguard runs as a `go vet` analyzer, so the Go toolchain must be installed and on `PATH` at runtime, even when using a pre-built binary.
+
 ### Run
 
 Mark secret parameters, then scan:
@@ -186,9 +188,25 @@ return strings.HasPrefix(token, "Bearer ")
 CTGuard integrates with `go vet` as a custom analyzer. It builds an SSA representation of your code, then:
 
 1. Collects `//ctguard:secret` annotations to identify sensitive parameters
-2. Performs interprocedural taint tracking (fixed-point iteration across function boundaries)
+2. Tracks taint across functions within a package (fixed-point iteration)
 3. Runs 7 specialized rule checkers against the taint graph
 4. Reports findings with confidence levels (high/low) based on taint precision
+
+## Limitations
+
+- **Taint does not cross package boundaries.** A secret passed to a function in another package is not tracked into that package's body. Mark the entry points there with `//ctguard:secret`, or declare them in `.ctguard.yaml` under `annotations.secrets`.
+- **CT007 only fires inside `//ctguard:isolated` regions**, which are opt-in.
+- **Confidence is `high` or `low`**, derived from taint precision, not a numeric score.
+
+## Compatibility
+
+ctguard follows semantic versioning. Within a `1.x` release these stay stable: rule IDs (CT001-CT007), the `.ctguard.yaml` schema, the JSON and SARIF output shapes, CLI flag names, and the exit codes below. Additive changes (new rules, new optional fields) may land in minor releases.
+
+| Exit code | Meaning |
+|-----------|---------|
+| `0` | No findings (or findings with `-fail=false`) |
+| `1` | Findings reported, or the scan was incomplete (a package failed to load) |
+| `2` | Usage or configuration error (bad flag, unknown rule, missing `go` toolchain) |
 
 ## Contributing
 
