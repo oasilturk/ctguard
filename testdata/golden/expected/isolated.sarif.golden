@@ -110,6 +110,11 @@
           ]
         }
       },
+      "originalUriBaseIds": {
+        "SRCROOT": {
+          "uri": "file://"
+        }
+      },
       "results": [
         {
           "ruleId": "CT007",
@@ -122,7 +127,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/isolated/isolated.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 14,
@@ -143,7 +148,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/isolated/isolated.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 20,
@@ -164,7 +169,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/isolated/isolated.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 26,
@@ -185,7 +190,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/isolated/isolated.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 33,
@@ -206,7 +211,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/isolated/isolated.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 50,
@@ -227,7 +232,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/isolated/isolated.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 56,
@@ -248,7 +253,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/isolated/isolated.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 73,

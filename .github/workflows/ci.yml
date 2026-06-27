@@ -17,10 +17,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: "go.mod"
+          go-version: "1.25"  # latest 1.25.x patch (keeps the build free of known stdlib CVEs)
 
       - name: Download modules
         run: go mod download
+
+      - name: Run govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v7

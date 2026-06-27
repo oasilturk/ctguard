@@ -274,6 +274,14 @@ func printSARIF(findings []Finding) {
 		},
 	}
 
+	// Resolve paths relative to the working directory (repo root in CI) so SARIF
+	// uris are portable. SRCROOT anchors them for GitHub Code Scanning.
+	cwd, _ := os.Getwd()
+	srcRoot := filepath.ToSlash(cwd)
+	if srcRoot != "" && !strings.HasPrefix(srcRoot, "/") {
+		srcRoot = "/" + srcRoot // Windows drive letter -> file:///C:/...
+	}
+
 	// Convert findings to SARIF results (must be empty array, not null)
 	results := make([]SarifResult, 0)
 	for _, f := range findings {
@@ -319,11 +327,18 @@ func printSARIF(findings []Finding) {
 				}
 			}
 
+			uri := filepath.ToSlash(filePath)
+			if cwd != "" {
+				if rel, err := filepath.Rel(cwd, filePath); err == nil && !strings.HasPrefix(rel, "..") {
+					uri = filepath.ToSlash(rel)
+				}
+			}
+
 			loc := SarifLocation{
 				PhysicalLocation: SarifPhysicalLocation{
 					ArtifactLocation: SarifArtifactLocation{
-						URI:       filePath,
-						URIBaseID: "%SRCROOT%",
+						URI:       uri,
+						URIBaseID: "SRCROOT",
 					},
 				},
 			}
@@ -362,7 +377,8 @@ func printSARIF(findings []Finding) {
 						Rules:          rules,
 					},
 				},
-				Results: results,
+				OriginalURIBaseIDs: srcRootBases(srcRoot),
+				Results:            results,
 			},
 		},
 	}
@@ -370,6 +386,13 @@ func printSARIF(findings []Finding) {
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(report)
+}
+
+func srcRootBases(srcRoot string) map[string]SarifURIBase {
+	if srcRoot == "" {
+		return nil
+	}
+	return map[string]SarifURIBase{"SRCROOT": {URI: "file://" + srcRoot + "/"}}
 }
 
 func printSummary(findings []Finding, toStderr bool) {

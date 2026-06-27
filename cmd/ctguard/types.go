@@ -17,8 +17,13 @@ type SarifReport struct {
 }
 
 type SarifRun struct {
-	Tool    SarifTool     `json:"tool"`
-	Results []SarifResult `json:"results"`
+	Tool               SarifTool               `json:"tool"`
+	OriginalURIBaseIDs map[string]SarifURIBase `json:"originalUriBaseIds,omitempty"`
+	Results            []SarifResult           `json:"results"`
+}
+
+type SarifURIBase struct {
+	URI string `json:"uri"`
 }
 
 type SarifTool struct {

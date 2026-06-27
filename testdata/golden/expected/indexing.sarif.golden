@@ -110,6 +110,11 @@
           ]
         }
       },
+      "originalUriBaseIds": {
+        "SRCROOT": {
+          "uri": "file://"
+        }
+      },
       "results": [
         {
           "ruleId": "CT001",
@@ -122,7 +127,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 84,
@@ -143,7 +148,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 9,
@@ -164,7 +169,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 16,
@@ -185,7 +190,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 23,
@@ -206,7 +211,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 31,
@@ -227,7 +232,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 50,
@@ -248,7 +253,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 51,
@@ -269,7 +274,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 61,
@@ -290,7 +295,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 68,
@@ -311,7 +316,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 76,
@@ -332,7 +337,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 95,
@@ -353,7 +358,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/indexing/indexing.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 102,

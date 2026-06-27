@@ -110,6 +110,11 @@
           ]
         }
       },
+      "originalUriBaseIds": {
+        "SRCROOT": {
+          "uri": "file://"
+        }
+      },
       "results": [
         {
           "ruleId": "CT004",
@@ -122,7 +127,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/exposure/exposure.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 15,
@@ -143,7 +148,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/exposure/exposure.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 16,
@@ -164,7 +169,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/exposure/exposure.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 17,
@@ -185,7 +190,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/exposure/exposure.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 24,
@@ -206,7 +211,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/exposure/exposure.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 25,
@@ -227,7 +232,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/exposure/exposure.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 26,
@@ -248,7 +253,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/exposure/exposure.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 33,
@@ -269,7 +274,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/exposure/exposure.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 34,
@@ -290,7 +295,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/exposure/exposure.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 35,
@@ -311,7 +316,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/exposure/exposure.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 42,
@@ -332,7 +337,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/exposure/exposure.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 49,
@@ -353,7 +358,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/exposure/exposure.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 50,
@@ -374,7 +379,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/exposure/exposure.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 51,
@@ -395,7 +400,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/exposure/exposure.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 59,
@@ -416,7 +421,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/exposure/exposure.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 80,
@@ -437,7 +442,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/exposure/exposure.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 81,

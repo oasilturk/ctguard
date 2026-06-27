@@ -110,6 +110,11 @@
           ]
         }
       },
+      "originalUriBaseIds": {
+        "SRCROOT": {
+          "uri": "file://"
+        }
+      },
       "results": [
         {
           "ruleId": "CT002",
@@ -122,7 +127,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/comparisons/comparisons.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 12,
@@ -143,7 +148,7 @@
               "physicalLocation": {
                 "artifactLocation": {
                   "uri": "testdata/src/comparisons/comparisons.go",
-                  "uriBaseId": "%SRCROOT%"
+                  "uriBaseId": "SRCROOT"
                 },
                 "region": {
                   "startLine": 19,
