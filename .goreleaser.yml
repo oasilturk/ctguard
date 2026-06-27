@@ -35,8 +35,12 @@ brews:
     homepage: "https://github.com/oasilturk/ctguard"
     description: "Detect timing side-channel vulnerabilities in Go code"
     license: "MIT"
+    skip_upload: "auto"  # do not push a Homebrew formula for prereleases (-rc, etc.)
     install: |
       bin.install "ctguard"
+
+release:
+  prerelease: auto  # tags like v1.0.0-rc.1 are marked as GitHub prereleases, not "Latest"
 
 changelog:
   sort: asc

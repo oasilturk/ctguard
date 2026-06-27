@@ -25,7 +25,7 @@ jobs:
 
       - uses: goreleaser/goreleaser-action@v6
         with:
-          version: "~> v2"
+          version: "v2.16.0"  # pinned: deprecated keys still accepted; no surprise break on a future v2 minor
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
