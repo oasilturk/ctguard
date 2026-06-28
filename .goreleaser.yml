@@ -41,6 +41,7 @@ brews:
 
 release:
   prerelease: auto  # tags like v1.0.0-rc.1 are marked as GitHub prereleases, not "Latest"
+  replace_existing_artifacts: true  # re-runs replace assets instead of failing with 422 already_exists
 
 changelog:
   sort: asc

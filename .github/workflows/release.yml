@@ -28,5 +28,6 @@ jobs:
           version: "v2.16.0"  # pinned: deprecated keys still accepted; no surprise break on a future v2 minor
           args: release --clean
         env:
+          GORELEASER_CURRENT_TAG: ${{ github.ref_name }}  # use the pushed tag, not git-describe (avoids picking a sibling tag on the same commit)
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
