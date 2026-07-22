@@ -2,3 +2,4 @@ testdata/src/mac/mac.go:18:20 CT002: bytes.Equal uses secret 'hmac' (confidence:
 testdata/src/mac/mac.go:24:42 CT002: string comparison uses secret 'hmac' (confidence: low)
 testdata/src/mac/mac.go:35:20 CT002: bytes.Equal uses secret 'computeMAC' (confidence: low)
 testdata/src/mac/mac.go:42:20 CT002: bytes.Equal uses secret 'hmac' (confidence: high)
+testdata/src/mac/mac.go:66:17 CT002: string comparison uses secret 'hmac' (confidence: low)

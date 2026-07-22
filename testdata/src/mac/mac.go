@@ -48,3 +48,20 @@ func verifySafe(key, msg, sig []byte) bool {
 	mac.Write(msg)
 	return hmac.Equal(mac.Sum(nil), sig) // OK
 }
+
+// Metadata methods (Size, Write's (int, error)) and equality against ""
+// expose no content; only the real comparison at the end is a finding.
+func verifyWithGuards(key, msg []byte, sig string) bool {
+	mac := hmac.New(sha256.New, key)
+	if mac.Size() != sha256.Size { // OK
+		return false
+	}
+	if _, err := mac.Write(msg); err != nil { // OK
+		return false
+	}
+	encoded := hex.EncodeToString(mac.Sum(nil))
+	if encoded == "" { // OK
+		return false
+	}
+	return encoded == sig // want "CT002"
+}

@@ -86,6 +86,10 @@ func RunCT002(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					if !isStringValue(bo.X) || !isStringValue(bo.Y) {
 						continue
 					}
+					// Equality against "" is decided by length alone: constant-time.
+					if isEmptyStringConst(bo.X) || isEmptyStringConst(bo.Y) {
+						continue
+					}
 					secretName, conf := dep.DependsOn(bo.X)
 					if secretName == "" {
 						secretName, conf = dep.DependsOn(bo.Y)

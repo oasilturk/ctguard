@@ -2,6 +2,7 @@ package rules
 
 import (
 	"fmt"
+	"go/constant"
 	"go/token"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/buildssa"
@@ -30,8 +31,9 @@ func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					continue
 				}
 
-				// Skip nil comparisons (e.g., "if err != nil")
-				if isNilComparison(i.Cond) {
+				// Skip comparisons that cannot leak content: nil checks and
+				// equality against "", which Go decides by length alone.
+				if isTrivialComparison(i.Cond) {
 					continue
 				}
 
@@ -57,7 +59,7 @@ func RunCT001(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 	return findings
 }
 
-func isNilComparison(cond ssa.Value) bool {
+func isTrivialComparison(cond ssa.Value) bool {
 	binop, ok := cond.(*ssa.BinOp)
 	if !ok {
 		return false
@@ -67,7 +69,8 @@ func isNilComparison(cond ssa.Value) bool {
 		return false
 	}
 
-	return isNilValue(binop.X) || isNilValue(binop.Y)
+	return isNilValue(binop.X) || isNilValue(binop.Y) ||
+		isEmptyStringConst(binop.X) || isEmptyStringConst(binop.Y)
 }
 
 func isNilValue(v ssa.Value) bool {
@@ -76,4 +79,12 @@ func isNilValue(v ssa.Value) bool {
 		return false
 	}
 	return c.Value == nil
+}
+
+func isEmptyStringConst(v ssa.Value) bool {
+	c, ok := v.(*ssa.Const)
+	if !ok || c.Value == nil {
+		return false
+	}
+	return c.Value.Kind() == constant.String && constant.StringVal(c.Value) == ""
 }

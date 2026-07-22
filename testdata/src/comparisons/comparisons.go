@@ -19,3 +19,14 @@ func stringCompare(password string, stored string, extra int) int {
 	_ = (password == stored) // want "CT002"
 	return 0
 }
+
+// Equality against "" is a length-only check: constant-time, not flagged.
+//
+//ctguard:secret token
+func emptyStringGuard(token string) string {
+	if token == "" { // OK
+		return "missing"
+	}
+	_ = (token != "") // OK
+	return "present"
+}

@@ -2,6 +2,7 @@ package taint
 
 import (
 	"go/token"
+	"go/types"
 	"strconv"
 	"strings"
 
@@ -416,9 +417,10 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 			}
 		} else if t.Call.IsInvoke() {
 			// Interface method call such as mac.Sum(nil): the receiver, not the args,
-			// carries the taint. Propagate it so the MAC bytes stay secret. Arg-derived
+			// carries the taint. Metadata methods (results all numeric/bool/error,
+			// e.g. Size or Write) expose no content and stay clean. Arg-derived
 			// taint keeps the pre-existing LOW cap for uninspectable callees.
-			if s, c := d.DependsOn(t.Call.Value); s != "" {
+			if s, c := d.DependsOn(t.Call.Value); s != "" && methodYieldsContent(t.Call.Method) {
 				secret, conf = s, c
 			} else if s, _ := d.taintFromArgs(t); s != "" {
 				secret, conf = s, confidence.ConfidenceLow
@@ -652,6 +654,33 @@ func (d *Depender) taintFromArgs(t *ssa.Call) (string, confidence.ConfidenceLeve
 		}
 	}
 	return "", confidence.ConfidenceLow
+}
+
+var errorType = types.Universe.Lookup("error").Type()
+
+// methodYieldsContent reports whether any result of the invoked method can
+// carry secret content. Numeric, bool and error results are metadata.
+func methodYieldsContent(m *types.Func) bool {
+	if m == nil {
+		return true
+	}
+	sig, ok := m.Type().(*types.Signature)
+	if !ok {
+		return true
+	}
+	res := sig.Results()
+	for i := 0; i < res.Len(); i++ {
+		rt := res.At(i).Type()
+		if types.Identical(rt, errorType) {
+			continue
+		}
+		if b, ok := rt.Underlying().(*types.Basic); ok &&
+			b.Info()&(types.IsNumeric|types.IsBoolean) != 0 {
+			continue
+		}
+		return true
+	}
+	return false
 }
 
 // IsTaintedChannel returns the secret name if the channel is tainted, empty string otherwise.
