@@ -474,7 +474,7 @@ func TestCT005Policy(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			allowed, risky := ct005Policy(tc.pkgPath, tc.funcName)
+			allowed, risky, _ := ct005Policy(tc.pkgPath, tc.funcName)
 			if allowed != tc.wantAllowed {
 				t.Errorf("ct005Policy(%q, %q) allowed = %v, want %v",
 					tc.pkgPath, tc.funcName, allowed, tc.wantAllowed)

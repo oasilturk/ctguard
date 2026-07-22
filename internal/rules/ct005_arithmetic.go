@@ -3,6 +3,7 @@ package rules
 import (
 	"fmt"
 	"go/token"
+	"slices"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/buildssa"
@@ -27,33 +28,34 @@ var ct005Allow = map[CallKey]struct{}{
 	// but we list them here for being complete
 }
 
-var ct005Deny = map[CallKey]struct{}{
-	{Pkg: "math", Name: "Mod"}:       {},
-	{Pkg: "math", Name: "Remainder"}: {},
+// Value lists the arg indices whose secret-dependence is variable-time; nil means any arg.
+var ct005Deny = map[CallKey][]int{
+	{Pkg: "math", Name: "Mod"}:       nil,
+	{Pkg: "math", Name: "Remainder"}: nil,
 
-	{Pkg: "math/big", Name: "Div"}:    {},
-	{Pkg: "math/big", Name: "Mod"}:    {},
-	{Pkg: "math/big", Name: "DivMod"}: {},
-	{Pkg: "math/big", Name: "Quo"}:    {},
-	{Pkg: "math/big", Name: "Rem"}:    {},
-	{Pkg: "math/big", Name: "QuoRem"}: {},
+	{Pkg: "math/big", Name: "Div"}:    nil,
+	{Pkg: "math/big", Name: "Mod"}:    nil,
+	{Pkg: "math/big", Name: "DivMod"}: nil,
+	{Pkg: "math/big", Name: "Quo"}:    nil,
+	{Pkg: "math/big", Name: "Rem"}:    nil,
+	{Pkg: "math/big", Name: "QuoRem"}: nil,
 
-	{Pkg: "math/bits", Name: "RotateLeft"}:   {},
-	{Pkg: "math/bits", Name: "RotateLeft8"}:  {},
-	{Pkg: "math/bits", Name: "RotateLeft16"}: {},
-	{Pkg: "math/bits", Name: "RotateLeft32"}: {},
-	{Pkg: "math/bits", Name: "RotateLeft64"}: {},
+	{Pkg: "math/bits", Name: "RotateLeft"}:   {1},
+	{Pkg: "math/bits", Name: "RotateLeft8"}:  {1},
+	{Pkg: "math/bits", Name: "RotateLeft16"}: {1},
+	{Pkg: "math/bits", Name: "RotateLeft32"}: {1},
+	{Pkg: "math/bits", Name: "RotateLeft64"}: {1},
 }
 
-func ct005Policy(pkgPath, name string) (allowed bool, risky bool) {
+func ct005Policy(pkgPath, name string) (allowed bool, risky bool, riskyArgs []int) {
 	k := CallKey{Pkg: pkgPath, Name: name}
 	if _, ok := ct005Allow[k]; ok {
-		return true, false
+		return true, false, nil
 	}
-	if _, ok := ct005Deny[k]; ok {
-		return false, true
+	if args, ok := ct005Deny[k]; ok {
+		return false, true, args
 	}
-	return false, false
+	return false, false, nil
 }
 
 // CT005 flags variable-time arithmetic operations on secret-tainted data.
@@ -76,9 +78,16 @@ func RunCT005(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						continue
 					}
 
-					secretName, conf := dep.DependsOn(bo.X)
-					if secretName == "" {
+					// Shift timing depends only on the amount, so only a secret-dependent bo.Y is a risk.
+					var secretName string
+					var conf confidence.ConfidenceLevel
+					if bo.Op == token.SHL || bo.Op == token.SHR {
 						secretName, conf = dep.DependsOn(bo.Y)
+					} else {
+						secretName, conf = dep.DependsOn(bo.X)
+						if secretName == "" {
+							secretName, conf = dep.DependsOn(bo.Y)
+						}
 					}
 					if secretName == "" {
 						continue
@@ -103,7 +112,7 @@ func RunCT005(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 						continue
 					}
 
-					allowed, risky := ct005Policy(pkgPath, name)
+					allowed, risky, riskyArgs := ct005Policy(pkgPath, name)
 					if allowed {
 						continue
 					}
@@ -114,9 +123,12 @@ func RunCT005(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Sec
 					var secretName string
 					var conf confidence.ConfidenceLevel
 					argPos := token.NoPos
-					for _, a := range c.Call.Args {
+					for i, a := range c.Call.Args {
 						if argPos == token.NoPos {
 							argPos = a.Pos()
+						}
+						if riskyArgs != nil && !slices.Contains(riskyArgs, i) {
+							continue
 						}
 						s, cf := dep.DependsOn(a)
 						if s != "" {

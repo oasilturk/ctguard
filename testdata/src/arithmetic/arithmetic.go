@@ -39,7 +39,7 @@ func rightShiftBySecret(shift uint, value byte) byte {
 
 //ctguard:secret data
 func shiftSecret(data uint, amount uint) uint {
-	return data << amount // want "CT005"
+	return data << amount // OK
 }
 
 //ctguard:secret key
@@ -104,10 +104,20 @@ func mathRemainder(x, y float64) float64 {
 
 //ctguard:secret n
 func rotateLeftSecret(n int) uint {
-	return bits.RotateLeft(uint(n), 3) // want "CT005"
+	return bits.RotateLeft(uint(n), 3) // OK
 }
 
 //ctguard:secret data
 func rotateLeft8Secret(data uint8) uint8 {
-	return bits.RotateLeft8(data, 2) // want "CT005"
+	return bits.RotateLeft8(data, 2) // OK
+}
+
+//ctguard:secret k
+func rotateBySecretAmount(k int, value uint) uint {
+	return bits.RotateLeft(value, k) // want "CT005"
+}
+
+//ctguard:secret k
+func rotate8BySecretAmount(k int, data uint8) uint8 {
+	return bits.RotateLeft8(data, k) // want "CT005"
 }

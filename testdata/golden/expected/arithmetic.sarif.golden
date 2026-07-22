@@ -246,27 +246,6 @@
           "ruleId": "CT005",
           "level": "error",
           "message": {
-            "text": "shift operates on secret 'data' (confidence: high)"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "testdata/src/arithmetic/arithmetic.go",
-                  "uriBaseId": "SRCROOT"
-                },
-                "region": {
-                  "startLine": 42,
-                  "startColumn": 14
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "CT005",
-          "level": "error",
-          "message": {
             "text": "division operates on secret 'secret' (confidence: high)"
           },
           "locations": [
@@ -372,7 +351,7 @@
           "ruleId": "CT005",
           "level": "error",
           "message": {
-            "text": "math/bits.RotateLeft uses secret 'n' (confidence: high)"
+            "text": "math/bits.RotateLeft uses secret 'k' (confidence: high)"
           },
           "locations": [
             {
@@ -382,7 +361,7 @@
                   "uriBaseId": "SRCROOT"
                 },
                 "region": {
-                  "startLine": 107,
+                  "startLine": 117,
                   "startColumn": 24
                 }
               }
@@ -393,7 +372,7 @@
           "ruleId": "CT005",
           "level": "error",
           "message": {
-            "text": "math/bits.RotateLeft8 uses secret 'data' (confidence: high)"
+            "text": "math/bits.RotateLeft8 uses secret 'k' (confidence: high)"
           },
           "locations": [
             {
@@ -403,7 +382,7 @@
                   "uriBaseId": "SRCROOT"
                 },
                 "region": {
-                  "startLine": 112,
+                  "startLine": 122,
                   "startColumn": 25
                 }
               }

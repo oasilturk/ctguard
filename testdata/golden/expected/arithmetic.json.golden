@@ -36,12 +36,6 @@
     "confidence": "high"
   },
   {
-    "pos": "testdata/src/arithmetic/arithmetic.go:42:14",
-    "message": "CT005: shift operates on secret 'data' (confidence: high)",
-    "rule": "CT005",
-    "confidence": "high"
-  },
-  {
     "pos": "testdata/src/arithmetic/arithmetic.go:77:16",
     "message": "CT005: division operates on secret 'secret' (confidence: high)",
     "rule": "CT005",
@@ -72,14 +66,14 @@
     "confidence": "high"
   },
   {
-    "pos": "testdata/src/arithmetic/arithmetic.go:107:24",
-    "message": "CT005: math/bits.RotateLeft uses secret 'n' (confidence: high)",
+    "pos": "testdata/src/arithmetic/arithmetic.go:117:24",
+    "message": "CT005: math/bits.RotateLeft uses secret 'k' (confidence: high)",
     "rule": "CT005",
     "confidence": "high"
   },
   {
-    "pos": "testdata/src/arithmetic/arithmetic.go:112:25",
-    "message": "CT005: math/bits.RotateLeft8 uses secret 'data' (confidence: high)",
+    "pos": "testdata/src/arithmetic/arithmetic.go:122:25",
+    "message": "CT005: math/bits.RotateLeft8 uses secret 'k' (confidence: high)",
     "rule": "CT005",
     "confidence": "high"
   }
