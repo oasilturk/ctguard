@@ -73,6 +73,19 @@ func TestGolden(t *testing.T) {
 			args:       []string{"-format=sarif"},
 			goldenFile: "comparisons.sarif.golden",
 		},
+		// Package 'mac' - CT002 on HMAC output (zero-annotation + return-boundary)
+		{
+			name:       "mac_plain",
+			target:     "./testdata/src/mac/",
+			args:       []string{},
+			goldenFile: "mac.plain.golden",
+		},
+		{
+			name:       "mac_json",
+			target:     "./testdata/src/mac/",
+			args:       []string{"-format=json"},
+			goldenFile: "mac.json.golden",
+		},
 		// Package 'nested' - nested branches
 		{
 			name:       "nested_plain",

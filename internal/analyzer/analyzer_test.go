@@ -36,6 +36,13 @@ func TestCTGuard(t *testing.T) {
 	analysistest.Run(t, testdata, analyzer.Analyzer, "branches", "comparisons")
 }
 
+// TestMAC tests CT002 on HMAC output compared in non-constant time, including
+// the zero-annotation and return-boundary cases.
+func TestMAC(t *testing.T) {
+	testdata := getTestdataPath(t)
+	analysistest.Run(t, testdata, analyzer.Analyzer, "mac")
+}
+
 // TestNestedBranches tests detection of nested secret-dependent branches
 func TestNestedBranches(t *testing.T) {
 	testdata := getTestdataPath(t)

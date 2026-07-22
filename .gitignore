@@ -20,3 +20,6 @@ coverage.out
 # Example packages
 examples/
 .ctguard.yaml
+
+# Local benchmark harness (dev-only, clones external repos to score detection/FPs)
+benchmark/

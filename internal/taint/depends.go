@@ -376,13 +376,25 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 			// Constant-time comparison result is a decision, not secret content: sanitize.
 			secret = ""
 			conf = confidence.ConfidenceLow
-		} else if callee != nil &&
-			d.ipAnalyzer != nil &&
-			d.ipAnalyzer.IsAnalyzed(callee) &&
-			!d.ipAnalyzer.HasTaintedReturn(callee) {
-			// Analyzed same-package callee with no tainted return: definitely not tainted.
-			secret = ""
-			conf = confidence.ConfidenceLow
+		} else if callee != nil && isMACConstructor(callee) {
+			// hmac.New(...) returns a keyed MAC state whose output is secret-equivalent
+			// regardless of how the key was obtained, so seed taint here. A later
+			// mac.Sum() compared in non-constant time is then caught with no annotation.
+			secret = "hmac"
+			conf = confidence.ConfidenceHigh
+		} else if callee != nil && d.ipAnalyzer != nil && d.ipAnalyzer.IsAnalyzed(callee) {
+			// Same-package analyzed callee: trust its return-taint verdict so a secret
+			// derived inside the callee (e.g. an HMAC) reaches the caller's result.
+			if d.ipAnalyzer.HasTaintedReturn(callee) {
+				if s, c := d.taintFromArgs(t); s != "" {
+					secret, conf = s, c
+				} else {
+					secret, conf = callee.Name(), confidence.ConfidenceLow
+				}
+			} else {
+				secret = ""
+				conf = confidence.ConfidenceLow
+			}
 		} else if builtin, isBuiltin := t.Call.Value.(*ssa.Builtin); isBuiltin {
 			switch builtin.Name() {
 			case "len", "cap":
@@ -401,6 +413,15 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 						conf = maxConfidence(conf, c)
 					}
 				}
+			}
+		} else if t.Call.IsInvoke() {
+			// Interface method call such as mac.Sum(nil): the receiver, not the args,
+			// carries the taint. Propagate it so the MAC bytes stay secret. Arg-derived
+			// taint keeps the pre-existing LOW cap for uninspectable callees.
+			if s, c := d.DependsOn(t.Call.Value); s != "" {
+				secret, conf = s, c
+			} else if s, _ := d.taintFromArgs(t); s != "" {
+				secret, conf = s, confidence.ConfidenceLow
 			}
 		} else {
 			// External or unanalyzed callee: propagate taint from args but cap at LOW
@@ -611,6 +632,26 @@ func isConstantTimeSanitizer(fn *ssa.Function) bool {
 		return false
 	}
 	return constantTimeComparators[obj.Pkg().Path()][obj.Name()]
+}
+
+// isMACConstructor reports whether fn produces a keyed MAC state (hmac.New)
+// whose output must be treated as secret regardless of annotations.
+func isMACConstructor(fn *ssa.Function) bool {
+	obj := fn.Object()
+	if obj == nil || obj.Pkg() == nil {
+		return false
+	}
+	return obj.Pkg().Path() == "crypto/hmac" && obj.Name() == "New"
+}
+
+// taintFromArgs returns the first tainted argument's secret and confidence.
+func (d *Depender) taintFromArgs(t *ssa.Call) (string, confidence.ConfidenceLevel) {
+	for _, a := range t.Call.Args {
+		if s, c := d.DependsOn(a); s != "" {
+			return s, c
+		}
+	}
+	return "", confidence.ConfidenceLow
 }
 
 // IsTaintedChannel returns the secret name if the channel is tainted, empty string otherwise.
