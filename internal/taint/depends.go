@@ -23,6 +23,7 @@ type Depender struct {
 	addrLengthTaint    map[ssa.Value]string                     // length taint on memory addresses
 	fieldTaint         map[ssa.Value]map[string]string          // field-qualified taint: root -> field path -> secret
 	elementTaintRoots  map[ssa.Value]bool                       // roots with a slice/array element write: propagate whole across boundaries
+	derivedTaint       map[ssa.Value]string                     // values tainted via an output-parameter transform (hex.Encode(dst, src))
 	containerHasSecret map[ssa.Value]string                     // whole-value: root holds a secret somewhere
 	ipAnalyzer         InterproceduralInfo                      // interprocedural analysis info
 	confMemo           map[ssa.Value]confidence.ConfidenceLevel // stores confidence level for each tainted value
@@ -47,6 +48,7 @@ func NewDepender(fn *ssa.Function, secretParams map[string]bool, ipAnalyzer Inte
 		addrLengthTaint:    map[ssa.Value]string{},
 		fieldTaint:         map[ssa.Value]map[string]string{},
 		elementTaintRoots:  map[ssa.Value]bool{},
+		derivedTaint:       map[ssa.Value]string{},
 		containerHasSecret: map[ssa.Value]string{},
 		ipAnalyzer:         ipAnalyzer,
 		confMemo:           map[ssa.Value]confidence.ConfidenceLevel{},
@@ -59,7 +61,58 @@ func NewDepender(fn *ssa.Function, secretParams map[string]bool, ipAnalyzer Inte
 	d.seedParamFieldTaint(fn, ipAnalyzer)
 	d.seedCallResultFieldTaint(fn, ipAnalyzer)
 	d.analyzeStores(fn)
+	d.analyzeOutputParams(fn)
 	return d
+}
+
+// outParamKey identifies a function that writes a transform of a source slice
+// argument into a destination slice argument.
+type outParamKey struct{ pkg, name string }
+
+// outParamTransforms maps such functions to the {dst, src} argument indices.
+// Indices include a method receiver at arg 0, so base64/base32 methods use 1,2.
+var outParamTransforms = map[outParamKey][2]int{
+	{"encoding/hex", "Encode"}:    {0, 1},
+	{"encoding/hex", "Decode"}:    {0, 1},
+	{"encoding/base64", "Encode"}: {1, 2},
+	{"encoding/base64", "Decode"}: {1, 2},
+	{"encoding/base32", "Encode"}: {1, 2},
+	{"encoding/base32", "Decode"}: {1, 2},
+}
+
+// analyzeOutputParams propagates taint through functions that write a transform
+// of a source argument into a destination slice argument, e.g.
+// `hex.Encode(dst, src)`. Without this the encoded MAC loses its taint and a
+// later non-constant-time compare of dst is missed (the common allocation-free
+// encoding pattern in real crypto code).
+func (d *Depender) analyzeOutputParams(fn *ssa.Function) {
+	if fn == nil || fn.Blocks == nil {
+		return
+	}
+	for _, b := range fn.Blocks {
+		for _, instr := range b.Instrs {
+			call, ok := instr.(*ssa.Call)
+			if !ok {
+				continue
+			}
+			callee := call.Call.StaticCallee()
+			if callee == nil || callee.Object() == nil || callee.Object().Pkg() == nil {
+				continue
+			}
+			idx, ok := outParamTransforms[outParamKey{callee.Object().Pkg().Path(), callee.Object().Name()}]
+			if !ok {
+				continue
+			}
+			args := call.Call.Args
+			if idx[0] >= len(args) || idx[1] >= len(args) {
+				continue
+			}
+			if s, _ := d.DependsOn(args[idx[1]]); s != "" {
+				root, _, _ := resolveFieldPath(args[idx[0]])
+				d.derivedTaint[root] = s
+			}
+		}
+	}
 }
 
 // seedParamFieldTaint marks the specific struct fields of params that carry a
@@ -432,6 +485,9 @@ func (d *Depender) analyzeStores(fn *ssa.Function) {
 func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 	if v == nil {
 		return "", confidence.ConfidenceLow
+	}
+	if s, ok := d.derivedTaint[v]; ok {
+		return s, confidence.ConfidenceLow
 	}
 	if secret, ok := d.memo[v]; ok {
 		if conf, confOk := d.confMemo[v]; confOk {

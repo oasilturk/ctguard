@@ -24,7 +24,13 @@
     "confidence": "high"
   },
   {
-    "pos": "testdata/src/mac/mac.go:66:17",
+    "pos": "testdata/src/mac/mac.go:54:20",
+    "message": "CT002: bytes.Equal uses secret 'hmac' (confidence: low)",
+    "rule": "CT002",
+    "confidence": "low"
+  },
+  {
+    "pos": "testdata/src/mac/mac.go:78:17",
     "message": "CT002: string comparison uses secret 'hmac' (confidence: low)",
     "rule": "CT002",
     "confidence": "low"

@@ -42,6 +42,18 @@ func verifyAnnotated(key, msg, sig []byte) bool {
 	return bytes.Equal(mac.Sum(nil), sig) // want "CT002"
 }
 
+// Output-parameter encoding: hex.Encode writes a transform of the MAC into a
+// destination slice (the common allocation-free pattern); the encoded value
+// stays tainted so a later non-constant-time compare is still flagged.
+func verifyEncodedOutParam(key, msg, sig []byte) bool {
+	m := hmac.New(sha256.New, key)
+	m.Write(msg)
+	sum := m.Sum(nil)
+	enc := make([]byte, hex.EncodedLen(len(sum)))
+	hex.Encode(enc, sum)
+	return bytes.Equal(enc, sig) // want "CT002"
+}
+
 // hmac.Equal is constant-time and must NOT be flagged.
 func verifySafe(key, msg, sig []byte) bool {
 	mac := hmac.New(sha256.New, key)
