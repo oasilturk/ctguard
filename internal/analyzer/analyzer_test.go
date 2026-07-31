@@ -43,6 +43,13 @@ func TestMAC(t *testing.T) {
 	analysistest.Run(t, testdata, analyzer.Analyzer, "mac")
 }
 
+// TestFieldTaint tests field-sensitive taint: a MAC-carrying struct does not
+// taint its sibling public fields across call/return boundaries.
+func TestFieldTaint(t *testing.T) {
+	testdata := getTestdataPath(t)
+	analysistest.Run(t, testdata, analyzer.Analyzer, "fieldtaint")
+}
+
 // TestNestedBranches tests detection of nested secret-dependent branches
 func TestNestedBranches(t *testing.T) {
 	testdata := getTestdataPath(t)

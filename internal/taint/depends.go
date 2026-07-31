@@ -22,6 +22,7 @@ type Depender struct {
 	taintedAddrs       map[ssa.Value]string                     // container-level content taint (elements, maps, chans)
 	addrLengthTaint    map[ssa.Value]string                     // length taint on memory addresses
 	fieldTaint         map[ssa.Value]map[string]string          // field-qualified taint: root -> field path -> secret
+	elementTaintRoots  map[ssa.Value]bool                       // roots with a slice/array element write: propagate whole across boundaries
 	containerHasSecret map[ssa.Value]string                     // whole-value: root holds a secret somewhere
 	ipAnalyzer         InterproceduralInfo                      // interprocedural analysis info
 	confMemo           map[ssa.Value]confidence.ConfidenceLevel // stores confidence level for each tainted value
@@ -33,6 +34,8 @@ type Depender struct {
 type InterproceduralInfo interface {
 	HasTaintedReturn(fn *ssa.Function) bool
 	IsAnalyzed(fn *ssa.Function) bool
+	SecretParamFields(fn *ssa.Function) map[string]map[string]bool
+	ReturnFields(fn *ssa.Function) map[string]bool
 }
 
 func NewDepender(fn *ssa.Function, secretParams map[string]bool, ipAnalyzer InterproceduralInfo) *Depender {
@@ -43,14 +46,65 @@ func NewDepender(fn *ssa.Function, secretParams map[string]bool, ipAnalyzer Inte
 		taintedAddrs:       map[ssa.Value]string{},
 		addrLengthTaint:    map[ssa.Value]string{},
 		fieldTaint:         map[ssa.Value]map[string]string{},
+		elementTaintRoots:  map[ssa.Value]bool{},
 		containerHasSecret: map[ssa.Value]string{},
 		ipAnalyzer:         ipAnalyzer,
 		confMemo:           map[ssa.Value]confidence.ConfidenceLevel{},
 		lenMemo:            map[ssa.Value]string{},
 		lenConfMemo:        map[ssa.Value]confidence.ConfidenceLevel{},
 	}
+	// Seed field-scoped taint from interprocedural facts BEFORE analyzing stores,
+	// so a by-value struct param/result spill (`*t0 = r`) can carry field taint
+	// into the local it is copied to.
+	d.seedParamFieldTaint(fn, ipAnalyzer)
+	d.seedCallResultFieldTaint(fn, ipAnalyzer)
 	d.analyzeStores(fn)
 	return d
+}
+
+// seedParamFieldTaint marks the specific struct fields of params that carry a
+// secret only in those fields (from interprocedural propagation), so a sibling
+// public field read stays clean while the secret field is still tainted.
+func (d *Depender) seedParamFieldTaint(fn *ssa.Function, ip InterproceduralInfo) {
+	if fn == nil || ip == nil {
+		return
+	}
+	spf := ip.SecretParamFields(fn)
+	if len(spf) == 0 {
+		return
+	}
+	for _, p := range fn.Params {
+		if d.secretParams[p.Name()] {
+			continue // wholly secret already: every field is tainted
+		}
+		for path := range spf[p.Name()] {
+			d.setFieldTaint(p, path, p.Name())
+		}
+	}
+}
+
+// seedCallResultFieldTaint marks the tainted fields of a struct returned by an
+// analyzed same-package callee, so reading the secret field of the result is
+// tainted while sibling public fields stay clean.
+func (d *Depender) seedCallResultFieldTaint(fn *ssa.Function, ip InterproceduralInfo) {
+	if fn == nil || ip == nil {
+		return
+	}
+	for _, block := range fn.Blocks {
+		for _, instr := range block.Instrs {
+			call, ok := instr.(*ssa.Call)
+			if !ok {
+				continue
+			}
+			callee := call.Call.StaticCallee()
+			if callee == nil {
+				continue
+			}
+			for path := range ip.ReturnFields(callee) {
+				d.setFieldTaint(call, path, callee.Name())
+			}
+		}
+	}
 }
 
 func (d *Depender) IsSecretParam(name string) bool {
@@ -157,6 +211,59 @@ func (d *Depender) fieldTainted(root ssa.Value, path string) (string, bool) {
 	return "", false
 }
 
+// ArgFieldTaint classifies a value's taint for propagation across a call/return
+// boundary. whole=true means the value is secret as a whole (a key, a raw MAC,
+// an extracted field value, an annotated struct) so the receiving param/result
+// and all its field reads are secret. Otherwise it returns the specific struct
+// field paths that are tainted, so sibling public fields stay clean.
+func (d *Depender) ArgFieldTaint(v ssa.Value) (whole bool, fields []string) {
+	if s, _ := d.DependsOn(v); s == "" {
+		return false, nil
+	}
+	root, path, sawIndex := resolveFieldPath(v)
+	if path != "" || sawIndex {
+		return true, nil // v is itself an extracted secret field/element
+	}
+	if _, ok := d.taintedAddrs[root]; ok {
+		return true, nil // whole-object store
+	}
+	if d.elementTaintRoots[root] {
+		// A secret written into a slice/array element of a field is tracked
+		// element-blind, so it cannot be re-seeded precisely across the boundary.
+		// Fall back to whole-value taint to preserve container-root propagation.
+		return true, nil
+	}
+	ft := d.fieldTaint[root]
+	if len(ft) == 0 {
+		return true, nil // tainted but not field-scoped
+	}
+	for k := range ft {
+		fields = append(fields, k)
+	}
+	return false, fields
+}
+
+// copyFieldTaint preserves field-level taint across a whole-struct copy such as
+// the SSA `*t0 = r` that spills a by-value struct param/result into a local: the
+// secret field stays tainted in the copy while sibling public fields do not.
+func (d *Depender) copyFieldTaint(dst, src ssa.Value) {
+	srcRoot, srcPath, srcIdx := resolveFieldPath(src)
+	if srcPath != "" || srcIdx {
+		return
+	}
+	srcFields := d.fieldTaint[srcRoot]
+	if len(srcFields) == 0 {
+		return
+	}
+	dstRoot, dstPath, dstIdx := resolveFieldPath(dst)
+	if dstPath != "" || dstIdx {
+		return
+	}
+	for fpath, s := range srcFields {
+		d.setFieldTaint(dstRoot, fpath, s)
+	}
+}
+
 // recordStoreTaint records content taint for a Store: field-qualified for struct
 // fields, container-level for element/map/chan/whole-object writes.
 func (d *Depender) recordStoreTaint(addr ssa.Value, secret string) {
@@ -167,6 +274,7 @@ func (d *Depender) recordStoreTaint(addr ssa.Value, secret string) {
 		d.taintedAddrs[indexBaseOf(addr)] = secret // element-blind base
 		if path != "" {
 			d.setFieldTaint(root, path, secret) // secret in a slice/array-typed field
+			d.elementTaintRoots[root] = true    // element-level: propagate whole across boundaries
 		}
 	case path != "":
 		d.setFieldTaint(root, path, secret) // struct-field write
@@ -276,6 +384,8 @@ func (d *Depender) analyzeStores(fn *ssa.Function) {
 			if store, ok := instr.(*ssa.Store); ok {
 				if secret, _ := d.DependsOn(store.Val); secret != "" {
 					d.recordStoreTaint(store.Addr, secret)
+				} else {
+					d.copyFieldTaint(store.Addr, store.Val)
 				}
 				if lenSecret, _ := d.LengthDependsOn(store.Val); lenSecret != "" {
 					d.addrLengthTaint[store.Addr] = lenSecret

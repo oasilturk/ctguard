@@ -9,11 +9,19 @@ import (
 	"github.com/oasilturk/ctguard/internal/annotations"
 )
 
-// FunctionContext holds taint information for a function
+// FunctionContext holds taint information for a function.
+//
+// Taint is tracked at two granularities that flow across call/return boundaries
+// as a monotone fixed point: whole-value (SecretParams / TaintedReturn) and
+// field-scoped (SecretParamFields / ReturnFields). A struct carrying a secret
+// only in some fields propagates just those field paths, so a sibling public
+// field stays clean in the callee or caller.
 type FunctionContext struct {
-	Function      *ssa.Function
-	SecretParams  map[string]bool
-	TaintedReturn bool // whether the function returns a tainted value
+	Function          *ssa.Function
+	SecretParams      map[string]bool            // params secret as a whole (annotation or wholly-tainted arg)
+	SecretParamFields map[string]map[string]bool // param name -> tainted field paths
+	TaintedReturn     bool                       // returns a wholly-tainted value
+	ReturnFields      map[string]bool            // tainted field paths of the returned struct
 }
 
 // InterproceduralAnalyzer propagates taint information across function calls
@@ -32,8 +40,10 @@ func NewInterproceduralAnalyzer(ssaRes *buildssa.SSA, secrets annotations.Secret
 		}
 
 		ctx := &FunctionContext{
-			Function:     fn,
-			SecretParams: make(map[string]bool),
+			Function:          fn,
+			SecretParams:      make(map[string]bool),
+			SecretParamFields: make(map[string]map[string]bool),
+			ReturnFields:      make(map[string]bool),
 		}
 
 		if fn.Object() != nil {
@@ -73,28 +83,36 @@ func (ia *InterproceduralAnalyzer) Analyze() {
 	}
 }
 
-// updateReturnTaint recalculates whether a function returns a tainted value.
+// updateReturnTaint recalculates a function's return taint at both granularities:
+// TaintedReturn for a wholly-tainted return, ReturnFields for a struct return
+// tainted only in specific fields. Monotone: fields only accumulate.
 func (ia *InterproceduralAnalyzer) updateReturnTaint(ctx *FunctionContext, dep *Depender) bool {
-	prev := ctx.TaintedReturn
-	ctx.TaintedReturn = ia.hasAnyTaintedReturn(ctx.Function, dep)
-	return ctx.TaintedReturn != prev
-}
-
-func (ia *InterproceduralAnalyzer) hasAnyTaintedReturn(fn *ssa.Function, dep *Depender) bool {
-	for _, block := range fn.Blocks {
+	changed := false
+	for _, block := range ctx.Function.Blocks {
 		for _, instr := range block.Instrs {
 			ret, ok := instr.(*ssa.Return)
 			if !ok {
 				continue
 			}
 			for _, result := range ret.Results {
-				if secret, _ := dep.DependsOn(result); secret != "" {
-					return true
+				whole, fields := dep.ArgFieldTaint(result)
+				if whole {
+					if !ctx.TaintedReturn {
+						ctx.TaintedReturn = true
+						changed = true
+					}
+					continue
+				}
+				for _, f := range fields {
+					if !ctx.ReturnFields[f] {
+						ctx.ReturnFields[f] = true
+						changed = true
+					}
 				}
 			}
 		}
 	}
-	return false
+	return changed
 }
 
 // propagateCallArgs propagates taint from caller arguments to callee parameters.
@@ -118,18 +136,54 @@ func (ia *InterproceduralAnalyzer) propagateCallArgs(fn *ssa.Function, dep *Depe
 			}
 
 			for i, arg := range call.Call.Args {
-				if secret, _ := dep.DependsOn(arg); secret == "" || i >= len(callee.Params) {
+				if i >= len(callee.Params) {
+					continue
+				}
+				whole, fields := dep.ArgFieldTaint(arg)
+				if !whole && len(fields) == 0 {
 					continue
 				}
 				paramName := callee.Params[i].Name()
-				if !calleeCtx.SecretParams[paramName] {
-					calleeCtx.SecretParams[paramName] = true
-					changed = true
+				if whole {
+					if !calleeCtx.SecretParams[paramName] {
+						calleeCtx.SecretParams[paramName] = true
+						changed = true
+					}
+					continue
+				}
+				fm := calleeCtx.SecretParamFields[paramName]
+				if fm == nil {
+					fm = map[string]bool{}
+					calleeCtx.SecretParamFields[paramName] = fm
+				}
+				for _, f := range fields {
+					if !fm[f] {
+						fm[f] = true
+						changed = true
+					}
 				}
 			}
 		}
 	}
 	return changed
+}
+
+// SecretParamFields returns the field-scoped secret params for fn (param name ->
+// tainted field paths), used to seed field-level taint without whole-param taint.
+func (ia *InterproceduralAnalyzer) SecretParamFields(fn *ssa.Function) map[string]map[string]bool {
+	if ctx := ia.contexts[fn]; ctx != nil {
+		return ctx.SecretParamFields
+	}
+	return nil
+}
+
+// ReturnFields returns the tainted field paths of fn's returned struct, used to
+// seed field-level taint on a call result without whole-value taint.
+func (ia *InterproceduralAnalyzer) ReturnFields(fn *ssa.Function) map[string]bool {
+	if ctx := ia.contexts[fn]; ctx != nil {
+		return ctx.ReturnFields
+	}
+	return nil
 }
 
 func (ia *InterproceduralAnalyzer) GetSecretParams(fn *ssa.Function) map[string]bool {
