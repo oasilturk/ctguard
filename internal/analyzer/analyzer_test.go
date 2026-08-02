@@ -58,6 +58,13 @@ func TestReceiverTaint(t *testing.T) {
 	analysistest.Run(t, testdata, analyzer.Analyzer, "receivertaint")
 }
 
+// TestPoolMAC locks sync.Pool MAC-source detection: a pool whose New returns an
+// HMAC yields MAC state on Get(), while a non-MAC pool stays clean.
+func TestPoolMAC(t *testing.T) {
+	testdata := getTestdataPath(t)
+	analysistest.Run(t, testdata, analyzer.Analyzer, "poolmac")
+}
+
 // TestNestedBranches tests detection of nested secret-dependent branches
 func TestNestedBranches(t *testing.T) {
 	testdata := getTestdataPath(t)

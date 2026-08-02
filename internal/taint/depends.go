@@ -42,6 +42,9 @@ type InterproceduralInfo interface {
 	// return taint must instead be re-justified by the call's actual arguments.
 	IntrinsicReturn(fn *ssa.Function) bool
 	IntrinsicReturnFields(fn *ssa.Function) map[string]bool
+	// IsMACPool reports whether v is a sync.Pool whose New returns a MAC, so a
+	// Get() on it yields MAC state.
+	IsMACPool(v ssa.Value) bool
 }
 
 func NewDepender(fn *ssa.Function, secretParams map[string]bool, ipAnalyzer InterproceduralInfo) *Depender {
@@ -653,6 +656,12 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 			// mac.Sum() compared in non-constant time is then caught with no annotation.
 			secret = "hmac"
 			conf = confidence.ConfidenceHigh
+		} else if callee != nil && isSyncPoolGet(callee) && d.ipAnalyzer != nil &&
+			len(t.Call.Args) > 0 && d.ipAnalyzer.IsMACPool(t.Call.Args[0]) {
+			// (*sync.Pool).Get() on a pool whose New returns a MAC yields MAC state,
+			// so the pooled hmac.Sum() compared later is caught with no annotation.
+			secret = "hmac"
+			conf = confidence.ConfidenceHigh
 		} else if callee != nil && d.ipAnalyzer != nil && d.ipAnalyzer.IsAnalyzed(callee) {
 			// Same-package analyzed callee: trust its return-taint verdict so a secret
 			// derived inside the callee (e.g. an HMAC) reaches the caller's result.
@@ -763,6 +772,23 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 		secret, conf = d.DependsOn(t.X)
 
 	case *ssa.MakeInterface:
+		secret, conf = d.DependsOn(t.X)
+
+	case *ssa.ChangeInterface:
+		// interface-to-interface conversion (e.g. hash.Hash -> any) preserves the
+		// underlying value's taint, except widening an error (error -> any, as when
+		// wrapping a decode error with fmt.Errorf) which is a diagnostic, not secret
+		// content, mirroring the error exemption in methodYieldsContent.
+		if types.Identical(t.X.Type(), errorType) {
+			secret = ""
+			conf = confidence.ConfidenceLow
+		} else {
+			secret, conf = d.DependsOn(t.X)
+		}
+
+	case *ssa.TypeAssert:
+		// x.(T): the asserted value carries the taint of x (e.g. a pooled MAC
+		// retrieved as `pool.Get().(hash.Hash)`).
 		secret, conf = d.DependsOn(t.X)
 
 	case *ssa.Extract:
@@ -918,6 +944,16 @@ func isMACConstructor(fn *ssa.Function) bool {
 		return false
 	}
 	return obj.Pkg().Path() == "crypto/hmac" && obj.Name() == "New"
+}
+
+// isSyncPoolGet reports whether fn is (*sync.Pool).Get; whether the pool yields a
+// MAC is decided separately by IsMACPool on the receiver.
+func isSyncPoolGet(fn *ssa.Function) bool {
+	obj := fn.Object()
+	if obj == nil || obj.Pkg() == nil {
+		return false
+	}
+	return obj.Pkg().Path() == "sync" && obj.Name() == "Get"
 }
 
 // taintFromArgs returns the first tainted argument's secret and confidence.

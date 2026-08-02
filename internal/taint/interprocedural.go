@@ -1,6 +1,7 @@
 package taint
 
 import (
+	"go/token"
 	"go/types"
 
 	"golang.org/x/tools/go/analysis/passes/buildssa"
@@ -39,11 +40,15 @@ type FunctionContext struct {
 // InterproceduralAnalyzer propagates taint information across function calls
 type InterproceduralAnalyzer struct {
 	contexts map[*ssa.Function]*FunctionContext
+	pkg      *ssa.Package       // for scanning synthesized funcs (init) not in SrcFuncs
+	macPools map[ssa.Value]bool // sync.Pool values whose New returns a MAC
 }
 
 func NewInterproceduralAnalyzer(ssaRes *buildssa.SSA, secrets annotations.Secrets) *InterproceduralAnalyzer {
 	ia := &InterproceduralAnalyzer{
 		contexts: make(map[*ssa.Function]*FunctionContext),
+		pkg:      ssaRes.Pkg,
+		macPools: make(map[ssa.Value]bool),
 	}
 
 	for _, fn := range ssaRes.SrcFuncs {
@@ -109,6 +114,148 @@ func (ia *InterproceduralAnalyzer) Analyze() {
 			break
 		}
 	}
+
+	// After IntrinsicReturn has stabilized, identify sync.Pool values whose New
+	// function returns a MAC, so pool.Get() at a use site is treated as a MAC.
+	ia.computeMACPools()
+}
+
+// computeMACPools records every sync.Pool value whose New field is set to a
+// function that intrinsically returns a MAC (e.g. `sync.Pool{New: func() any {
+// return hmac.New(...) }}`). A Get() on such a pool yields MAC state, so a later
+// mac.Sum() compared in non-constant time is caught with no annotation. This is a
+// principled crypto-source recognition, not a name heuristic.
+func (ia *InterproceduralAnalyzer) computeMACPools() {
+	// Scan every package function, including the synthesized `init` (where global
+	// `var p = sync.Pool{New: ...}` is lowered) which is not in SrcFuncs.
+	for _, fn := range ia.allPkgFuncs() {
+		if fn.Blocks == nil {
+			continue
+		}
+		for _, block := range fn.Blocks {
+			for _, instr := range block.Instrs {
+				store, ok := instr.(*ssa.Store)
+				if !ok {
+					continue
+				}
+				fa, ok := store.Addr.(*ssa.FieldAddr)
+				if !ok || !isSyncPoolNewField(fa) {
+					continue
+				}
+				newFn := funcOfValue(store.Val)
+				if newFn != nil && ia.funcIntrinsicallyReturnsMAC(newFn) {
+					ia.macPools[poolRootValue(fa.X)] = true
+				}
+			}
+		}
+	}
+}
+
+// allPkgFuncs returns every function of the package: named members, the
+// synthesized init, and their nested anonymous functions.
+func (ia *InterproceduralAnalyzer) allPkgFuncs() []*ssa.Function {
+	if ia.pkg == nil {
+		out := make([]*ssa.Function, 0, len(ia.contexts))
+		for fn := range ia.contexts {
+			out = append(out, fn)
+		}
+		return out
+	}
+	var out []*ssa.Function
+	seen := map[*ssa.Function]bool{}
+	var add func(fn *ssa.Function)
+	add = func(fn *ssa.Function) {
+		if fn == nil || seen[fn] {
+			return
+		}
+		seen[fn] = true
+		out = append(out, fn)
+		for _, a := range fn.AnonFuncs {
+			add(a)
+		}
+	}
+	for _, m := range ia.pkg.Members {
+		if fn, ok := m.(*ssa.Function); ok {
+			add(fn)
+		}
+	}
+	return out
+}
+
+// funcIntrinsicallyReturnsMAC reports whether fn returns MAC state regardless of
+// arguments. It uses the computed IntrinsicReturn fact when fn was analyzed, and
+// otherwise (e.g. an init-scoped anonymous New func) derives it locally.
+func (ia *InterproceduralAnalyzer) funcIntrinsicallyReturnsMAC(fn *ssa.Function) bool {
+	if ctx := ia.contexts[fn]; ctx != nil {
+		return ctx.IntrinsicReturn
+	}
+	if fn.Blocks == nil {
+		return false
+	}
+	dep := NewDepender(fn, map[string]bool{}, intrinsicView{ia})
+	for _, block := range fn.Blocks {
+		for _, instr := range block.Instrs {
+			ret, ok := instr.(*ssa.Return)
+			if !ok {
+				continue
+			}
+			for _, r := range ret.Results {
+				if whole, _ := dep.ArgFieldTaint(r); whole {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// IsMACPool reports whether v is a sync.Pool whose New returns a MAC.
+func (ia *InterproceduralAnalyzer) IsMACPool(v ssa.Value) bool {
+	return ia.macPools[poolRootValue(v)]
+}
+
+// isSyncPoolNewField reports whether fa addresses the New field of a sync.Pool.
+func isSyncPoolNewField(fa *ssa.FieldAddr) bool {
+	pt, ok := fa.X.Type().(*types.Pointer)
+	if !ok {
+		return false
+	}
+	named, ok := pt.Elem().(*types.Named)
+	if !ok {
+		return false
+	}
+	obj := named.Obj()
+	if obj.Pkg() == nil || obj.Pkg().Path() != "sync" || obj.Name() != "Pool" {
+		return false
+	}
+	st, ok := named.Underlying().(*types.Struct)
+	if !ok || fa.Field < 0 || fa.Field >= st.NumFields() {
+		return false
+	}
+	return st.Field(fa.Field).Name() == "New"
+}
+
+// funcOfValue returns the concrete function behind a value stored into a field,
+// whether a bare *ssa.Function or a MakeClosure over one.
+func funcOfValue(v ssa.Value) *ssa.Function {
+	switch t := v.(type) {
+	case *ssa.Function:
+		return t
+	case *ssa.MakeClosure:
+		if f, ok := t.Fn.(*ssa.Function); ok {
+			return f
+		}
+	}
+	return nil
+}
+
+// poolRootValue strips a leading dereference so the pool identity matches between
+// the `pool.New = fn` store site and the `pool.Get()` use site.
+func poolRootValue(v ssa.Value) ssa.Value {
+	if u, ok := v.(*ssa.UnOp); ok && u.Op == token.MUL {
+		return u.X
+	}
+	return v
 }
 
 // updateReturnTaint recalculates a function's return taint at both granularities:
@@ -302,6 +449,7 @@ func (v intrinsicView) IntrinsicReturn(fn *ssa.Function) bool { return v.ia.Intr
 func (v intrinsicView) IntrinsicReturnFields(fn *ssa.Function) map[string]bool {
 	return v.ia.IntrinsicReturnFields(fn)
 }
+func (v intrinsicView) IsMACPool(val ssa.Value) bool { return v.ia.IsMACPool(val) }
 
 // lookupSecretParams finds secret param annotations for the given function
 // by trying progressively less specific keys.
