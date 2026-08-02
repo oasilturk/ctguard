@@ -50,6 +50,14 @@ func TestFieldTaint(t *testing.T) {
 	analysistest.Run(t, testdata, analyzer.Analyzer, "fieldtaint")
 }
 
+// TestReceiverTaint locks the context-sensitive return-taint fix: a passthrough
+// constructor's param-derived return taint must not leak to a public call site and
+// taint a stateful receiver's public fields (the mox SCRAM Server cascade).
+func TestReceiverTaint(t *testing.T) {
+	testdata := getTestdataPath(t)
+	analysistest.Run(t, testdata, analyzer.Analyzer, "receivertaint")
+}
+
 // TestNestedBranches tests detection of nested secret-dependent branches
 func TestNestedBranches(t *testing.T) {
 	testdata := getTestdataPath(t)

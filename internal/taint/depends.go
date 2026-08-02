@@ -37,6 +37,11 @@ type InterproceduralInfo interface {
 	IsAnalyzed(fn *ssa.Function) bool
 	SecretParamFields(fn *ssa.Function) map[string]map[string]bool
 	ReturnFields(fn *ssa.Function) map[string]bool
+	// IntrinsicReturn(Fields) report the argument-independent part of a callee's
+	// return taint, which holds at every call site. Conditional (param-derived)
+	// return taint must instead be re-justified by the call's actual arguments.
+	IntrinsicReturn(fn *ssa.Function) bool
+	IntrinsicReturnFields(fn *ssa.Function) map[string]bool
 }
 
 func NewDepender(fn *ssa.Function, secretParams map[string]bool, ipAnalyzer InterproceduralInfo) *Depender {
@@ -138,7 +143,12 @@ func (d *Depender) seedParamFieldTaint(fn *ssa.Function, ip InterproceduralInfo)
 
 // seedCallResultFieldTaint marks the tainted fields of a struct returned by an
 // analyzed same-package callee, so reading the secret field of the result is
-// tainted while sibling public fields stay clean.
+// tainted while sibling public fields stay clean. A callee's INTRINSIC return
+// fields (from an in-body source or annotated param) hold at every call site; its
+// merely param-derived return fields hold only where a tainted argument actually
+// flows into THIS call. Without the latter gate the summary leaks to an unrelated
+// public call site (the newParser-in-NewServer cascade); without seeding it at all
+// a constructor that takes a MAC and stores it in a field is missed (false negative).
 func (d *Depender) seedCallResultFieldTaint(fn *ssa.Function, ip InterproceduralInfo) {
 	if fn == nil || ip == nil {
 		return
@@ -153,11 +163,105 @@ func (d *Depender) seedCallResultFieldTaint(fn *ssa.Function, ip Interprocedural
 			if callee == nil {
 				continue
 			}
-			for path := range ip.ReturnFields(callee) {
+			for path := range ip.IntrinsicReturnFields(callee) {
+				d.setFieldTaint(call, path, callee.Name())
+			}
+			cond := ip.ReturnFields(callee)
+			if len(cond) == 0 || !d.callHasSecretArg(call) {
+				continue
+			}
+			for path := range cond {
 				d.setFieldTaint(call, path, callee.Name())
 			}
 		}
 	}
+}
+
+// callHasSecretArg reports whether any argument of call is known to carry secret
+// content from store-independent facts, used to gate param-derived return-field
+// taint at the specific call site.
+func (d *Depender) callHasSecretArg(call *ssa.Call) bool {
+	for _, a := range call.Call.Args {
+		if d.argCarriesSecretPreStore(a, map[ssa.Value]bool{}) {
+			return true
+		}
+	}
+	return false
+}
+
+// argCarriesSecretPreStore reports whether v carries secret content using only
+// facts available before analyzeStores: secret params, already-seeded param-field
+// taint, and intrinsic/analyzed call returns. It deliberately avoids DependsOn so
+// it neither pollutes the memo nor depends on store analysis; it under-approximates
+// taint arriving solely via a local store, which at worst declines to seed a rare
+// case rather than leaking.
+func (d *Depender) argCarriesSecretPreStore(v ssa.Value, seen map[ssa.Value]bool) bool {
+	if v == nil || seen[v] {
+		return false
+	}
+	seen[v] = true
+	switch t := v.(type) {
+	case *ssa.Parameter:
+		return d.secretParams[t.Name()]
+	case *ssa.ChangeType:
+		return d.argCarriesSecretPreStore(t.X, seen)
+	case *ssa.Convert:
+		return d.argCarriesSecretPreStore(t.X, seen)
+	case *ssa.MakeInterface:
+		return d.argCarriesSecretPreStore(t.X, seen)
+	case *ssa.Slice:
+		return d.argCarriesSecretPreStore(t.X, seen)
+	case *ssa.Phi:
+		for _, e := range t.Edges {
+			if d.argCarriesSecretPreStore(e, seen) {
+				return true
+			}
+		}
+		return false
+	case *ssa.UnOp:
+		if t.Op == token.MUL {
+			root, path, _ := resolveFieldPath(t)
+			if p, ok := root.(*ssa.Parameter); ok && d.secretParams[p.Name()] {
+				return true
+			}
+			if _, ok := d.taintedAddrs[root]; ok {
+				return true
+			}
+			for k := range d.fieldTaint[root] {
+				if k == path || strings.HasPrefix(path, k+",") || strings.HasPrefix(k, path+",") {
+					return true
+				}
+			}
+			return false
+		}
+		return d.argCarriesSecretPreStore(t.X, seen)
+	case *ssa.Call:
+		callee := t.Call.StaticCallee()
+		if callee != nil {
+			if isMACConstructor(callee) {
+				return true
+			}
+			if d.ipAnalyzer != nil && d.ipAnalyzer.IntrinsicReturn(callee) {
+				return true
+			}
+			if d.ipAnalyzer != nil && d.ipAnalyzer.HasTaintedReturn(callee) {
+				for _, a := range t.Call.Args {
+					if d.argCarriesSecretPreStore(a, seen) {
+						return true
+					}
+				}
+			}
+		}
+		if _, isB := t.Call.Value.(*ssa.Builtin); isB {
+			for _, a := range t.Call.Args {
+				if d.argCarriesSecretPreStore(a, seen) {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	return false
 }
 
 func (d *Depender) IsSecretParam(name string) bool {
@@ -552,10 +656,14 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 		} else if callee != nil && d.ipAnalyzer != nil && d.ipAnalyzer.IsAnalyzed(callee) {
 			// Same-package analyzed callee: trust its return-taint verdict so a secret
 			// derived inside the callee (e.g. an HMAC) reaches the caller's result.
+			// The result is secret only if justified HERE: either a tainted argument
+			// flows in, or the callee's return is intrinsically secret (in-body source
+			// or annotated param) independent of arguments. A merely param-derived
+			// return with public arguments at this site is NOT secret.
 			if d.ipAnalyzer.HasTaintedReturn(callee) {
 				if s, c := d.taintFromArgs(t); s != "" {
 					secret, conf = s, c
-				} else {
+				} else if d.ipAnalyzer.IntrinsicReturn(callee) {
 					secret, conf = callee.Name(), confidence.ConfidenceLow
 				}
 			} else {
