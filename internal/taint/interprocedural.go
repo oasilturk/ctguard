@@ -35,6 +35,14 @@ type FunctionContext struct {
 	AnnotatedParams       map[string]bool // params declared secret by annotation (fixed, pre-propagation)
 	IntrinsicReturn       bool            // returns a wholly-tainted value independent of arguments
 	IntrinsicReturnFields map[string]bool // return field paths tainted independent of arguments
+
+	// Kinds travel with the taint across the boundary so a published
+	// authenticator is not reported in the callee it is passed to nor in the
+	// caller it is returned to. They only ever rise, keeping the fixed point
+	// monotone; an unset kind reads as KindContent.
+	ParamKinds          map[string]Kind // param name -> kind of the taint it carries
+	ReturnKind          Kind            // kind of the return taint (whole value and fields)
+	IntrinsicReturnKind Kind            // kind of the argument-independent return taint
 }
 
 // InterproceduralAnalyzer propagates taint information across function calls
@@ -63,6 +71,7 @@ func NewInterproceduralAnalyzer(ssaRes *buildssa.SSA, secrets annotations.Secret
 			ReturnFields:          make(map[string]bool),
 			AnnotatedParams:       make(map[string]bool),
 			IntrinsicReturnFields: make(map[string]bool),
+			ParamKinds:            make(map[string]Kind),
 		}
 
 		if fn.Object() != nil {
@@ -70,8 +79,10 @@ func NewInterproceduralAnalyzer(ssaRes *buildssa.SSA, secrets annotations.Secret
 		}
 		// Snapshot the annotated params before any propagation adds to SecretParams;
 		// intrinsic-return analysis treats only these (plus in-body sources) as secret.
+		// An annotation declares confidential material, hence content taint.
 		for k := range ctx.SecretParams {
 			ctx.AnnotatedParams[k] = true
+			ctx.ParamKinds[k] = KindContent
 		}
 
 		ia.contexts[fn] = ctx
@@ -200,7 +211,7 @@ func (ia *InterproceduralAnalyzer) funcIntrinsicallyReturnsMAC(fn *ssa.Function)
 				continue
 			}
 			for _, r := range ret.Results {
-				if whole, _ := dep.ArgFieldTaint(r); whole {
+				if whole, _, _ := dep.ArgFieldTaint(r); whole {
 					return true
 				}
 			}
@@ -270,10 +281,14 @@ func (ia *InterproceduralAnalyzer) updateReturnTaint(ctx *FunctionContext, dep *
 				continue
 			}
 			for _, result := range ret.Results {
-				whole, fields := dep.ArgFieldTaint(result)
+				whole, fields, kind := dep.ArgFieldTaint(result)
 				if whole {
 					if !ctx.TaintedReturn {
 						ctx.TaintedReturn = true
+						changed = true
+					}
+					if k := JoinKind(ctx.ReturnKind, kind); k != ctx.ReturnKind {
+						ctx.ReturnKind = k
 						changed = true
 					}
 					continue
@@ -281,6 +296,12 @@ func (ia *InterproceduralAnalyzer) updateReturnTaint(ctx *FunctionContext, dep *
 				for _, f := range fields {
 					if !ctx.ReturnFields[f] {
 						ctx.ReturnFields[f] = true
+						changed = true
+					}
+				}
+				if len(fields) > 0 {
+					if k := JoinKind(ctx.ReturnKind, kind); k != ctx.ReturnKind {
+						ctx.ReturnKind = k
 						changed = true
 					}
 				}
@@ -302,10 +323,14 @@ func (ia *InterproceduralAnalyzer) updateIntrinsicReturn(ctx *FunctionContext, d
 				continue
 			}
 			for _, result := range ret.Results {
-				whole, fields := dep.ArgFieldTaint(result)
+				whole, fields, kind := dep.ArgFieldTaint(result)
 				if whole {
 					if !ctx.IntrinsicReturn {
 						ctx.IntrinsicReturn = true
+						changed = true
+					}
+					if k := JoinKind(ctx.IntrinsicReturnKind, kind); k != ctx.IntrinsicReturnKind {
+						ctx.IntrinsicReturnKind = k
 						changed = true
 					}
 					continue
@@ -313,6 +338,12 @@ func (ia *InterproceduralAnalyzer) updateIntrinsicReturn(ctx *FunctionContext, d
 				for _, f := range fields {
 					if !ctx.IntrinsicReturnFields[f] {
 						ctx.IntrinsicReturnFields[f] = true
+						changed = true
+					}
+				}
+				if len(fields) > 0 {
+					if k := JoinKind(ctx.IntrinsicReturnKind, kind); k != ctx.IntrinsicReturnKind {
+						ctx.IntrinsicReturnKind = k
 						changed = true
 					}
 				}
@@ -346,11 +377,15 @@ func (ia *InterproceduralAnalyzer) propagateCallArgs(fn *ssa.Function, dep *Depe
 				if i >= len(callee.Params) {
 					continue
 				}
-				whole, fields := dep.ArgFieldTaint(arg)
+				whole, fields, kind := dep.ArgFieldTaint(arg)
 				if !whole && len(fields) == 0 {
 					continue
 				}
 				paramName := callee.Params[i].Name()
+				if k := JoinKind(calleeCtx.ParamKinds[paramName], kind); k != calleeCtx.ParamKinds[paramName] {
+					calleeCtx.ParamKinds[paramName] = k
+					changed = true
+				}
 				if whole {
 					if !calleeCtx.SecretParams[paramName] {
 						calleeCtx.SecretParams[paramName] = true
@@ -412,6 +447,32 @@ func (ia *InterproceduralAnalyzer) IntrinsicReturnFields(fn *ssa.Function) map[s
 	return nil
 }
 
+// ParamKinds gives the kind of taint each param of fn carries; a param missing
+// from the map is read as KindContent by the Depender.
+func (ia *InterproceduralAnalyzer) ParamKinds(fn *ssa.Function) map[string]Kind {
+	if ctx := ia.contexts[fn]; ctx != nil {
+		return ctx.ParamKinds
+	}
+	return nil
+}
+
+// ReturnKind covers both the whole-value and the field-scoped return taint;
+// KindContent when fn was not analyzed.
+func (ia *InterproceduralAnalyzer) ReturnKind(fn *ssa.Function) Kind {
+	if ctx := ia.contexts[fn]; ctx != nil && ctx.ReturnKind != KindNone {
+		return ctx.ReturnKind
+	}
+	return KindContent
+}
+
+// IntrinsicReturnKind is ReturnKind for the argument-independent part.
+func (ia *InterproceduralAnalyzer) IntrinsicReturnKind(fn *ssa.Function) Kind {
+	if ctx := ia.contexts[fn]; ctx != nil && ctx.IntrinsicReturnKind != KindNone {
+		return ctx.IntrinsicReturnKind
+	}
+	return KindContent
+}
+
 func (ia *InterproceduralAnalyzer) GetSecretParams(fn *ssa.Function) map[string]bool {
 	if ctx := ia.contexts[fn]; ctx != nil {
 		return ctx.SecretParams
@@ -450,6 +511,14 @@ func (v intrinsicView) IntrinsicReturnFields(fn *ssa.Function) map[string]bool {
 	return v.ia.IntrinsicReturnFields(fn)
 }
 func (v intrinsicView) IsMACPool(val ssa.Value) bool { return v.ia.IsMACPool(val) }
+
+// The intrinsic pass seeds only annotated params, which are content, so an empty
+// map (read as content) is the right answer here.
+func (v intrinsicView) ParamKinds(fn *ssa.Function) map[string]Kind { return nil }
+func (v intrinsicView) ReturnKind(fn *ssa.Function) Kind            { return v.ia.IntrinsicReturnKind(fn) }
+func (v intrinsicView) IntrinsicReturnKind(fn *ssa.Function) Kind {
+	return v.ia.IntrinsicReturnKind(fn)
+}
 
 // lookupSecretParams finds secret param annotations for the given function
 // by trying progressively less specific keys.

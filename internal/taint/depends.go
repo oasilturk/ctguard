@@ -15,20 +15,53 @@ import (
 // Content and length taint are tracked separately: len/cap of a secret slice
 // propagates only length taint, so an innocent len(secret) read is not reported
 // while slice[i] content reads still are.
+//
+// Every content taint also carries a Kind (see kind.go), which decides whether
+// the confidentiality rules may report it.
 type Depender struct {
 	secretParams       map[string]bool
+	paramKinds         map[string]Kind      // param name -> kind; missing means KindContent
 	memo               map[ssa.Value]string // stores secret name or "" if not tainted
+	kindMemo           map[ssa.Value]Kind   // kind of the memoized taint, mirrors memo
 	inStack            map[ssa.Value]bool
-	taintedAddrs       map[ssa.Value]string                     // container-level content taint (elements, maps, chans)
+	taintedAddrs       map[ssa.Value]taintRef                   // container-level content taint (elements, maps, chans)
 	addrLengthTaint    map[ssa.Value]string                     // length taint on memory addresses
-	fieldTaint         map[ssa.Value]map[string]string          // field-qualified taint: root -> field path -> secret
+	fieldTaint         map[ssa.Value]map[string]taintRef        // field-qualified taint: root -> field path -> secret
 	elementTaintRoots  map[ssa.Value]bool                       // roots with a slice/array element write: propagate whole across boundaries
-	derivedTaint       map[ssa.Value]string                     // values tainted via an output-parameter transform (hex.Encode(dst, src))
-	containerHasSecret map[ssa.Value]string                     // whole-value: root holds a secret somewhere
+	derivedTaint       map[ssa.Value]taintRef                   // values tainted via an output-parameter transform (hex.Encode(dst, src))
+	containerHasSecret map[ssa.Value]taintRef                   // whole-value: root holds a secret somewhere
 	ipAnalyzer         InterproceduralInfo                      // interprocedural analysis info
 	confMemo           map[ssa.Value]confidence.ConfidenceLevel // stores confidence level for each tainted value
 	lenMemo            map[ssa.Value]string                     // length-taint secret name, mirrors memo
 	lenConfMemo        map[ssa.Value]confidence.ConfidenceLevel // length-taint confidence, mirrors confMemo
+}
+
+// taintRef is a recorded taint: which secret, of what kind.
+type taintRef struct {
+	secret string
+	kind   Kind
+}
+
+// join merges a fact in. The kind rises, and the label follows the strongest
+// kind so a diagnostic names the value that made it a finding rather than a MAC
+// sharing the same container. Equal kinds keep the label already recorded.
+func (t taintRef) join(secret string, kind Kind) taintRef {
+	out := taintRef{t.secret, JoinKind(t.kind, kind)}
+	if t.secret == "" || kind > t.kind {
+		out.secret = secret
+	}
+	return out
+}
+
+// joinLatest is join with the opposite tie-break: on equal kinds the incoming
+// label wins, which is how the memory maps behaved before kinds existed (a later
+// store simply overwrote the recorded secret).
+func (t taintRef) joinLatest(secret string, kind Kind) taintRef {
+	out := taintRef{secret, JoinKind(t.kind, kind)}
+	if t.secret != "" && kind < t.kind {
+		out.secret = t.secret
+	}
+	return out
 }
 
 // InterproceduralInfo provides information about taint across function boundaries
@@ -45,23 +78,32 @@ type InterproceduralInfo interface {
 	// IsMACPool reports whether v is a sync.Pool whose New returns a MAC, so a
 	// Get() on it yields MAC state.
 	IsMACPool(v ssa.Value) bool
+	// ParamKinds / ReturnKind / IntrinsicReturnKind give the kind of the taint on
+	// fn's params and return; anything unclassified reads as KindContent.
+	ParamKinds(fn *ssa.Function) map[string]Kind
+	ReturnKind(fn *ssa.Function) Kind
+	IntrinsicReturnKind(fn *ssa.Function) Kind
 }
 
 func NewDepender(fn *ssa.Function, secretParams map[string]bool, ipAnalyzer InterproceduralInfo) *Depender {
 	d := &Depender{
 		secretParams:       secretParams,
 		memo:               map[ssa.Value]string{},
+		kindMemo:           map[ssa.Value]Kind{},
 		inStack:            map[ssa.Value]bool{},
-		taintedAddrs:       map[ssa.Value]string{},
+		taintedAddrs:       map[ssa.Value]taintRef{},
 		addrLengthTaint:    map[ssa.Value]string{},
-		fieldTaint:         map[ssa.Value]map[string]string{},
+		fieldTaint:         map[ssa.Value]map[string]taintRef{},
 		elementTaintRoots:  map[ssa.Value]bool{},
-		derivedTaint:       map[ssa.Value]string{},
-		containerHasSecret: map[ssa.Value]string{},
+		derivedTaint:       map[ssa.Value]taintRef{},
+		containerHasSecret: map[ssa.Value]taintRef{},
 		ipAnalyzer:         ipAnalyzer,
 		confMemo:           map[ssa.Value]confidence.ConfidenceLevel{},
 		lenMemo:            map[ssa.Value]string{},
 		lenConfMemo:        map[ssa.Value]confidence.ConfidenceLevel{},
+	}
+	if ipAnalyzer != nil {
+		d.paramKinds = ipAnalyzer.ParamKinds(fn)
 	}
 	// Seed field-scoped taint from interprocedural facts BEFORE analyzing stores,
 	// so a by-value struct param/result spill (`*t0 = r`) can carry field taint
@@ -115,9 +157,9 @@ func (d *Depender) analyzeOutputParams(fn *ssa.Function) {
 			if idx[0] >= len(args) || idx[1] >= len(args) {
 				continue
 			}
-			if s, _ := d.DependsOn(args[idx[1]]); s != "" {
+			if s, _, k := d.dependsOn(args[idx[1]]); s != "" {
 				root, _, _ := resolveFieldPath(args[idx[0]])
-				d.derivedTaint[root] = s
+				d.derivedTaint[root] = d.derivedTaint[root].joinLatest(s, k)
 			}
 		}
 	}
@@ -139,7 +181,7 @@ func (d *Depender) seedParamFieldTaint(fn *ssa.Function, ip InterproceduralInfo)
 			continue // wholly secret already: every field is tainted
 		}
 		for path := range spf[p.Name()] {
-			d.setFieldTaint(p, path, p.Name())
+			d.setFieldTaint(p, path, p.Name(), d.paramKind(p.Name()))
 		}
 	}
 }
@@ -167,14 +209,14 @@ func (d *Depender) seedCallResultFieldTaint(fn *ssa.Function, ip Interprocedural
 				continue
 			}
 			for path := range ip.IntrinsicReturnFields(callee) {
-				d.setFieldTaint(call, path, callee.Name())
+				d.setFieldTaint(call, path, callee.Name(), ip.IntrinsicReturnKind(callee))
 			}
 			cond := ip.ReturnFields(callee)
 			if len(cond) == 0 || !d.callHasSecretArg(call) {
 				continue
 			}
 			for path := range cond {
-				d.setFieldTaint(call, path, callee.Name())
+				d.setFieldTaint(call, path, callee.Name(), ip.ReturnKind(callee))
 			}
 		}
 	}
@@ -271,6 +313,21 @@ func (d *Depender) IsSecretParam(name string) bool {
 	return d.secretParams[name]
 }
 
+// SecretParamKind is for rules that key off the param itself rather than off a
+// value flowing through it.
+func (d *Depender) SecretParamKind(name string) Kind {
+	return d.paramKind(name)
+}
+
+// paramKind treats anything the interprocedural pass did not classify as
+// content: the weaker authenticator kind is only ever reached by proof.
+func (d *Depender) paramKind(name string) Kind {
+	if k, ok := d.paramKinds[name]; ok && k != KindNone {
+		return k
+	}
+	return KindContent
+}
+
 func maxConfidence(a, b confidence.ConfidenceLevel) confidence.ConfidenceLevel {
 	if a.AtLeast(b) {
 		return a
@@ -335,40 +392,55 @@ func indexBaseOf(addr ssa.Value) ssa.Value {
 	}
 }
 
-func (d *Depender) setFieldTaint(root ssa.Value, path, secret string) {
+func (d *Depender) setFieldTaint(root ssa.Value, path, secret string, kind Kind) {
 	m := d.fieldTaint[root]
 	if m == nil {
-		m = map[string]string{}
+		m = map[string]taintRef{}
 		d.fieldTaint[root] = m
 	}
-	m[path] = secret
+	m[path] = m[path].joinLatest(secret, kind)
+}
+
+// containerKind is a floor on the kind of any element read out of v: element
+// writes are element-blind, so one MAC byte landing in an annotated secret
+// buffer must not reclassify reads of that buffer.
+func (d *Depender) containerKind(v ssa.Value) (string, Kind) {
+	if v == nil {
+		return "", KindNone
+	}
+	s, _, k := d.dependsOn(v)
+	return s, k
 }
 
 // fieldTainted answers query B (is THIS field secret?). Secret-param roots and
 // whole-object stores taint every field; otherwise only an exact or overlapping
-// path matches, so siblings do not.
-func (d *Depender) fieldTainted(root ssa.Value, path string) (string, bool) {
+// path matches, so siblings do not. Overlapping matches join their kinds.
+func (d *Depender) fieldTainted(root ssa.Value, path string) (string, Kind, bool) {
 	if p, ok := root.(*ssa.Parameter); ok && d.secretParams[p.Name()] {
-		return p.Name(), true
+		return p.Name(), d.paramKind(p.Name()), true
 	}
-	if s, ok := d.taintedAddrs[root]; ok { // whole-object store
-		return s, true
+	var hit taintRef
+	if t, ok := d.taintedAddrs[root]; ok { // whole-object store: taints every field
+		hit = hit.join(t.secret, t.kind)
 	}
-	for k, s := range d.fieldTaint[root] {
+	for k, t := range d.fieldTaint[root] {
 		if k == path || strings.HasPrefix(path, k+",") || strings.HasPrefix(k, path+",") {
-			return s, true
+			hit = hit.join(t.secret, t.kind)
 		}
+	}
+	if hit.secret != "" {
+		return hit.secret, hit.kind, true
 	}
 	// The root may itself be a wholly-tainted value (e.g. a tainted Call/Phi
 	// result, p := taintedCtor()); then every field is tainted. Exclude *ssa.Alloc:
 	// DependsOn(Alloc) reflects local sibling-field writes via containerHasSecret,
 	// which here would be a false positive.
 	if _, isAlloc := root.(*ssa.Alloc); !isAlloc {
-		if s, _ := d.DependsOn(root); s != "" {
-			return s, true
+		if s, _, k := d.dependsOn(root); s != "" {
+			return s, k, true
 		}
 	}
-	return "", false
+	return "", KindNone, false
 }
 
 // ArgFieldTaint classifies a value's taint for propagation across a call/return
@@ -376,31 +448,35 @@ func (d *Depender) fieldTainted(root ssa.Value, path string) (string, bool) {
 // an extracted field value, an annotated struct) so the receiving param/result
 // and all its field reads are secret. Otherwise it returns the specific struct
 // field paths that are tainted, so sibling public fields stay clean.
-func (d *Depender) ArgFieldTaint(v ssa.Value) (whole bool, fields []string) {
-	if s, _ := d.DependsOn(v); s == "" {
-		return false, nil
+func (d *Depender) ArgFieldTaint(v ssa.Value) (whole bool, fields []string, kind Kind) {
+	s, _, k := d.dependsOn(v)
+	if s == "" {
+		return false, nil, KindNone
 	}
 	root, path, sawIndex := resolveFieldPath(v)
 	if path != "" || sawIndex {
-		return true, nil // v is itself an extracted secret field/element
+		return true, nil, k // v is itself an extracted secret field/element
 	}
-	if _, ok := d.taintedAddrs[root]; ok {
-		return true, nil // whole-object store
+	if t, ok := d.taintedAddrs[root]; ok {
+		return true, nil, JoinKind(k, t.kind) // whole-object store
 	}
 	if d.elementTaintRoots[root] {
 		// A secret written into a slice/array element of a field is tracked
 		// element-blind, so it cannot be re-seeded precisely across the boundary.
 		// Fall back to whole-value taint to preserve container-root propagation.
-		return true, nil
+		return true, nil, k
 	}
 	ft := d.fieldTaint[root]
 	if len(ft) == 0 {
-		return true, nil // tainted but not field-scoped
+		return true, nil, k // tainted but not field-scoped
 	}
-	for k := range ft {
-		fields = append(fields, k)
+	// The propagated fact is per-function, not per-field, so the kind is the join.
+	fieldKind := KindNone
+	for key, t := range ft {
+		fields = append(fields, key)
+		fieldKind = JoinKind(fieldKind, t.kind)
 	}
-	return false, fields
+	return false, fields, fieldKind
 }
 
 // copyFieldTaint preserves field-level taint across a whole-struct copy such as
@@ -419,27 +495,28 @@ func (d *Depender) copyFieldTaint(dst, src ssa.Value) {
 	if dstPath != "" || dstIdx {
 		return
 	}
-	for fpath, s := range srcFields {
-		d.setFieldTaint(dstRoot, fpath, s)
+	for fpath, t := range srcFields {
+		d.setFieldTaint(dstRoot, fpath, t.secret, t.kind)
 	}
 }
 
 // recordStoreTaint records content taint for a Store: field-qualified for struct
 // fields, container-level for element/map/chan/whole-object writes.
-func (d *Depender) recordStoreTaint(addr ssa.Value, secret string) {
+func (d *Depender) recordStoreTaint(addr ssa.Value, secret string, kind Kind) {
 	root, path, sawIndex := resolveFieldPath(addr)
-	d.containerHasSecret[root] = secret // query A: container holds a secret
+	d.containerHasSecret[root] = d.containerHasSecret[root].joinLatest(secret, kind) // query A
 	switch {
 	case sawIndex:
-		d.taintedAddrs[indexBaseOf(addr)] = secret // element-blind base
+		base := indexBaseOf(addr)
+		d.taintedAddrs[base] = d.taintedAddrs[base].joinLatest(secret, kind) // element-blind base
 		if path != "" {
-			d.setFieldTaint(root, path, secret) // secret in a slice/array-typed field
-			d.elementTaintRoots[root] = true    // element-level: propagate whole across boundaries
+			d.setFieldTaint(root, path, secret, kind) // secret in a slice/array-typed field
+			d.elementTaintRoots[root] = true          // element-level: propagate whole across boundaries
 		}
 	case path != "":
-		d.setFieldTaint(root, path, secret) // struct-field write
+		d.setFieldTaint(root, path, secret, kind) // struct-field write
 	default:
-		d.taintedAddrs[addr] = secret // whole-object store
+		d.taintedAddrs[addr] = d.taintedAddrs[addr].joinLatest(secret, kind) // whole-object store
 	}
 }
 
@@ -542,8 +619,8 @@ func (d *Depender) analyzeStores(fn *ssa.Function) {
 	for _, block := range fn.Blocks {
 		for _, instr := range block.Instrs {
 			if store, ok := instr.(*ssa.Store); ok {
-				if secret, _ := d.DependsOn(store.Val); secret != "" {
-					d.recordStoreTaint(store.Addr, secret)
+				if secret, _, kind := d.dependsOn(store.Val); secret != "" {
+					d.recordStoreTaint(store.Addr, secret, kind)
 				} else {
 					d.copyFieldTaint(store.Addr, store.Val)
 				}
@@ -554,31 +631,30 @@ func (d *Depender) analyzeStores(fn *ssa.Function) {
 			}
 
 			if mapUpdate, ok := instr.(*ssa.MapUpdate); ok {
-				secret, _ := d.DependsOn(mapUpdate.Value)
+				secret, _, kind := d.dependsOn(mapUpdate.Value)
 				if secret == "" {
 					continue
 				}
 
-				d.taintedAddrs[mapUpdate.Map] = secret
+				d.taintedAddrs[mapUpdate.Map] = d.taintedAddrs[mapUpdate.Map].joinLatest(secret, kind)
 				continue
 			}
 
 			// the channel becomes tainted if a secret is sent in
 			if send, ok := instr.(*ssa.Send); ok {
-				secret, _ := d.DependsOn(send.X)
+				secret, _, kind := d.dependsOn(send.X)
 				if secret == "" {
 					continue
 				}
-				d.taintedAddrs[send.Chan] = secret
+				d.taintedAddrs[send.Chan] = d.taintedAddrs[send.Chan].joinLatest(secret, kind)
 				continue
 			}
 
 			if call, ok := instr.(*ssa.Call); ok {
 				if builtin, ok := call.Call.Value.(*ssa.Builtin); ok && builtin.Name() == "append" {
 					for _, arg := range call.Call.Args {
-						if secret, _ := d.DependsOn(arg); secret != "" {
-							d.taintedAddrs[call] = secret
-							break
+						if secret, _, kind := d.dependsOn(arg); secret != "" {
+							d.taintedAddrs[call] = d.taintedAddrs[call].joinLatest(secret, kind)
 						}
 					}
 				}
@@ -589,45 +665,69 @@ func (d *Depender) analyzeStores(fn *ssa.Function) {
 
 // DependsOn returns the name of the secret this value depends on, or empty string if not tainted.
 // The second return value indicates the confidence level of the finding.
+// It reports taint of any kind, so the disclosure rules must use
+// ContentDependsOn instead.
 func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
-	if v == nil {
+	s, c, _ := d.dependsOn(v)
+	return s, c
+}
+
+// ContentDependsOn is DependsOn restricted to confidential content, for the
+// disclosure rules: publishing an HMAC is not a leak, publishing a key is.
+func (d *Depender) ContentDependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
+	s, c, k := d.dependsOn(v)
+	if k != KindContent {
 		return "", confidence.ConfidenceLow
 	}
-	if s, ok := d.derivedTaint[v]; ok {
-		return s, confidence.ConfidenceLow
+	return s, c
+}
+
+// dependsOn is the memoized core of DependsOn. Kinds join at every merge point,
+// so a value derived from both an authenticator and content reports as content.
+func (d *Depender) dependsOn(v ssa.Value) (string, confidence.ConfidenceLevel, Kind) {
+	if v == nil {
+		return "", confidence.ConfidenceLow, KindNone
+	}
+	if t, ok := d.derivedTaint[v]; ok {
+		return t.secret, confidence.ConfidenceLow, t.kind
 	}
 	if secret, ok := d.memo[v]; ok {
 		if conf, confOk := d.confMemo[v]; confOk {
-			return secret, conf
+			return secret, conf, d.kindMemo[v]
 		}
-		return secret, confidence.ConfidenceLow
+		return secret, confidence.ConfidenceLow, d.kindMemo[v]
 	}
 	if d.inStack[v] {
-		return "", confidence.ConfidenceLow
+		return "", confidence.ConfidenceLow, KindNone
 	}
 	d.inStack[v] = true
 	defer func() { d.inStack[v] = false }()
 
 	var secret string
 	var conf confidence.ConfidenceLevel
+	var kind Kind
 
 	if p, ok := v.(*ssa.Parameter); ok {
 		if d.secretParams[p.Name()] {
+			k := d.paramKind(p.Name())
 			d.memo[v] = p.Name()
 			d.confMemo[v] = confidence.ConfidenceHigh
-			return p.Name(), confidence.ConfidenceHigh
+			d.kindMemo[v] = k
+			return p.Name(), confidence.ConfidenceHigh, k
 		}
 		d.memo[v] = ""
 		d.confMemo[v] = confidence.ConfidenceLow
-		return "", confidence.ConfidenceLow
+		d.kindMemo[v] = KindNone
+		return "", confidence.ConfidenceLow, KindNone
 	}
 
 	switch t := v.(type) {
 	// binary operations: check both operands, take highest confidence
 	case *ssa.BinOp:
-		secretX, confX := d.DependsOn(t.X)
-		secretY, confY := d.DependsOn(t.Y)
+		secretX, confX, kindX := d.dependsOn(t.X)
+		secretY, confY, kindY := d.dependsOn(t.Y)
 		conf = maxConfidence(confX, confY)
+		kind = JoinKind(kindX, kindY)
 		if secretX != "" {
 			secret = secretX
 		} else {
@@ -637,9 +737,10 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 	// phi nodes: check all edges, take highest confidence
 	case *ssa.Phi:
 		for _, e := range t.Edges {
-			if s, c := d.DependsOn(e); s != "" {
+			if s, c, k := d.dependsOn(e); s != "" {
 				secret = s
 				conf = maxConfidence(conf, c)
+				kind = JoinKind(kind, k)
 			}
 		}
 
@@ -656,12 +757,14 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 			// mac.Sum() compared in non-constant time is then caught with no annotation.
 			secret = "hmac"
 			conf = confidence.ConfidenceHigh
+			kind = KindAuthenticator
 		} else if callee != nil && isSyncPoolGet(callee) && d.ipAnalyzer != nil &&
 			len(t.Call.Args) > 0 && d.ipAnalyzer.IsMACPool(t.Call.Args[0]) {
 			// (*sync.Pool).Get() on a pool whose New returns a MAC yields MAC state,
 			// so the pooled hmac.Sum() compared later is caught with no annotation.
 			secret = "hmac"
 			conf = confidence.ConfidenceHigh
+			kind = KindAuthenticator
 		} else if callee != nil && d.ipAnalyzer != nil && d.ipAnalyzer.IsAnalyzed(callee) {
 			// Same-package analyzed callee: trust its return-taint verdict so a secret
 			// derived inside the callee (e.g. an HMAC) reaches the caller's result.
@@ -670,10 +773,18 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 			// or annotated param) independent of arguments. A merely param-derived
 			// return with public arguments at this site is NOT secret.
 			if d.ipAnalyzer.HasTaintedReturn(callee) {
-				if s, c := d.taintFromArgs(t); s != "" {
-					secret, conf = s, c
+				if s, c, k := d.taintFromArgs(t); s != "" {
+					secret, conf, kind = s, c, k
+					if d.ipAnalyzer.IntrinsicReturn(callee) {
+						// What the body returns on its own is a floor on the result's kind:
+						// a callee returning an annotated secret stays content even when the
+						// only tainted argument at this site is a MAC.
+						ref := taintRef{secret, kind}.join(callee.Name(), d.ipAnalyzer.IntrinsicReturnKind(callee))
+						secret, kind = ref.secret, ref.kind
+					}
 				} else if d.ipAnalyzer.IntrinsicReturn(callee) {
 					secret, conf = callee.Name(), confidence.ConfidenceLow
+					kind = d.ipAnalyzer.IntrinsicReturnKind(callee)
 				}
 			} else {
 				secret = ""
@@ -687,14 +798,16 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 					if s, c := d.LengthDependsOn(a); s != "" {
 						secret = s
 						conf = maxConfidence(conf, c)
+						kind = KindContent
 					}
 				}
 			default:
 				// append, copy, … are transparent; content taint flows from args.
 				for _, a := range t.Call.Args {
-					if s, c := d.DependsOn(a); s != "" {
+					if s, c, k := d.dependsOn(a); s != "" {
 						secret = s
 						conf = maxConfidence(conf, c)
+						kind = JoinKind(kind, k)
 					}
 				}
 			}
@@ -703,20 +816,21 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 			// carries the taint. Metadata methods (results all numeric/bool/error,
 			// e.g. Size or Write) expose no content and stay clean. Arg-derived
 			// taint keeps the pre-existing LOW cap for uninspectable callees.
-			if s, c := d.DependsOn(t.Call.Value); s != "" && methodYieldsContent(t.Call.Method) {
-				secret, conf = s, c
-			} else if s, _ := d.taintFromArgs(t); s != "" {
-				secret, conf = s, confidence.ConfidenceLow
+			if s, c, k := d.dependsOn(t.Call.Value); s != "" && methodYieldsContent(t.Call.Method) {
+				// The arguments can end up in the result too (hash.Sum(b) appends the
+				// digest to b), so their kinds join in.
+				ref := taintRef{s, k}
+				if as, _, ak := d.taintFromArgs(t); as != "" {
+					ref = ref.join(as, ak)
+				}
+				secret, conf, kind = ref.secret, c, ref.kind
+			} else if s, _, k := d.taintFromArgs(t); s != "" {
+				secret, conf, kind = s, confidence.ConfidenceLow, k
 			}
 		} else {
 			// External or unanalyzed callee: propagate taint from args but cap at LOW
 			// confidence because we cannot inspect the function body (prompt item 3).
-			for _, a := range t.Call.Args {
-				if s, _ := d.DependsOn(a); s != "" {
-					secret = s
-					break
-				}
-			}
+			secret, _, kind = d.taintFromArgs(t)
 			conf = confidence.ConfidenceLow
 		}
 
@@ -726,53 +840,68 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 			switch ax := t.X.(type) {
 			case *ssa.FieldAddr: // *(&r.f): field-qualified (query B)
 				root, path, _ := resolveFieldPath(ax)
-				if s, ok := d.fieldTainted(root, path); ok {
+				if s, k, ok := d.fieldTainted(root, path); ok {
 					secret = s
+					kind = k
 					conf = confidence.ConfidenceLow
 				}
 			case *ssa.IndexAddr: // element read: element-blind base, then container oracle
-				if s, ok := d.taintedAddrs[ax.X]; ok {
-					secret = s
+				if tr, ok := d.taintedAddrs[ax.X]; ok {
+					secret = tr.secret
+					kind = tr.kind
 					conf = confidence.ConfidenceLow
 				} else if root, _, _ := resolveFieldPath(ax); root != nil {
-					if s, ok := d.containerHasSecret[root]; ok {
-						secret = s
+					if tr, ok := d.containerHasSecret[root]; ok {
+						secret = tr.secret
+						kind = tr.kind
 						conf = confidence.ConfidenceLow
 					}
 				}
+				// The container may itself be confidential, which outranks whatever
+				// single element was last written into it.
+				if secret != "" {
+					ref := taintRef{secret, kind}.join(d.containerKind(ax.X))
+					secret, kind = ref.secret, ref.kind
+				}
 			default: // whole-value deref *p
-				if s, ok := d.taintedAddrs[t.X]; ok {
-					secret = s
-					conf = confidence.ConfidenceLow
-				} else if s, ok := d.containerHasSecret[t.X]; ok {
-					secret = s
+				var whole taintRef
+				if tr, ok := d.taintedAddrs[t.X]; ok {
+					whole = whole.join(tr.secret, tr.kind)
+				}
+				if tr, ok := d.containerHasSecret[t.X]; ok {
+					whole = whole.join(tr.secret, tr.kind)
+				}
+				if whole.secret != "" {
+					secret = whole.secret
+					kind = whole.kind
 					conf = confidence.ConfidenceLow
 				}
 			}
 			if secret == "" {
-				secret, conf = d.DependsOn(t.X) // structural fallback
+				secret, conf, kind = d.dependsOn(t.X) // structural fallback
 			}
 		case token.ARROW: // <- as in channel receive
 			// Check if the channel itself is tainted
-			if s, ok := d.taintedAddrs[t.X]; ok {
-				secret = s
+			if tr, ok := d.taintedAddrs[t.X]; ok {
+				secret = tr.secret
+				kind = tr.kind
 				conf = confidence.ConfidenceLow // channel receive is LOW
 			}
 			if secret == "" {
-				secret, conf = d.DependsOn(t.X)
+				secret, conf, kind = d.dependsOn(t.X)
 			}
 		default:
-			secret, conf = d.DependsOn(t.X)
+			secret, conf, kind = d.dependsOn(t.X)
 		}
 
 	case *ssa.ChangeType:
-		secret, conf = d.DependsOn(t.X)
+		secret, conf, kind = d.dependsOn(t.X)
 
 	case *ssa.Convert:
-		secret, conf = d.DependsOn(t.X)
+		secret, conf, kind = d.dependsOn(t.X)
 
 	case *ssa.MakeInterface:
-		secret, conf = d.DependsOn(t.X)
+		secret, conf, kind = d.dependsOn(t.X)
 
 	case *ssa.ChangeInterface:
 		// interface-to-interface conversion (e.g. hash.Hash -> any) preserves the
@@ -783,115 +912,131 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 			secret = ""
 			conf = confidence.ConfidenceLow
 		} else {
-			secret, conf = d.DependsOn(t.X)
+			secret, conf, kind = d.dependsOn(t.X)
 		}
 
 	case *ssa.TypeAssert:
 		// x.(T): the asserted value carries the taint of x (e.g. a pooled MAC
 		// retrieved as `pool.Get().(hash.Hash)`).
-		secret, conf = d.DependsOn(t.X)
+		secret, conf, kind = d.dependsOn(t.X)
 
 	case *ssa.Extract:
-		secret, conf = d.DependsOn(t.Tuple)
+		secret, conf, kind = d.dependsOn(t.Tuple)
 
 	case *ssa.Field:
 		// query B: this field's taint only (fieldTainted also covers a wholly
 		// tainted non-Alloc root), never a sibling's.
 		root, path, _ := resolveFieldPath(t)
-		if s, ok := d.fieldTainted(root, path); ok {
+		if s, k, ok := d.fieldTainted(root, path); ok {
 			secret = s
+			kind = k
 		}
 		conf = confidence.ConfidenceLow
 
 	case *ssa.FieldAddr:
 		// query B: this field's taint only, never a sibling's.
 		root, path, _ := resolveFieldPath(t)
-		if s, ok := d.fieldTainted(root, path); ok {
+		if s, k, ok := d.fieldTainted(root, path); ok {
 			secret = s
+			kind = k
 		}
 		conf = confidence.ConfidenceLow
 
 	case *ssa.Index:
-		if s, ok := d.taintedAddrs[t.X]; ok {
-			secret = s
+		if tr, ok := d.taintedAddrs[t.X]; ok {
+			ref := taintRef{tr.secret, tr.kind}.join(d.containerKind(t.X))
+			secret = ref.secret
+			kind = ref.kind
 			conf = confidence.ConfidenceLow // index access without element tracking
 		}
 		if secret == "" {
-			secret, conf = d.DependsOn(t.X)
+			secret, conf, kind = d.dependsOn(t.X)
 		}
 		if secret == "" {
-			secretIndex, confIndex := d.DependsOn(t.Index)
+			secretIndex, confIndex, kindIndex := d.dependsOn(t.Index)
 			if secretIndex != "" {
 				secret = secretIndex
+				kind = kindIndex
 				conf = maxConfidence(conf, confIndex)
 			}
 		}
 
 	case *ssa.IndexAddr:
-		if s, ok := d.taintedAddrs[t.X]; ok {
-			secret = s
+		if tr, ok := d.taintedAddrs[t.X]; ok {
+			ref := taintRef{tr.secret, tr.kind}.join(d.containerKind(t.X))
+			secret = ref.secret
+			kind = ref.kind
 			conf = confidence.ConfidenceLow
 		}
 		if secret == "" {
-			secret, conf = d.DependsOn(t.X)
+			secret, conf, kind = d.dependsOn(t.X)
 		}
 		if secret == "" {
-			secretIndex, confIndex := d.DependsOn(t.Index)
+			secretIndex, confIndex, kindIndex := d.dependsOn(t.Index)
 			if secretIndex != "" {
 				secret = secretIndex
+				kind = kindIndex
 				conf = maxConfidence(conf, confIndex)
 			}
 		}
 
 	case *ssa.Slice:
 		// No element-level tracking, therefore LOW confidence
-		secret, _ = d.DependsOn(t.X)
+		secret, _, kind = d.dependsOn(t.X)
 		conf = confidence.ConfidenceLow
 		if secret == "" && t.Low != nil {
-			secretLow, confLow := d.DependsOn(t.Low)
+			secretLow, confLow, kindLow := d.dependsOn(t.Low)
 			if secretLow != "" {
 				secret = secretLow
+				kind = kindLow
 				conf = maxConfidence(conf, confLow)
 			}
 		}
 		if secret == "" && t.High != nil {
-			secretHigh, confHigh := d.DependsOn(t.High)
+			secretHigh, confHigh, kindHigh := d.dependsOn(t.High)
 			if secretHigh != "" {
 				secret = secretHigh
+				kind = kindHigh
 				conf = maxConfidence(conf, confHigh)
 			}
 		}
 		if secret == "" && t.Max != nil {
-			secretMax, confMax := d.DependsOn(t.Max)
+			secretMax, confMax, kindMax := d.dependsOn(t.Max)
 			if secretMax != "" {
 				secret = secretMax
+				kind = kindMax
 				conf = maxConfidence(conf, confMax)
 			}
 		}
 
 	case *ssa.Lookup:
-		if s, ok := d.taintedAddrs[t.X]; ok {
-			secret = s
+		if tr, ok := d.taintedAddrs[t.X]; ok {
+			ref := taintRef{tr.secret, tr.kind}.join(d.containerKind(t.X))
+			secret = ref.secret
+			kind = ref.kind
 			conf = confidence.ConfidenceLow
 		}
 		if secret == "" {
-			secret, conf = d.DependsOn(t.X)
+			secret, conf, kind = d.dependsOn(t.X)
 		}
 		if secret == "" {
-			secretIndex, confIndex := d.DependsOn(t.Index)
+			secretIndex, confIndex, kindIndex := d.dependsOn(t.Index)
 			if secretIndex != "" {
 				secret = secretIndex
+				kind = kindIndex
 				conf = maxConfidence(conf, confIndex)
 			}
 		}
 
 	case *ssa.Alloc:
 		// query A: tainted if the container holds a secret anywhere
-		if s, ok := d.containerHasSecret[t]; ok {
-			secret = s
+		if tr, ok := d.containerHasSecret[t]; ok {
+			secret = tr.secret
+			kind = tr.kind
 			conf = confidence.ConfidenceLow
-		} else if s, ok := d.taintedAddrs[t]; ok {
-			secret = s
+		} else if tr, ok := d.taintedAddrs[t]; ok {
+			secret = tr.secret
+			kind = tr.kind
 			conf = confidence.ConfidenceLow // tainted allocation is LOW
 		}
 
@@ -907,11 +1052,16 @@ func (d *Depender) DependsOn(v ssa.Value) (string, confidence.ConfidenceLevel) {
 	// if no secret found, default to LOW
 	if secret == "" {
 		conf = confidence.ConfidenceLow
+		kind = KindNone
+	} else if kind == KindNone {
+		// Unclassified provenance counts as content: the exemption must be earned.
+		kind = KindContent
 	}
 
 	d.memo[v] = secret
 	d.confMemo[v] = conf
-	return secret, conf
+	d.kindMemo[v] = kind
+	return secret, conf, kind
 }
 
 // constantTimeComparators are functions whose result is a comparison decision, not
@@ -956,14 +1106,22 @@ func isSyncPoolGet(fn *ssa.Function) bool {
 	return obj.Pkg().Path() == "sync" && obj.Name() == "Get"
 }
 
-// taintFromArgs returns the first tainted argument's secret and confidence.
-func (d *Depender) taintFromArgs(t *ssa.Call) (string, confidence.ConfidenceLevel) {
+// taintFromArgs reports the first tainted argument's secret with the highest
+// confidence and the JOIN of every tainted argument's kind. Scanning past the
+// first hit matters for the kind: a call mixing a MAC with a key must yield
+// content, or the result would launder the key into the weaker kind.
+func (d *Depender) taintFromArgs(t *ssa.Call) (string, confidence.ConfidenceLevel, Kind) {
+	ref := taintRef{}
+	conf := confidence.ConfidenceLow
 	for _, a := range t.Call.Args {
-		if s, c := d.DependsOn(a); s != "" {
-			return s, c
+		s, c, k := d.dependsOn(a)
+		if s == "" {
+			continue
 		}
+		ref = ref.join(s, k)
+		conf = maxConfidence(conf, c)
 	}
-	return "", confidence.ConfidenceLow
+	return ref.secret, conf, ref.kind
 }
 
 var errorType = types.Universe.Lookup("error").Type()
@@ -993,11 +1151,12 @@ func methodYieldsContent(m *types.Func) bool {
 	return false
 }
 
-// IsTaintedChannel returns the secret name if the channel is tainted, empty string otherwise.
-// The second return value indicates the confidence level.
-func (d *Depender) IsTaintedChannel(ch ssa.Value) (string, confidence.ConfidenceLevel) {
-	if s, ok := d.taintedAddrs[ch]; ok {
-		return s, confidence.ConfidenceLow
+// ContentTaintedChannel returns the secret name if the channel carries
+// confidential content, empty string otherwise. A channel of MACs discloses
+// nothing, so it is not reported.
+func (d *Depender) ContentTaintedChannel(ch ssa.Value) (string, confidence.ConfidenceLevel) {
+	if t, ok := d.taintedAddrs[ch]; ok && t.kind == KindContent {
+		return t.secret, confidence.ConfidenceLow
 	}
 	return "", confidence.ConfidenceLow
 }

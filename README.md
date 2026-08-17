@@ -71,6 +71,8 @@ ctguard ./...
 | **CT006** | Secret on channels | `ch <- secret` |
 | **CT007** | Secret in I/O sinks | `conn.Write(secret)` in isolated regions |
 
+CT004, CT006 and CT007 report disclosure, so they only fire on confidential content. See [Two kinds of secret](#two-kinds-of-secret).
+
 ## Example
 
 ```go
@@ -187,14 +189,35 @@ return strings.HasPrefix(token, "Bearer ")
 
 CTGuard integrates with `go vet` as a custom analyzer. It builds an SSA representation of your code, then:
 
-1. Collects `//ctguard:secret` annotations to identify sensitive parameters
+1. Identifies secrets from two sources: `//ctguard:secret` annotations (and their `.ctguard.yaml` equivalent), plus crypto values it recognizes on its own, currently HMAC state from `hmac.New` and from a `sync.Pool` that produces one
 2. Tracks taint across functions within a package (fixed-point iteration)
 3. Runs 7 specialized rule checkers against the taint graph
 4. Reports findings with confidence levels (high/low) based on taint precision
 
+### Two kinds of secret
+
+Not every secret-tainted value is confidential. CTGuard tracks a kind alongside the taint:
+
+- **Content**: keys, passwords, tokens, anything you annotate. Every rule applies.
+- **Authenticator**: an HMAC and whatever is derived from it. A MAC is meant to be published, so it is exempt from the disclosure rules (CT004, CT006, CT007). The timing rules still apply, because comparing or indexing by a MAC in variable time helps an attacker forge one.
+
+Mixing the two never weakens the result: a value derived from both a MAC and a key is treated as content.
+
+The authenticator classification is an assumption about intent, not a proof. When an HMAC output is itself a secret, the assumption is wrong and the disclosure rules go quiet; see [Limitations](#limitations).
+
+```go
+func sign(key, msg []byte) {
+    m := hmac.New(sha256.New, key)
+    m.Write(msg)
+    log.Printf("sig=%x", m.Sum(nil))        // not a finding: a MAC is public
+    if bytes.Equal(m.Sum(nil), given) {}    // CT002: still a forgery oracle
+}
+```
+
 ## Limitations
 
 - **Taint does not cross package boundaries.** A secret passed to a function in another package is not tracked into that package's body. Mark the entry points there with `//ctguard:secret`, or declare them in `.ctguard.yaml` under `annotations.secrets`.
+- **An HMAC whose output is itself a secret is treated as an authenticator.** `hmac.New(...).Sum(nil)` is the same expression whether the result is a signature meant to be published, a subkey from a hand-rolled KDF, or a capability such as a password-reset token, a signed value used as a bearer credential, or an HMAC-derived API key. ctguard cannot tell them apart, so all of them are exempt from CT004, CT006 and CT007, and logging one is not reported even when it is a real leak. Where the output is key material or a credential rather than a signature, annotate the parameter that receives it with `//ctguard:secret` to restore content taint. The timing rules are unaffected either way.
 - **Taint is not tracked into closures, goroutines, or deferred functions.** A secret captured by a `go func(){...}()`, a closure, or a `defer` is not followed into that body.
 - **CT007 only fires inside `//ctguard:isolated` regions**, which are opt-in.
 - **Confidence is `high` or `low`**, derived from taint precision, not a numeric score.

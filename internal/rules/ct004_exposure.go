@@ -12,7 +12,9 @@ import (
 	"github.com/oasilturk/ctguard/internal/taint"
 )
 
-// CT004 flags secrets that end up in logs, prints, or error messages.
+// CT004 flags secrets that end up in logs, prints, or error messages. It reports
+// disclosure, so only confidential content counts: an HMAC and its encodings are
+// published by design. Comparing one in non-constant time is still CT002.
 func RunCT004(pass *analysis.Pass, ssaRes *buildssa.SSA, secrets annotations.Secrets, ipAnalyzer *taint.InterproceduralAnalyzer) FindingList {
 	var findings FindingList
 
@@ -81,7 +83,7 @@ func ct004FindSecretInArgs(args []ssa.Value, dep *taint.Depender) (string, confi
 }
 
 func ct004CheckArg(arg ssa.Value, dep *taint.Depender) (string, confidence.ConfidenceLevel) {
-	if s, c := dep.DependsOn(arg); s != "" {
+	if s, c := dep.ContentDependsOn(arg); s != "" {
 		return ct004UpgradeConfidence(s, c, dep)
 	}
 

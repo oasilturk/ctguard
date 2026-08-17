@@ -43,6 +43,14 @@ func TestMAC(t *testing.T) {
 	analysistest.Run(t, testdata, analyzer.Analyzer, "mac")
 }
 
+// TestMACKind locks the taint-kind split: publishing an HMAC is not a finding
+// while comparing it still is, confidential content still reports at the
+// disclosure sinks, and mixing content in never launders it into the weaker kind.
+func TestMACKind(t *testing.T) {
+	testdata := getTestdataPath(t)
+	analysistest.Run(t, testdata, analyzer.Analyzer, "mackind")
+}
+
 // TestFieldTaint tests field-sensitive taint: a MAC-carrying struct does not
 // taint its sibling public fields across call/return boundaries.
 func TestFieldTaint(t *testing.T) {

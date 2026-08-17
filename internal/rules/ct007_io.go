@@ -154,12 +154,14 @@ func ct007CheckDynamicCall(
 	return findings
 }
 
+// ct007FindSecretInArgs looks for confidential content only: writing an HMAC to
+// a socket or a file is what signing code is supposed to do.
 func ct007FindSecretInArgs(args []ssa.Value, dep *taint.Depender) (string, confidence.ConfidenceLevel) {
 	for _, a := range args {
 		if a == nil {
 			continue
 		}
-		if s, c := dep.DependsOn(a); s != "" {
+		if s, c := dep.ContentDependsOn(a); s != "" {
 			return s, c
 		}
 	}

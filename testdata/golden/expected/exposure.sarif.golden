@@ -58,7 +58,7 @@
                 "text": "Secret data exposure"
               },
               "fullDescription": {
-                "text": "Detects when secret data is passed to logging, printing, or error formatting functions. Secrets may be exposed in logs, console output, or error messages."
+                "text": "Detects when secret data is passed to logging, printing, or error formatting functions. Secrets may be exposed in logs, console output, or error messages. Authenticators such as HMAC output are excluded: they are published by design."
               },
               "helpUri": "https://github.com/oasilturk/ctguard#ct004",
               "defaultConfiguration": {
@@ -86,7 +86,7 @@
                 "text": "Channel operations with secret data"
               },
               "fullDescription": {
-                "text": "Detects when secret data is sent to or received from channels. Channel communication can leak timing information and create attack surfaces where goroutines can observe secret data."
+                "text": "Detects when secret data is sent to or received from channels. Channel communication can leak timing information and create attack surfaces where goroutines can observe secret data. Authenticators such as HMAC output are excluded: they are published by design."
               },
               "helpUri": "https://github.com/oasilturk/ctguard#ct006",
               "defaultConfiguration": {
@@ -100,7 +100,7 @@
                 "text": "Secret data in I/O sink within isolated region"
               },
               "fullDescription": {
-                "text": "Detects when secret-tainted values flow into network, file, or syscall I/O functions inside //ctguard:isolated regions. Isolated regions are code sections that must not leak secrets through I/O operations."
+                "text": "Detects when secret-tainted values flow into network, file, or syscall I/O functions inside //ctguard:isolated regions. Isolated regions are code sections that must not leak secrets through I/O operations. Authenticators such as HMAC output are excluded: they are published by design."
               },
               "helpUri": "https://github.com/oasilturk/ctguard#ct007",
               "defaultConfiguration": {
