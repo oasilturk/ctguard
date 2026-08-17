@@ -18,6 +18,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.25"  # latest 1.25.x patch (keeps the build free of known stdlib CVEs)
+          check-latest: true  # without this, setup-go accepts the runner image's cached patch
 
       - name: Download modules
         run: go mod download
