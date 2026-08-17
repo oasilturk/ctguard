@@ -7,15 +7,15 @@
   },
   {
     "pos": "testdata/src/mac/mac.go:24:42",
-    "message": "CT002: string comparison uses secret 'hmac' (confidence: low)",
+    "message": "CT002: string comparison uses secret 'hmac' (confidence: high)",
     "rule": "CT002",
-    "confidence": "low"
+    "confidence": "high"
   },
   {
     "pos": "testdata/src/mac/mac.go:35:20",
-    "message": "CT002: bytes.Equal uses secret 'computeMAC' (confidence: low)",
+    "message": "CT002: bytes.Equal uses secret 'computeMAC' (confidence: high)",
     "rule": "CT002",
-    "confidence": "low"
+    "confidence": "high"
   },
   {
     "pos": "testdata/src/mac/mac.go:42:20",
@@ -25,14 +25,14 @@
   },
   {
     "pos": "testdata/src/mac/mac.go:54:20",
-    "message": "CT002: bytes.Equal uses secret 'hmac' (confidence: low)",
+    "message": "CT002: bytes.Equal uses secret 'hmac' (confidence: high)",
     "rule": "CT002",
-    "confidence": "low"
+    "confidence": "high"
   },
   {
     "pos": "testdata/src/mac/mac.go:78:17",
-    "message": "CT002: string comparison uses secret 'hmac' (confidence: low)",
+    "message": "CT002: string comparison uses secret 'hmac' (confidence: high)",
     "rule": "CT002",
-    "confidence": "low"
+    "confidence": "high"
   }
 ]

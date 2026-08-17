@@ -87,11 +87,12 @@ func compareMAC(key, msg, sig []byte) bool {
 	return bytes.Equal(m.Sum(nil), sig) // want "CT002.*confidence: high"
 }
 
-// The kind survives an encoder, so the encoded compare is still reported.
+// An exact encoder keeps both the taint and its confidence, so the encoded
+// compare is not demoted below the inline one.
 func compareEncodedMAC(key, msg []byte, sig string) bool {
 	m := hmac.New(sha256.New, key)
 	m.Write(msg)
-	return hex.EncodeToString(m.Sum(nil)) == sig // want "CT002.*confidence: low"
+	return hex.EncodeToString(m.Sum(nil)) == sig // want "CT002.*confidence: high"
 }
 
 func computeTag(key, msg []byte) []byte {
@@ -100,10 +101,10 @@ func computeTag(key, msg []byte) []byte {
 	return m.Sum(nil)
 }
 
-// The MAC is produced in another function, and the authenticator kind crosses
-// the return with it.
+// The MAC is produced in another function; we inspected that body, so this is
+// as certain as the inline case.
 func compareCrossFunction(key, msg, sig []byte) bool {
-	return bytes.Equal(computeTag(key, msg), sig) // want "CT002.*confidence: low"
+	return bytes.Equal(computeTag(key, msg), sig) // want "CT002.*confidence: high"
 }
 
 // --- confidential content is still reported at the disclosure sinks ---

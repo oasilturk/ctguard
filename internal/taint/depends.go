@@ -28,7 +28,7 @@ type Depender struct {
 	addrLengthTaint    map[ssa.Value]string                     // length taint on memory addresses
 	fieldTaint         map[ssa.Value]map[string]taintRef        // field-qualified taint: root -> field path -> secret
 	elementTaintRoots  map[ssa.Value]bool                       // roots with a slice/array element write: propagate whole across boundaries
-	derivedTaint       map[ssa.Value]taintRef                   // values tainted via an output-parameter transform (hex.Encode(dst, src))
+	derivedTaint       map[ssa.Value]derivedRef                 // values tainted via an output-parameter transform (hex.Encode(dst, src))
 	containerHasSecret map[ssa.Value]taintRef                   // whole-value: root holds a secret somewhere
 	ipAnalyzer         InterproceduralInfo                      // interprocedural analysis info
 	confMemo           map[ssa.Value]confidence.ConfidenceLevel // stores confidence level for each tainted value
@@ -64,6 +64,14 @@ func (t taintRef) joinLatest(secret string, kind Kind) taintRef {
 	return out
 }
 
+// derivedRef also keeps the source's confidence, because the output-parameter
+// transform that produced it is an exact one (hex.Encode and friends).
+type derivedRef struct {
+	secret string
+	conf   confidence.ConfidenceLevel
+	kind   Kind
+}
+
 // InterproceduralInfo provides information about taint across function boundaries
 type InterproceduralInfo interface {
 	HasTaintedReturn(fn *ssa.Function) bool
@@ -95,7 +103,7 @@ func NewDepender(fn *ssa.Function, secretParams map[string]bool, ipAnalyzer Inte
 		addrLengthTaint:    map[ssa.Value]string{},
 		fieldTaint:         map[ssa.Value]map[string]taintRef{},
 		elementTaintRoots:  map[ssa.Value]bool{},
-		derivedTaint:       map[ssa.Value]taintRef{},
+		derivedTaint:       map[ssa.Value]derivedRef{},
 		containerHasSecret: map[ssa.Value]taintRef{},
 		ipAnalyzer:         ipAnalyzer,
 		confMemo:           map[ssa.Value]confidence.ConfidenceLevel{},
@@ -157,9 +165,11 @@ func (d *Depender) analyzeOutputParams(fn *ssa.Function) {
 			if idx[0] >= len(args) || idx[1] >= len(args) {
 				continue
 			}
-			if s, _, k := d.dependsOn(args[idx[1]]); s != "" {
+			if s, c, k := d.dependsOn(args[idx[1]]); s != "" {
 				root, _, _ := resolveFieldPath(args[idx[0]])
-				d.derivedTaint[root] = d.derivedTaint[root].joinLatest(s, k)
+				prev := d.derivedTaint[root]
+				ref := taintRef{prev.secret, prev.kind}.joinLatest(s, k)
+				d.derivedTaint[root] = derivedRef{ref.secret, maxConfidence(prev.conf, c), ref.kind}
 			}
 		}
 	}
@@ -689,7 +699,7 @@ func (d *Depender) dependsOn(v ssa.Value) (string, confidence.ConfidenceLevel, K
 		return "", confidence.ConfidenceLow, KindNone
 	}
 	if t, ok := d.derivedTaint[v]; ok {
-		return t.secret, confidence.ConfidenceLow, t.kind
+		return t.secret, t.conf, t.kind
 	}
 	if secret, ok := d.memo[v]; ok {
 		if conf, confOk := d.confMemo[v]; confOk {
@@ -783,7 +793,9 @@ func (d *Depender) dependsOn(v ssa.Value) (string, confidence.ConfidenceLevel, K
 						secret, kind = ref.secret, ref.kind
 					}
 				} else if d.ipAnalyzer.IntrinsicReturn(callee) {
-					secret, conf = callee.Name(), confidence.ConfidenceLow
+					// The body WAS inspected and the source found in it, so this is as
+					// certain as an inline source rather than an uninspectable callee.
+					secret, conf = callee.Name(), confidence.ConfidenceHigh
 					kind = d.ipAnalyzer.IntrinsicReturnKind(callee)
 				}
 			} else {
@@ -811,6 +823,11 @@ func (d *Depender) dependsOn(v ssa.Value) (string, confidence.ConfidenceLevel, K
 					}
 				}
 			}
+		} else if callee != nil && isPureTransform(callee) {
+			// An exact transform of its input, so taint flows with its confidence
+			// intact instead of being capped like an opaque callee: encoding a MAC
+			// before comparing it must not be demoted to LOW.
+			secret, conf, kind = d.taintFromArgs(t)
 		} else if t.Call.IsInvoke() {
 			// Interface method call such as mac.Sum(nil): the receiver, not the args,
 			// carries the taint. Metadata methods (results all numeric/bool/error,
@@ -1094,6 +1111,37 @@ func isMACConstructor(fn *ssa.Function) bool {
 		return false
 	}
 	return obj.Pkg().Path() == "crypto/hmac" && obj.Name() == "New"
+}
+
+// pureTransforms lists functions returning an exact transform of their input
+// (the encoders that wrap a MAC before it is compared), so unlike an opaque
+// callee they preserve the confidence and kind of whatever flows in.
+//
+// Taint is taken from EVERY argument rather than a fixed position: Append*
+// returns its destination grown in place, and a bound method value
+// (base64.StdEncoding.EncodeToString passed as a func) drops the receiver from
+// the argument list, so any fixed index would be wrong.
+var pureTransforms = map[outParamKey]bool{
+	{"encoding/hex", "EncodeToString"}:    true,
+	{"encoding/hex", "DecodeString"}:      true,
+	{"encoding/hex", "AppendEncode"}:      true,
+	{"encoding/hex", "AppendDecode"}:      true,
+	{"encoding/base64", "EncodeToString"}: true,
+	{"encoding/base64", "DecodeString"}:   true,
+	{"encoding/base64", "AppendEncode"}:   true,
+	{"encoding/base64", "AppendDecode"}:   true,
+	{"encoding/base32", "EncodeToString"}: true,
+	{"encoding/base32", "DecodeString"}:   true,
+	{"encoding/base32", "AppendEncode"}:   true,
+	{"encoding/base32", "AppendDecode"}:   true,
+}
+
+func isPureTransform(fn *ssa.Function) bool {
+	obj := fn.Object()
+	if obj == nil || obj.Pkg() == nil {
+		return false
+	}
+	return pureTransforms[outParamKey{obj.Pkg().Path(), obj.Name()}]
 }
 
 // isSyncPoolGet reports whether fn is (*sync.Pool).Get; whether the pool yields a
