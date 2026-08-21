@@ -1,0 +1,14 @@
+[
+  {
+    "pos": "testdata/src/authflow/authflow.go:48:19",
+    "message": "CT002: string comparison uses secret 'expected' (confidence: high)",
+    "rule": "CT002",
+    "confidence": "high"
+  },
+  {
+    "pos": "testdata/src/authflow/authflow.go:54:12",
+    "message": "CT004: secret 'expected' passed to log.Printf (confidence: high)",
+    "rule": "CT004",
+    "confidence": "high"
+  }
+]

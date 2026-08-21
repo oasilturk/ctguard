@@ -130,3 +130,11 @@ func TestConstantTimeSanitizer(t *testing.T) {
 	testdata := getTestdataPath(t)
 	analysistest.Run(t, testdata, analyzer.Analyzer, "constanttime")
 }
+
+// TestAuthFlow is the real-world-inspired case: a bearer-token gateway where the
+// API key reaches a non-constant-time compare and a log sink only through
+// helpers, while the public protocol values around it stay clean.
+func TestAuthFlow(t *testing.T) {
+	testdata := getTestdataPath(t)
+	analysistest.Run(t, testdata, analyzer.Analyzer, "authflow")
+}

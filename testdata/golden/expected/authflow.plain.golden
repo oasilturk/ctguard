@@ -1,0 +1,2 @@
+testdata/src/authflow/authflow.go:48:19 CT002: string comparison uses secret 'expected' (confidence: high)
+testdata/src/authflow/authflow.go:54:12 CT004: secret 'expected' passed to log.Printf (confidence: high)

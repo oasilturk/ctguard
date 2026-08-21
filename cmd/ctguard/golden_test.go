@@ -271,6 +271,19 @@ func TestGolden(t *testing.T) {
 			args:       []string{"-rules=CT007"},
 			goldenFile: "isolated.ct007.golden",
 		},
+		// Package 'authflow' - real-world-inspired bearer-token flow (CT002 + CT004)
+		{
+			name:       "authflow_plain",
+			target:     "./testdata/src/authflow/",
+			args:       []string{},
+			goldenFile: "authflow.plain.golden",
+		},
+		{
+			name:       "authflow_json",
+			target:     "./testdata/src/authflow/",
+			args:       []string{"-format=json"},
+			goldenFile: "authflow.json.golden",
+		},
 	}
 
 	for _, tc := range cases {
